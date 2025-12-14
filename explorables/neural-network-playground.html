@@ -140,18 +140,22 @@
         }
 
         #tooltip {
-            position: absolute;
-            background-color: rgba(20, 20, 20, 0.9);
+            position: fixed;
+            left: 0;
+            top: 0;
+            background-color: rgba(20, 20, 20, 0.95);
             border: 1px solid var(--primary-color);
             border-radius: 5px;
-            padding: 10px;
+            padding: 10px 12px;
             color: var(--text-color);
             font-size: 0.9em;
+            line-height: 1.5;
             pointer-events: none;
             opacity: 0;
-            transition: opacity 0.1s ease-in-out;
-            max-width: 300px;
+            max-width: 320px;
             word-wrap: break-word;
+            z-index: 9999;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
         }
     </style>
 </head>
@@ -565,9 +569,38 @@
             
             function showTooltip(e, content) {
                 viz.tooltip.innerHTML = content;
+                
+                // Set initial position near cursor
+                const padding = 15;
+                let left = e.clientX + padding;
+                let top = e.clientY + padding;
+                
+                // Apply position first
+                viz.tooltip.style.left = `${left}px`;
+                viz.tooltip.style.top = `${top}px`;
                 viz.tooltip.style.opacity = '1';
-                viz.tooltip.style.left = `${e.clientX + 15}px`;
-                viz.tooltip.style.top = `${e.clientY + 15}px`;
+                
+                // Then adjust if it goes off-screen
+                requestAnimationFrame(() => {
+                    const tooltipRect = viz.tooltip.getBoundingClientRect();
+                    
+                    // Prevent tooltip from going off the right edge
+                    if (tooltipRect.right > window.innerWidth - padding) {
+                        left = e.clientX - tooltipRect.width - padding;
+                    }
+                    
+                    // Prevent tooltip from going off the bottom edge
+                    if (tooltipRect.bottom > window.innerHeight - padding) {
+                        top = e.clientY - tooltipRect.height - padding;
+                    }
+                    
+                    // Ensure tooltip doesn't go off the left or top edge
+                    left = Math.max(padding, left);
+                    top = Math.max(padding, top);
+                    
+                    viz.tooltip.style.left = `${left}px`;
+                    viz.tooltip.style.top = `${top}px`;
+                });
             }
 
             function hideTooltip() {
