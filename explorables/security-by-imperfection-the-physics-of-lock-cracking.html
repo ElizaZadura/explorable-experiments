@@ -1,0 +1,838 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Security by Imperfection: The Physics of Lock Cracking</title>
+    <style>
+        :root {
+            --bg-color: #f4f4f2;
+            --text-color: #2c2c2c;
+            --accent-red: #e74c3c;
+            --accent-green: #27ae60;
+            --accent-blue: #2980b9;
+            --metal-grey: #95a5a6;
+            --metal-dark: #7f8c8d;
+            --font-stack: 'Helvetica Neue', Helvetica, Arial, sans-serif;
+        }
+
+        * { box-sizing: border-box; user-select: none; -webkit-user-select: none; }
+
+        body {
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            font-family: var(--font-stack);
+            line-height: 1.6;
+            margin: 0;
+            padding: 0;
+            overflow-x: hidden;
+        }
+
+        h1, h2, h3 { font-weight: 700; letter-spacing: -0.5px; }
+        p { font-weight: 400; max-width: 650px; margin: 0 auto 1.5rem auto; }
+
+        section {
+            padding: 3rem 1rem;
+            border-bottom: 1px solid #ddd;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            min-height: 80vh;
+            justify-content: center;
+        }
+
+        .container {
+            width: 100%;
+            max-width: 800px;
+            margin: 0 auto;
+            text-align: center;
+        }
+
+        /* UI Controls */
+        button {
+            background: var(--text-color);
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            font-size: 1rem;
+            font-weight: bold;
+            cursor: pointer;
+            border-radius: 4px;
+            transition: background 0.2s;
+            margin-top: 1rem;
+        }
+        button:active { transform: scale(0.98); }
+        button:disabled { background: #ccc; cursor: not-allowed; }
+        button.red-btn { background: var(--accent-red); }
+        
+        input[type=range] {
+            width: 100%;
+            max-width: 300px;
+            margin: 10px 0;
+        }
+
+        /* --- SECTION 1: ANATOMY --- */
+        .lock-anatomy {
+            position: relative;
+            width: 300px;
+            height: 250px;
+            margin: 2rem auto;
+            background: #e0e0e0;
+            border-radius: 10px;
+            border: 2px solid #ccc;
+        }
+
+        .shackle-group {
+            position: absolute;
+            top: -60px;
+            left: 25px;
+            width: 250px;
+            height: 100px;
+            transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+
+        .shackle-bar {
+            width: 250px;
+            height: 60px;
+            border: 15px solid var(--metal-dark);
+            border-bottom: none;
+            border-radius: 30px 30px 0 0;
+        }
+
+        .shackle-teeth {
+            display: flex;
+            justify-content: space-around;
+            padding: 0 20px;
+        }
+
+        .tooth {
+            width: 10px;
+            height: 40px; /* Extends down */
+            background: var(--metal-dark);
+        }
+
+        .wheels-container {
+            display: flex;
+            justify-content: space-around;
+            position: absolute;
+            bottom: 30px;
+            width: 100%;
+            padding: 0 20px;
+        }
+
+        .wheel-s1 {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background: white;
+            border: 4px solid var(--metal-grey);
+            position: relative;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            cursor: pointer;
+            transition: border-color 0.3s;
+        }
+
+        .wheel-s1 .gate {
+            position: absolute;
+            top: -6px;
+            width: 12px;
+            height: 8px;
+            background: var(--bg-color); /* Mask to create notch */
+            border: 1px solid #ccc;
+            border-top: none;
+            display: none; /* Hidden by default, shown via rotation logic visually */
+        }
+        
+        /* We simulate rotation by checking logic, visual is just a number */
+        .wheel-s1.unlocked { border-color: var(--accent-green); color: var(--accent-green); }
+        
+        .dial-controls {
+            display: flex;
+            justify-content: center;
+            gap: 10px;
+            margin-top: 10px;
+        }
+        .dial-col { display: flex; flex-direction: column; align-items: center; }
+
+        /* --- SECTION 2: PHYSICS --- */
+        .microscope-view {
+            width: 320px;
+            height: 200px;
+            background: #333;
+            border-radius: 50%; /* Circle view */
+            margin: 20px auto;
+            position: relative;
+            overflow: hidden;
+            border: 8px solid #222;
+        }
+
+        .micro-shackle {
+            position: absolute;
+            top: 20px;
+            left: 10px;
+            width: 280px;
+            height: 50px;
+            background: var(--metal-dark);
+            display: flex;
+            justify-content: space-around;
+            align-items: flex-end;
+            transition: top 0.2s;
+        }
+
+        .micro-tooth {
+            width: 30px;
+            height: 30px; /* Variable height set by JS */
+            background: #999;
+            border-bottom: 2px solid #fff;
+        }
+
+        .micro-wheels {
+            position: absolute;
+            bottom: 40px;
+            left: 10px;
+            width: 280px;
+            display: flex;
+            justify-content: space-around;
+        }
+
+        .micro-wheel {
+            width: 40px;
+            height: 40px;
+            background: var(--metal-grey);
+            border-radius: 50%;
+            transition: background 0.2s;
+        }
+        
+        .binding { background-color: var(--accent-red) !important; box-shadow: 0 0 10px var(--accent-red); }
+        .free { background-color: var(--metal-grey); opacity: 0.7; }
+
+        /* --- SECTION 3: THE GAME --- */
+        .game-board {
+            background: #222;
+            padding: 20px;
+            border-radius: 12px;
+            color: white;
+            margin-top: 20px;
+            position: relative;
+        }
+
+        .lock-body {
+            display: flex;
+            gap: 15px;
+            background: #444;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: inset 0 0 15px #000;
+        }
+
+        .game-dial {
+            width: 50px;
+            height: 80px;
+            background: linear-gradient(to bottom, #333, #fff, #333);
+            border-radius: 4px;
+            color: black;
+            font-size: 24px;
+            font-weight: bold;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: ns-resize;
+            position: relative;
+            user-select: none;
+        }
+
+        .game-dial.solved {
+            box-shadow: 0 0 10px var(--accent-green);
+            border: 2px solid var(--accent-green);
+        }
+
+        .game-dial.binding-feel {
+            cursor:  ns-resize; /* Visual cue handled by JS logic mostly */
+        }
+
+        .status-light {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            background: #555;
+            margin: 5px auto 0 auto;
+        }
+        .status-light.on { background: var(--accent-green); box-shadow: 0 0 5px var(--accent-green); }
+
+        .tension-bar {
+            width: 100%;
+            height: 40px;
+            background: #555;
+            margin-bottom: 10px;
+            border-radius: 4px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            font-weight: bold;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+        .tension-bar.active {
+            background: var(--accent-blue);
+            box-shadow: 0 0 10px var(--accent-blue);
+        }
+        
+        .feedback-text {
+            min-height: 1.5em;
+            color: #aaa;
+            font-size: 0.9rem;
+            margin-top: 10px;
+        }
+
+        /* --- SECTION 4: FALSE GATES --- */
+        .counter-viz {
+            position: relative;
+            width: 200px;
+            height: 200px;
+            margin: 20px auto;
+        }
+        .big-wheel {
+            width: 100%;
+            height: 100%;
+            border-radius: 50%;
+            background: conic-gradient(var(--metal-grey) 0deg, #fff 90deg, var(--metal-grey) 180deg, #fff 270deg, var(--metal-grey) 360deg);
+            position: relative;
+            transform: rotate(0deg);
+            border: 10px solid #444;
+        }
+        /* Notches */
+        .notch {
+            position: absolute;
+            width: 20px;
+            height: 20px;
+            background: var(--bg-color);
+            left: 50%;
+            top: -10px;
+            transform-origin: bottom center;
+            transform: translateX(-50%);
+            clip-path: polygon(0 0, 100% 0, 80% 100%, 20% 100%);
+        }
+        /* True gate is deeper */
+        .notch.true { height: 30px; top: -15px; background: var(--bg-color); border: 1px dashed green;} 
+        
+        .shackle-pin {
+            position: absolute;
+            top: -40px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 15px;
+            height: 50px;
+            background: var(--accent-red);
+            transition: top 0.1s;
+            z-index: 10;
+        }
+
+        /* Animations */
+        @keyframes shake {
+            0% { transform: translateX(0); }
+            25% { transform: translateX(-5px); }
+            50% { transform: translateX(5px); }
+            75% { transform: translateX(-5px); }
+            100% { transform: translateX(0); }
+        }
+        .shake { animation: shake 0.3s; }
+
+        footer {
+            background: #222;
+            color: #888;
+            padding: 3rem;
+            text-align: center;
+            font-size: 0.8rem;
+        }
+    </style>
+</head>
+<body>
+
+    <section>
+        <div class="container">
+            <h1>Security by Imperfection</h1>
+            <h2>The Physics of Lock Cracking</h2>
+            <p>We trust combination locks to secure our valuables. But security is often an illusion. By understanding the microscopic imperfections inside a lock, we can bypass the code entirely.</p>
+            <p style="color: #888; font-size: 0.9rem;">Scroll down to begin.</p>
+        </div>
+    </section>
+
+    <!-- SECTION 1: ANATOMY -->
+    <section id="sec-anatomy">
+        <div class="container">
+            <h2>1. The Anatomy of Trust</h2>
+            <p>Inside a lock, wheels block a metal shackle. In a perfect world, you must align every wheel's "Gate" to the shackle's "Teeth" for it to open.</p>
+            
+            <div class="lock-anatomy">
+                <div class="shackle-group" id="s1-shackle">
+                    <div class="shackle-bar"></div>
+                    <div class="shackle-teeth">
+                        <div class="tooth"></div>
+                        <div class="tooth"></div>
+                        <div class="tooth"></div>
+                        <div class="tooth"></div>
+                    </div>
+                </div>
+                <div class="wheels-container">
+                    <div class="wheel-s1" id="w1-0">0</div>
+                    <div class="wheel-s1" id="w1-1">0</div>
+                    <div class="wheel-s1" id="w1-2">0</div>
+                    <div class="wheel-s1" id="w1-3">0</div>
+                </div>
+            </div>
+
+            <div class="dial-controls">
+                <div class="dial-col"><input type="range" min="0" max="9" value="0" orient="vertical" oninput="updateS1(0, this.value)"></div>
+                <div class="dial-col"><input type="range" min="0" max="9" value="0" orient="vertical" oninput="updateS1(1, this.value)"></div>
+                <div class="dial-col"><input type="range" min="0" max="9" value="0" orient="vertical" oninput="updateS1(2, this.value)"></div>
+                <div class="dial-col"><input type="range" min="0" max="9" value="0" orient="vertical" oninput="updateS1(3, this.value)"></div>
+            </div>
+
+            <p style="margin-top:1rem; font-size: 0.9rem;">Target Combination: <strong>3 - 7 - 2 - 9</strong></p>
+            <button onclick="attemptUnlockS1()">Pull Shackle</button>
+        </div>
+    </section>
+
+    <!-- SECTION 2: PHYSICS -->
+    <section id="sec-physics">
+        <div class="container">
+            <h2>2. The Physics of Imperfection</h2>
+            <p>Here is the secret: <strong>No lock is manufactured perfectly.</strong> The holes in the shackle are never perfectly aligned. Some are microscopic fractions of a millimeter off.</p>
+            
+            <div class="microscope-view">
+                <div class="micro-shackle" id="micro-shackle">
+                    <div class="micro-tooth" style="height: 20px;"></div>
+                    <div class="micro-tooth" style="height: 20px;"></div>
+                    <div class="micro-tooth" style="height: 20px;"></div>
+                    <div class="micro-tooth" style="height: 20px;"></div>
+                </div>
+                <div class="micro-wheels">
+                    <div class="micro-wheel" id="mw-0"></div>
+                    <div class="micro-wheel" id="mw-1"></div>
+                    <div class="micro-wheel" id="mw-2"></div>
+                    <div class="micro-wheel" id="mw-3"></div>
+                </div>
+            </div>
+
+            <label><strong>Manufacturing Error Level:</strong> <span id="error-val">0</span>%</label>
+            <input type="range" min="0" max="100" value="0" id="tolerance-slider">
+            
+            <p style="font-size: 0.9rem; margin-top: 1rem;">Hold the button below. With 0% error, all teeth hit at once. <br>With error > 0%, <strong>only one tooth binds first.</strong></p>
+            
+            <button id="tension-btn-s2" class="red-btn">Apply Tension</button>
+        </div>
+    </section>
+
+    <!-- SECTION 3: THE CRACK -->
+    <section id="sec-game">
+        <div class="container">
+            <h2>3. The Crack (Simulation)</h2>
+            <p>Because one wheel binds first, we can find the numbers one by one. <br><strong>The Algorithm:</strong> Apply tension. Find the wheel that is hardest to turn (Binding). Turn it until it clicks.</p>
+            
+            <div class="game-board">
+                <div class="tension-bar" id="game-tension-bar">Hold Spacebar or Click Here for Tension</div>
+                
+                <div class="lock-body">
+                    <div class="game-dial-wrapper">
+                        <div class="game-dial" id="gd-0" data-idx="0">0</div>
+                        <div class="status-light" id="sl-0"></div>
+                    </div>
+                    <div class="game-dial-wrapper">
+                        <div class="game-dial" id="gd-1" data-idx="1">0</div>
+                        <div class="status-light" id="sl-1"></div>
+                    </div>
+                    <div class="game-dial-wrapper">
+                        <div class="game-dial" id="gd-2" data-idx="2">0</div>
+                        <div class="status-light" id="sl-2"></div>
+                    </div>
+                    <div class="game-dial-wrapper">
+                        <div class="game-dial" id="gd-3" data-idx="3">0</div>
+                        <div class="status-light" id="sl-3"></div>
+                    </div>
+                </div>
+                <div class="feedback-text" id="game-feedback">Waiting for tension...</div>
+            </div>
+            <p style="margin-top: 1rem; font-size: 0.85rem;">
+                Instructions: Hold Tension. Drag dials up/down. <br>The <strong>Binding Wheel</strong> will move very slowly (high friction). <br>When it hits the right number, it clicks and becomes loose.
+            </p>
+            <button onclick="resetGame()">Reset Lock</button>
+        </div>
+    </section>
+
+    <!-- SECTION 4: COUNTERMEASURES -->
+    <section id="sec-counter">
+        <div class="container">
+            <h2>4. Countermeasures: False Gates</h2>
+            <p>To fight this, expensive locks add "False Gates"—shallow notches that feel like the correct number but don't open the lock.</p>
+            
+            <div class="counter-viz">
+                <div class="shackle-pin" id="cp-pin"></div>
+                <!-- A visual representation of a wheel with notches -->
+                <div class="big-wheel" id="cp-wheel">
+                    <!-- True Gate at top (0 deg visual) -->
+                    <div class="notch true" style="transform: translateX(-50%) rotate(0deg); top: -5px;"></div>
+                    <!-- False Gate at 90 deg -->
+                    <div class="notch" style="transform: translateX(-50%) rotate(90deg); left: 100%; top: 50%; transform-origin: -50% 0;"></div>
+                    <!-- False Gate at 270 deg -->
+                    <div class="notch" style="transform: translateX(-50%) rotate(270deg); left: 0%; top: 50%; transform-origin: 50% 0;"></div>
+                </div>
+            </div>
+
+            <div style="margin-top: 20px;">
+                <label>Rotate Wheel</label><br>
+                <input type="range" min="0" max="360" value="45" id="cp-slider" style="width: 100%;">
+            </div>
+            
+            <div style="margin-top: 10px;">
+                <label>Wiggle Test (Check for Play)</label><br>
+                <input type="range" min="-10" max="10" value="0" id="wiggle-slider">
+            </div>
+
+            <p id="cp-status" style="font-weight: bold; color: var(--accent-blue); margin-top:10px;">Status: On Surface</p>
+        </div>
+    </section>
+
+    <footer>
+        <p>Security is an illusion created by the assumption of mechanical perfection.</p>
+        <p>Based on the concept of Binding Order. Interactive Design Demo.</p>
+    </footer>
+
+    <script>
+        /* --- GLOBAL STATE --- */
+        const SECRET = [3, 7, 2, 9];
+        const TOLERANCES = [0.0, 0.0, 0.0, 0.0]; // Generated on load
+        
+        // Randomize Tolerances (0.1 to 0.9, distinct values to ensure strict order)
+        function initTolerances() {
+            let base = [0.2, 0.4, 0.6, 0.8];
+            // Shuffle
+            for (let i = base.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [base[i], base[j]] = [base[j], base[i]];
+            }
+            for(let i=0; i<4; i++) TOLERANCES[i] = base[i];
+        }
+        initTolerances();
+
+        /* --- SECTION 1: ANATOMY LOGIC --- */
+        let s1Current = [0, 0, 0, 0];
+        
+        function updateS1(idx, val) {
+            s1Current[idx] = parseInt(val);
+            const el = document.getElementById(`w1-${idx}`);
+            el.innerText = val;
+            
+            // Visual hint (Green if correct number, simulating knowing the code)
+            if (s1Current[idx] === SECRET[idx]) {
+                el.classList.add('unlocked');
+            } else {
+                el.classList.remove('unlocked');
+            }
+        }
+
+        function attemptUnlockS1() {
+            const shackle = document.getElementById('s1-shackle');
+            const isCorrect = s1Current.every((val, i) => val === SECRET[i]);
+            
+            if (isCorrect) {
+                shackle.style.transform = "translateY(-40px)";
+                setTimeout(() => { alert("Unlocked!"); }, 300);
+            } else {
+                shackle.style.transform = "translateY(0)";
+                shackle.classList.add('shake');
+                setTimeout(() => shackle.classList.remove('shake'), 300);
+            }
+        }
+
+        /* --- SECTION 2: PHYSICS LOGIC --- */
+        const s2Slider = document.getElementById('tolerance-slider');
+        const s2Btn = document.getElementById('tension-btn-s2');
+        const s2Shackle = document.getElementById('micro-shackle');
+        const s2ErrorDisplay = document.getElementById('error-val');
+        let s2ErrorLevel = 0;
+
+        // Update visualization of jagged teeth
+        s2Slider.addEventListener('input', (e) => {
+            s2ErrorLevel = e.target.value / 100;
+            s2ErrorDisplay.innerText = e.target.value;
+            
+            const teeth = document.querySelectorAll('.micro-tooth');
+            teeth.forEach((t, i) => {
+                // Base height 20. Error adds up to 10px variance based on tolerance array
+                const variance = TOLERANCES[i] * 15 * s2ErrorLevel; 
+                t.style.height = `${20 + variance}px`;
+            });
+        });
+
+        // Tension Logic
+        s2Btn.addEventListener('mousedown', applyTensionS2);
+        s2Btn.addEventListener('mouseup', releaseTensionS2);
+        s2Btn.addEventListener('touchstart', (e)=>{e.preventDefault(); applyTensionS2()});
+        s2Btn.addEventListener('touchend', releaseTensionS2);
+
+        function applyTensionS2() {
+            s2Shackle.style.top = "45px"; // Move down
+            
+            // Calculate which hits first
+            // Gap = distance - tooth_length. Smallest gap binds.
+            // Since distance is constant, largest tooth binds first.
+            
+            if (s2ErrorLevel > 0.1) {
+                // Find index of max tolerance (longest tooth)
+                let maxVal = -1;
+                let maxIdx = -1;
+                for(let i=0; i<4; i++) {
+                    if(TOLERANCES[i] > maxVal) {
+                        maxVal = TOLERANCES[i];
+                        maxIdx = i;
+                    }
+                }
+                document.getElementById(`mw-${maxIdx}`).classList.add('binding');
+            } else {
+                // All hit
+                for(let i=0; i<4; i++) document.getElementById(`mw-${i}`).classList.add('binding');
+            }
+        }
+
+        function releaseTensionS2() {
+            s2Shackle.style.top = "20px";
+            for(let i=0; i<4; i++) document.getElementById(`mw-${i}`).classList.remove('binding');
+        }
+
+        /* --- SECTION 3: GAME LOGIC --- */
+        let gameDials = [0, 0, 0, 0];
+        let gameSolved = [false, false, false, false];
+        let isTension = false;
+        let currentBindingIndex = -1;
+        
+        const gameTensionBar = document.getElementById('game-tension-bar');
+        const gameFeedback = document.getElementById('game-feedback');
+        
+        // Input Handlers for Tension
+        document.addEventListener('keydown', (e) => { if(e.code==='Space') setTension(true); });
+        document.addEventListener('keyup', (e) => { if(e.code==='Space') setTension(false); });
+        gameTensionBar.addEventListener('mousedown', () => setTension(true));
+        gameTensionBar.addEventListener('mouseup', () => setTension(false));
+        gameTensionBar.addEventListener('touchstart', (e) => {e.preventDefault(); setTension(true);});
+        gameTensionBar.addEventListener('touchend', (e) => {e.preventDefault(); setTension(false);});
+
+        function setTension(active) {
+            isTension = active;
+            if (active) {
+                gameTensionBar.classList.add('active');
+                gameTensionBar.innerText = "Tension Applied";
+                calculateBinding();
+            } else {
+                gameTensionBar.classList.remove('active');
+                gameTensionBar.innerText = "Hold Spacebar or Click Here";
+                currentBindingIndex = -1;
+                gameFeedback.innerText = "Tension released. Wheels are loose.";
+            }
+        }
+
+        function calculateBinding() {
+            // Find the unsolved wheel with the largest tolerance (longest tooth)
+            // In this game logic, we just sort tolerances.
+            let maxTol = -1;
+            let candidate = -1;
+            
+            let allSolved = true;
+
+            for(let i=0; i<4; i++) {
+                if (!gameSolved[i]) {
+                    allSolved = false;
+                    if (TOLERANCES[i] > maxTol) {
+                        maxTol = TOLERANCES[i];
+                        candidate = i;
+                    }
+                }
+            }
+
+            if (allSolved) {
+                gameFeedback.innerText = "LOCK OPENED! Time: " + ((Date.now() - gameStartTime)/1000).toFixed(1) + "s";
+                gameTensionBar.style.backgroundColor = "var(--accent-green)";
+                gameTensionBar.innerText = "OPEN";
+                return;
+            }
+
+            currentBindingIndex = candidate;
+            gameFeedback.innerText = "Tension applied. Find the sticky wheel.";
+        }
+
+        // Dial Interaction
+        let gameStartTime = Date.now();
+        const dialElements = document.querySelectorAll('.game-dial');
+        
+        dialElements.forEach(dial => {
+            let startY = 0;
+            let currentVal = 0;
+            let accumulatedDelta = 0;
+
+            const idx = parseInt(dial.dataset.idx);
+
+            const handleStart = (y) => {
+                startY = y;
+                currentVal = gameDials[idx];
+                accumulatedDelta = 0;
+            };
+
+            const handleMove = (y) => {
+                if (!isTension) {
+                    // Loose movement (fast)
+                    let delta = startY - y;
+                    if (Math.abs(delta) > 20) {
+                        let change = delta > 0 ? 1 : -1;
+                        updateGameDial(idx, change);
+                        startY = y; 
+                    }
+                } else {
+                    // Tension applied logic
+                    if (gameSolved[idx]) return; // Already solved
+
+                    let delta = startY - y;
+                    let resistance = (idx === currentBindingIndex) ? 80 : 20; // Binding is 4x harder to move
+                    
+                    // Visual feedback for binding
+                    if (idx === currentBindingIndex) {
+                        gameFeedback.innerText = `Wheel ${idx+1} is BINDING (Heavy friction)`;
+                    } else {
+                        gameFeedback.innerText = `Wheel ${idx+1} is spinning freely (Not binding yet)`;
+                    }
+
+                    if (Math.abs(delta) > resistance) {
+                        let change = delta > 0 ? 1 : -1;
+                        updateGameDial(idx, change);
+                        startY = y;
+                        
+                        // Check for solve click
+                        if (idx === currentBindingIndex && gameDials[idx] === SECRET[idx]) {
+                            gameSolved[idx] = true;
+                            document.getElementById(`sl-${idx}`).classList.add('on');
+                            document.getElementById(`gd-${idx}`).classList.add('solved');
+                            gameFeedback.innerText = "CLICK! Wheel set.";
+                            // Visual jolt
+                            gameTensionBar.style.transform = "translateY(2px)";
+                            setTimeout(()=>gameTensionBar.style.transform="translateY(0)", 100);
+                            calculateBinding(); // Find next binder
+                        }
+                    }
+                }
+            };
+
+            dial.addEventListener('mousedown', (e) => {
+                handleStart(e.clientY);
+                const onMove = (em) => handleMove(em.clientY);
+                const onUp = () => {
+                    window.removeEventListener('mousemove', onMove);
+                    window.removeEventListener('mouseup', onUp);
+                };
+                window.addEventListener('mousemove', onMove);
+                window.addEventListener('mouseup', onUp);
+            });
+
+            dial.addEventListener('touchstart', (e) => {
+                e.preventDefault();
+                handleStart(e.touches[0].clientY);
+            });
+            dial.addEventListener('touchmove', (e) => {
+                e.preventDefault();
+                handleMove(e.touches[0].clientY);
+            });
+        });
+
+        function updateGameDial(idx, change) {
+            let v = gameDials[idx] + change;
+            if (v > 9) v = 0;
+            if (v < 0) v = 9;
+            gameDials[idx] = v;
+            document.getElementById(`gd-${idx}`).innerText = v;
+        }
+
+        function resetGame() {
+            gameDials = [0,0,0,0];
+            gameSolved = [false, false, false, false];
+            dialElements.forEach(d => {
+                d.innerText = '0';
+                d.classList.remove('solved');
+            });
+            document.querySelectorAll('.status-light').forEach(s => s.classList.remove('on'));
+            gameStartTime = Date.now();
+            gameFeedback.innerText = "Lock Reset.";
+            gameTensionBar.style.backgroundColor = "#555";
+        }
+
+        /* --- SECTION 4: FALSE GATES --- */
+        const cpSlider = document.getElementById('cp-slider');
+        const wiggleSlider = document.getElementById('wiggle-slider');
+        const cpWheel = document.getElementById('cp-wheel');
+        const cpPin = document.getElementById('cp-pin');
+        const cpStatus = document.getElementById('cp-status');
+
+        let cpAngle = 45;
+        let wiggle = 0;
+
+        function updateCP() {
+            // Normalize angle 0-360
+            let totalAngle = cpAngle + wiggle;
+            cpWheel.style.transform = `rotate(${totalAngle}deg)`;
+            
+            // Logic:
+            // True Gate at 0 (360)
+            // False Gates at 90, 270
+            // Tolerance +/- 5 deg
+            
+            let norm = (cpAngle % 360 + 360) % 360;
+            
+            let depth = 0; // 0 = surface, 1 = false gate, 2 = true gate
+            let state = "On Surface";
+
+            if (Math.abs(norm - 0) < 8 || Math.abs(norm - 360) < 8) {
+                depth = 2; // True
+                state = "TRUE GATE (Deep Set)";
+            } else if (Math.abs(norm - 90) < 8 || Math.abs(norm - 270) < 8) {
+                depth = 1; // False
+                state = "FALSE GATE (Shallow Trap)";
+            }
+
+            // Visual Pin Movement
+            if (depth === 2) cpPin.style.top = "-15px";
+            else if (depth === 1) cpPin.style.top = "-30px";
+            else cpPin.style.top = "-40px";
+
+            // Wiggle Restriction Logic
+            // If in a gate (False or True), wiggle is restricted visually or by logic?
+            // Here we just show text. In a real lock, a True gate wiggles MORE than a false gate under tension.
+            // Let's simulate the "Test":
+            
+            if (depth === 1) {
+                cpStatus.innerText = state + " - Pinched Tight (No Wiggle)";
+                cpStatus.style.color = "orange";
+            } else if (depth === 2) {
+                cpStatus.innerText = state + " - Loose (Wiggles)";
+                cpStatus.style.color = "green";
+            } else {
+                cpStatus.innerText = state;
+                cpStatus.style.color = "#333";
+            }
+        }
+
+        cpSlider.addEventListener('input', (e) => {
+            cpAngle = parseInt(e.target.value);
+            updateCP();
+        });
+
+        wiggleSlider.addEventListener('input', (e) => {
+            // Only allow wiggle if in a gate? For demo, just add value.
+            wiggle = parseInt(e.target.value);
+            updateCP();
+        });
+
+        updateCP();
+
+    </script>
+</body>
+</html>

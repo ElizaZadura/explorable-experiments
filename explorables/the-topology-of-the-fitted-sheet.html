@@ -1,0 +1,541 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>The Topology of the Fitted Sheet</title>
+    <style>
+        /* --- CSS VARIABLES & RESET --- */
+        :root {
+            --sheet-main: #d2b48c;       /* The classic beige sheet color */
+            --sheet-shadow: #b0906a;     /* Darker shade for depth */
+            --bg-color: #fdfbf7;         /* Off-white background */
+            --text-color: #3e3e3e;       /* Soft black */
+            --elastic-red: #e74c3c;      /* Tension highlight */
+            --magic-gold: #f1c40f;       /* Success state */
+            --panel-border: 1px solid #e0e0e0;
+        }
+
+        * { box-sizing: border-box; }
+
+        body {
+            margin: 0;
+            padding: 0;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            line-height: 1.6;
+            overflow-x: hidden;
+        }
+
+        /* --- TYPOGRAPHY --- */
+        header {
+            text-align: center;
+            padding: 4rem 1rem;
+            background: #fff;
+            border-bottom: 1px solid #eee;
+        }
+
+        h1 {
+            margin: 0;
+            font-size: 2.2rem;
+            font-weight: 800;
+            letter-spacing: -1px;
+            color: #2c2c2c;
+        }
+
+        h2 {
+            margin: 0.5rem 0 0;
+            font-size: 1.2rem;
+            font-weight: 400;
+            color: #888;
+        }
+
+        h3 { font-size: 1.5rem; margin-bottom: 0.5rem; }
+
+        p { margin-bottom: 1.5rem; max-width: 60ch; }
+
+        .step-label {
+            display: inline-block;
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            letter-spacing: 1.5px;
+            color: #999;
+            margin-bottom: 0.5rem;
+            font-weight: bold;
+        }
+
+        .math-font {
+            font-family: "Courier New", Courier, monospace;
+            background: #eee;
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-weight: bold;
+        }
+
+        /* --- LAYOUT --- */
+        section {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 4rem 1rem;
+            border-bottom: 1px dashed #dcdcdc;
+            min-height: 80vh;
+            justify-content: center;
+        }
+
+        .container {
+            width: 100%;
+            max-width: 600px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        /* --- INTERACTIVE STAGES --- */
+        .stage {
+            width: 100%;
+            background: #fff;
+            border: var(--panel-border);
+            border-radius: 16px;
+            padding: 2rem;
+            margin: 2rem 0;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.03);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            position: relative;
+            overflow: hidden;
+        }
+
+        button {
+            background: var(--text-color);
+            color: #fff;
+            border: none;
+            padding: 12px 24px;
+            font-size: 1rem;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: transform 0.1s ease, background 0.2s;
+            margin: 5px;
+        }
+        button:hover { background: #000; }
+        button:active { transform: scale(0.96); }
+        button:disabled { background: #ccc; cursor: not-allowed; transform: none; }
+
+        .feedback-text {
+            margin-top: 1rem;
+            font-size: 0.9rem;
+            min-height: 1.5em;
+            text-align: center;
+            font-style: italic;
+            color: #666;
+        }
+
+        /* --- SECTION 1: THE BLOB --- */
+        .blob-wrapper {
+            height: 200px;
+            width: 100%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .sheet-blob {
+            width: 180px;
+            height: 140px;
+            background-color: var(--sheet-main);
+            /* Organic blob shape */
+            border-radius: 40% 60% 70% 30% / 40% 50% 60% 50%;
+            position: relative;
+            box-shadow: inset 10px 10px 20px rgba(0,0,0,0.1);
+            transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+        }
+
+        .elastic-point {
+            position: absolute;
+            width: 12px;
+            height: 12px;
+            background-color: var(--elastic-red);
+            border-radius: 50%;
+            border: 2px solid #fff;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+        }
+
+        /* Animation for the failed fold */
+        .shake-animation {
+            animation: shake 0.5s cubic-bezier(.36,.07,.19,.97) both;
+        }
+
+        @keyframes shake {
+            10%, 90% { transform: translate3d(-2px, 0, 0) scale(0.95); }
+            20%, 80% { transform: translate3d(4px, 0, 0) scale(0.95); }
+            30%, 50%, 70% { transform: translate3d(-8px, 0, 0) scale(0.95); }
+            40%, 60% { transform: translate3d(8px, 0, 0) scale(0.95); }
+        }
+
+        /* --- SECTION 2: THE HAMMOCK --- */
+        .hammock-wrapper {
+            width: 100%;
+            height: 220px;
+            perspective: 1000px; /* Crucial for 3D effect */
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .hammock-container {
+            width: 90%;
+            height: 140px;
+            position: relative;
+            transform-style: preserve-3d;
+        }
+
+        /* The Left Side (Static Base) */
+        .sheet-panel {
+            position: absolute;
+            top: 0;
+            bottom: 0;
+            background-color: var(--sheet-main);
+            border: 1px solid var(--sheet-shadow);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-weight: bold;
+            color: #fff;
+            text-shadow: 0 1px 2px rgba(0,0,0,0.2);
+        }
+
+        .panel-left {
+            left: 0;
+            width: 50%;
+            z-index: 1;
+            border-radius: 8px 0 0 8px;
+        }
+
+        /* The Right Side (The Folder) */
+        .panel-right {
+            right: 0;
+            width: 50%;
+            transform-origin: left center; /* Rotate from the middle seam */
+            transform-style: preserve-3d;
+            z-index: 2;
+            border-radius: 0 8px 8px 0;
+            transition: transform 0.1s linear; /* Smooth slider tracking */
+        }
+
+        /* The back of the right panel (visible when folded over) */
+        .panel-back {
+            position: absolute;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background-color: var(--sheet-shadow); /* Darker to show it's the "back" */
+            backface-visibility: hidden;
+            transform: rotateY(180deg);
+            border-radius: 8px 0 0 8px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            color: #fff;
+        }
+
+        .corner-marker {
+            position: absolute;
+            font-size: 0.7rem;
+            color: #333;
+            background: rgba(255,255,255,0.8);
+            padding: 2px 5px;
+            border-radius: 4px;
+        }
+        .tl { top: 5px; left: 5px; }
+        .bl { bottom: 5px; left: 5px; }
+        .tr { top: 5px; right: 5px; }
+        .br { bottom: 5px; right: 5px; }
+
+        input[type=range] {
+            width: 100%;
+            margin-top: 1.5rem;
+            accent-color: var(--text-color);
+        }
+
+        .ghost-line {
+            position: absolute;
+            height: 2px;
+            background: var(--elastic-red);
+            top: 50%; left: 10%; right: 10%;
+            opacity: 0;
+            transition: opacity 0.3s;
+            pointer-events: none;
+            z-index: 10;
+        }
+
+        /* --- SECTION 3: RECURSION --- */
+        .math-display {
+            background: #222;
+            color: #0f0;
+            font-family: monospace;
+            padding: 1rem;
+            border-radius: 8px;
+            margin-bottom: 1.5rem;
+            width: 100%;
+            text-align: center;
+            font-size: 1.1rem;
+        }
+
+        .fold-wrapper {
+            height: 200px;
+            width: 100%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            perspective: 800px;
+        }
+
+        .fold-rect {
+            background-color: var(--sheet-main);
+            border: 2px solid var(--sheet-shadow);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-weight: bold;
+            color: white;
+            transition: all 0.6s cubic-bezier(0.22, 1, 0.36, 1);
+            position: relative;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+        }
+
+        .magic-glow {
+            background-color: var(--magic-gold);
+            box-shadow: 0 0 25px var(--magic-gold);
+            border-color: #fff;
+            color: #fff;
+            text-shadow: 0 1px 2px rgba(0,0,0,0.2);
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+            100% { transform: scale(1); }
+        }
+
+        /* Mobile adjustments */
+        @media (max-width: 500px) {
+            h1 { font-size: 1.8rem; }
+            .stage { padding: 1.5rem 1rem; }
+        }
+
+    </style>
+</head>
+<body>
+
+<header>
+    <h1>The Topology of the Fitted Sheet</h1>
+    <h2>From Chaos to Rectangle</h2>
+</header>
+
+<!-- SECTION 1: THE PROBLEM -->
+<section id="sec-chaos">
+    <div class="container">
+        <span class="step-label">Part 1: The Problem</span>
+        <h3>The "Bag" State</h3>
+        <p>
+            A flat sheet is a 2D plane. A fitted sheet, however, is topologically distinct because of its elastic corners. It behaves like a 3D "bag." 
+        </p>
+        <p>
+            If you try to fold it like a piece of paper, the elastic resists.
+        </p>
+
+        <div class="stage">
+            <div class="blob-wrapper">
+                <div class="sheet-blob" id="blob">
+                    <!-- Elastic Corners -->
+                    <div class="elastic-point" style="top: 10px; left: 15px;"></div>
+                    <div class="elastic-point" style="top: 5px; right: 25px;"></div>
+                    <div class="elastic-point" style="bottom: 20px; left: 10px;"></div>
+                    <div class="elastic-point" style="bottom: 10px; right: 20px;"></div>
+                </div>
+            </div>
+            <button onclick="attemptFold()">Apply Standard Fold</button>
+            <div class="feedback-text" id="blob-feedback"></div>
+        </div>
+
+        <p>Standard algorithms fail on non-planar geometry.</p>
+    </div>
+</section>
+
+<!-- SECTION 2: THE ALGORITHM -->
+<section id="sec-algo">
+    <div class="container">
+        <span class="step-label">Part 2: The Transformation</span>
+        <h3>The "Hammock" Setup</h3>
+        <p>
+            To solve this, we must transform the 3D "bag" into a 2D rectangle. We do this by mapping the corners on top of each other to neutralize the curvature.
+        </p>
+        <p>
+            <strong>Interact:</strong> Drag the slider to fold the Right Side (C & D) all the way onto the Left Side (A & B).
+        </p>
+
+        <div class="stage">
+            <div class="hammock-wrapper">
+                <div class="hammock-container">
+                    <!-- Left Panel (Static) -->
+                    <div class="sheet-panel panel-left">
+                        <span class="corner-marker tl">A</span>
+                        <span class="corner-marker bl">B</span>
+                        Left Side
+                    </div>
+                    
+                    <!-- Right Panel (Rotates) -->
+                    <div class="sheet-panel panel-right" id="folding-panel">
+                        <span class="corner-marker tr">C</span>
+                        <span class="corner-marker br">D</span>
+                        Right Side
+                        <!-- Backface shown when folded -->
+                        <div class="panel-back">Aligned</div>
+                    </div>
+                </div>
+            </div>
+
+            <input type="range" min="0" max="100" value="0" id="fold-slider" oninput="updateHammock(this.value)">
+            <div class="feedback-text" id="hammock-status">State: Open Hammock</div>
+        </div>
+        
+        <p>
+            Once aligned, the sheet enters the <strong>"Salsa Skirt"</strong> state: a long, flat rectangle. The geometry problem is solved.
+        </p>
+    </div>
+</section>
+
+<!-- SECTION 3: RECURSION -->
+<section id="sec-math">
+    <div class="container">
+        <span class="step-label">Part 3: Recursive Reduction</span>
+        <h3>The Math of Folding</h3>
+        <p>
+            Now it is merely an area reduction problem. We apply a recursive function: <span class="math-font">Area_new = Area_current / 2</span>.
+        </p>
+
+        <div class="stage">
+            <div class="math-display" id="math-screen">Area = 100%</div>
+
+            <div class="fold-wrapper">
+                <div class="fold-rect" id="final-sheet" style="width: 280px; height: 140px;">
+                    <span id="rect-label">Salsa Skirt</span>
+                </div>
+            </div>
+
+            <div style="display: flex; flex-wrap: wrap; justify-content: center; gap: 10px; margin-top: 20px;">
+                <button id="btn-fold-1" onclick="doRecursiveFold(1)">1. Fold Horizontal</button>
+                <button id="btn-fold-2" onclick="doRecursiveFold(2)" disabled>2. Fold Back</button>
+                <button id="btn-fold-3" onclick="doRecursiveFold(3)" disabled>3. Flip Vertical</button>
+            </div>
+            <div class="feedback-text" id="fold-feedback">Waiting to start reduction...</div>
+        </div>
+    </div>
+</section>
+
+<script>
+    /* --- SECTION 1 LOGIC --- */
+    let frustrationLevel = 0;
+    const blob = document.getElementById('blob');
+    const blobFeedback = document.getElementById('blob-feedback');
+
+    function attemptFold() {
+        // Reset animation to allow re-triggering
+        blob.classList.remove('shake-animation');
+        void blob.offsetWidth; // Force reflow
+        blob.classList.add('shake-animation');
+
+        frustrationLevel++;
+        
+        const messages = [
+            "Elastic resists! The shape bounces back.",
+            "Still a chaotic blob. Try again?",
+            `Frustration Level: ${frustrationLevel}. It's not working.`,
+            "The geometry fights you. It cannot be folded flat yet."
+        ];
+
+        // Pick message based on frustration or random
+        let msg = frustrationLevel < 3 ? messages[frustrationLevel - 1] : messages[3];
+        blobFeedback.innerText = msg;
+        blobFeedback.style.color = varColor('elastic-red');
+        
+        setTimeout(() => {
+            blobFeedback.style.color = '#666';
+        }, 1000);
+    }
+
+    /* --- SECTION 2 LOGIC --- */
+    function updateHammock(value) {
+        const panel = document.getElementById('folding-panel');
+        const status = document.getElementById('hammock-status');
+        
+        // Convert 0-100 input to 0 to -180 degrees
+        const rotation = value * -1.8; 
+        panel.style.transform = `rotateY(${rotation}deg)`;
+
+        if (value < 10) {
+            status.innerText = "State: Open Hammock";
+            status.style.color = "#666";
+        } else if (value < 95) {
+            status.innerText = "State: Aligning Vectors...";
+            status.style.color = "#666";
+        } else {
+            status.innerText = "State: Asymmetric Salsa Skirt (Rectangle Achieved)";
+            status.style.color = varColor('text-color');
+            status.style.fontWeight = "bold";
+        }
+    }
+
+    /* --- SECTION 3 LOGIC --- */
+    function doRecursiveFold(step) {
+        const sheet = document.getElementById('final-sheet');
+        const mathScreen = document.getElementById('math-screen');
+        const feedback = document.getElementById('fold-feedback');
+        const label = document.getElementById('rect-label');
+
+        // Buttons
+        const b1 = document.getElementById('btn-fold-1');
+        const b2 = document.getElementById('btn-fold-2');
+        const b3 = document.getElementById('btn-fold-3');
+
+        if (step === 1) {
+            // Fold width in half
+            sheet.style.width = '140px';
+            mathScreen.innerText = "100% / 2 = 50% Area";
+            feedback.innerText = "Good. Length contained.";
+            b1.disabled = true;
+            b2.disabled = false;
+        } 
+        else if (step === 2) {
+            // Fold width again (fold back)
+            sheet.style.width = '70px';
+            mathScreen.innerText = "50% / 2 = 25% Area";
+            feedback.innerText = "Excellent. Now it is a strip.";
+            label.innerText = "Strip";
+            b2.disabled = true;
+            b3.disabled = false;
+        } 
+        else if (step === 3) {
+            // Fold height (Flip)
+            sheet.style.height = '70px';
+            mathScreen.innerText = "25% / 2 = 12.5% Area";
+            feedback.innerText = ""; // Clear text for the big reveal
+            label.innerText = "MAGIC";
+            
+            // Add magic effect
+            sheet.classList.add('magic-glow');
+            
+            b3.disabled = true;
+        }
+    }
+
+    // Helper to get CSS variable values
+    function varColor(name) {
+        return getComputedStyle(document.documentElement).getPropertyValue('--' + name).trim();
+    }
+
+</script>
+
+</body>
+</html>

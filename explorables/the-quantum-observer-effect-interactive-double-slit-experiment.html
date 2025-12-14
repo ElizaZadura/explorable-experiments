@@ -1,0 +1,515 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>The Quantum Observer Effect: Interactive Double-Slit Experiment</title>
+    <style>
+        :root {
+            --bg-color: #1a1a2e;
+            --text-color: #e0e0e0;
+            --primary-color: #0f3460;
+            --secondary-color: #e94560;
+            --accent-color: #53a8b6;
+            --font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol';
+            --canvas-bg: #16213e;
+            --particle-color: #fca311;
+            --wave-color: rgba(252, 163, 17, 0.2);
+            --flash-color: #ffffff;
+        }
+
+        body {
+            font-family: var(--font-family);
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            margin: 0;
+            padding: 0;
+            line-height: 1.6;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .container {
+            max-width: 800px;
+            width: 90%;
+            padding: 2rem 0;
+        }
+
+        header, section {
+            margin-bottom: 2.5rem;
+            padding-bottom: 1.5rem;
+            border-bottom: 1px solid var(--primary-color);
+        }
+        
+        header h1 {
+            color: var(--secondary-color);
+            font-size: 2.2rem;
+            text-align: center;
+        }
+
+        header p {
+            font-size: 1.1rem;
+            text-align: center;
+            opacity: 0.9;
+        }
+
+        h2 {
+            color: var(--accent-color);
+            font-size: 1.8rem;
+            margin-bottom: 1rem;
+        }
+
+        p {
+            margin-bottom: 1rem;
+        }
+
+        .prompt {
+            background-color: var(--primary-color);
+            border-left: 4px solid var(--secondary-color);
+            padding: 1rem 1.5rem;
+            margin: 1.5rem 0;
+            border-radius: 4px;
+            font-style: italic;
+        }
+
+        #simulation-area {
+            width: 100%;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            margin-top: 2rem;
+        }
+        
+        canvas {
+            background-color: var(--canvas-bg);
+            border: 1px solid var(--accent-color);
+            width: 100%;
+            max-width: 600px;
+            aspect-ratio: 2 / 1;
+            display: block;
+            margin: 0 auto;
+        }
+
+        .controls-panel {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            align-items: center;
+            gap: 1rem;
+            margin-top: 1.5rem;
+            padding: 1rem;
+            background-color: var(--primary-color);
+            border-radius: 8px;
+            width: 100%;
+            max-width: 600px;
+            box-sizing: border-box;
+        }
+
+        .controls-panel button {
+            background-color: var(--secondary-color);
+            color: white;
+            border: none;
+            padding: 0.7rem 1.2rem;
+            border-radius: 5px;
+            font-size: 1rem;
+            font-weight: bold;
+            cursor: pointer;
+            transition: background-color 0.2s;
+        }
+
+        .controls-panel button:hover {
+            background-color: #c43750;
+        }
+        
+        .controls-panel button:active {
+            transform: scale(0.98);
+        }
+
+        /* Toggle Switch Styling */
+        .toggle-container {
+            display: flex;
+            align-items: center;
+            gap: 0.7rem;
+            font-weight: bold;
+        }
+
+        .toggle-switch {
+            position: relative;
+            display: inline-block;
+            width: 60px;
+            height: 34px;
+        }
+
+        .toggle-switch input {
+            opacity: 0;
+            width: 0;
+            height: 0;
+        }
+
+        .slider {
+            position: absolute;
+            cursor: pointer;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: #555;
+            transition: .4s;
+            border-radius: 34px;
+        }
+
+        .slider:before {
+            position: absolute;
+            content: "";
+            height: 26px;
+            width: 26px;
+            left: 4px;
+            bottom: 4px;
+            background-color: white;
+            transition: .4s;
+            border-radius: 50%;
+        }
+
+        input:checked + .slider {
+            background-color: var(--accent-color);
+        }
+
+        input:checked + .slider:before {
+            transform: translateX(26px);
+        }
+        
+        input:disabled + .slider {
+            cursor: not-allowed;
+            background-color: #333;
+        }
+
+        .final-statement {
+            font-size: 1.2rem;
+            font-weight: bold;
+            color: var(--accent-color);
+            text-align: center;
+            margin-top: 2rem;
+            padding: 1rem;
+            border: 1px solid var(--accent-color);
+            border-radius: 8px;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <header>
+            <h1>The Quantum Observer Effect Isn't What You Think</h1>
+            <p>At the heart of quantum mechanics lies a profound mystery: particles like electrons can act as both particles and waves. This is most famously shown in the double-slit experiment. But what happens when we try to 'watch' which path a particle takes? This interactive sandbox lets you perform the experiment yourself and discover that 'observation' in the quantum world is a very physical act.</p>
+        </header>
+
+        <section id="section1">
+            <h2>Part 1: The Unobserved Particle</h2>
+            <p>Let's fire single electrons, one by one, at a barrier with two vertical slits. On the other side is a detector screen that will record where each electron lands. When we don't try to measure which slit an electron goes through, it behaves like a wave. It passes through <em>both slits at once</em> and interferes with itself, like ripples in a pond. Over time, these individual electron impacts build up into a distinctive 'interference pattern'.</p>
+            <div class="prompt">
+                Click the 'Fire Stream' button and watch the pattern form on the detector screen. Does it look like what you'd expect from tiny baseballs, or something else?
+            </div>
+        </section>
+
+        <!-- Interactive Simulation Area -->
+        <div id="simulation-area">
+            <canvas id="simulationCanvas"></canvas>
+            <div class="controls-panel">
+                <button id="fireSingleBtn">Fire Single Electron</button>
+                <button id="fireStreamBtn">Fire Stream</button>
+                <button id="resetBtn">Reset Simulation</button>
+                <div class="toggle-container">
+                    <span>Detector at Slits</span>
+                    <label class="toggle-switch">
+                        <input type="checkbox" id="detectorToggle">
+                        <span class="slider"></span>
+                    </label>
+                </div>
+            </div>
+        </div>
+
+        <section id="section2">
+            <h2>Part 2: What Happens When We Look?</h2>
+            <p>The interference pattern is strange. How can a single electron interfere with itself? It must be going through both slits. Let's test this by placing a detector at the slits to see which path each electron takes. <strong>CRITICAL:</strong> This isn't a person watching. Our detector is a device that physically interacts with the electron (for example, by bouncing a photon off it) to record its position. This <em>physical interaction</em> is what quantum mechanics calls 'measurement' or 'observation'.</p>
+            <div class="prompt">
+                Now, use the toggle switch to turn the 'Detector at Slits' ON. The simulation will now show a small flash at the slit where the electron is detected. Reset the simulation and click 'Fire Stream' again. Observe the new pattern that forms. What's different? Why did the pattern change?
+            </div>
+        </section>
+
+        <section id="section3">
+            <h2>Conclusion: Interaction, Not Consciousness</h2>
+            <p>You've just demonstrated the Observer Effect! When the detector is OFF, electrons act as waves, creating an interference pattern. When the detector is ON, the physical interaction of measurement forces the electron's 'cloud of probabilities' to collapse. It behaves like a classical particle, passing through only one slit, and the interference pattern vanishes.</p>
+            <div class="final-statement">
+                The key lesson is this: the universe doesn't care if it's being 'watched' by a conscious mind. It responds to physical interactions. The act of measuring a quantum system fundamentally changes it. You can't measure something without 'touching' it, and in the quantum world, every touch leaves a mark.
+            </div>
+        </section>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            // --- DOM Elements ---
+            const canvas = document.getElementById('simulationCanvas');
+            const ctx = canvas.getContext('2d');
+            const fireSingleBtn = document.getElementById('fireSingleBtn');
+            const fireStreamBtn = document.getElementById('fireStreamBtn');
+            const resetBtn = document.getElementById('resetBtn');
+            const detectorToggle = document.getElementById('detectorToggle');
+
+            // --- State Management ---
+            let state = {
+                isDetectorOn: false,
+                isFiringStream: false,
+                particles: [],
+                hits: [],
+                flashes: [],
+                particleCount: 0,
+            };
+
+            // --- Simulation Constants ---
+            const SIM_CONFIG = {
+                EMITTER_X: 30,
+                BARRIER_X: 300,
+                SCREEN_X: 580,
+                SLIT_Y1: 120,
+                SLIT_Y2: 180,
+                SLIT_HEIGHT: 60,
+                SLIT_WIDTH: 8,
+            };
+            
+            // --- Canvas Setup ---
+            function setupCanvas() {
+                const dpr = window.devicePixelRatio || 1;
+                const rect = canvas.getBoundingClientRect();
+                canvas.width = rect.width * dpr;
+                canvas.height = rect.height * dpr;
+                ctx.scale(dpr, dpr);
+                SIM_CONFIG.CANVAS_WIDTH = rect.width;
+                SIM_CONFIG.CANVAS_HEIGHT = rect.height;
+            }
+
+            // --- Drawing Functions ---
+            function drawScene() {
+                // Background
+                ctx.fillStyle = getComputedStyle(document.documentElement).getPropertyValue('--canvas-bg').trim();
+                ctx.fillRect(0, 0, SIM_CONFIG.CANVAS_WIDTH, SIM_CONFIG.CANVAS_HEIGHT);
+
+                // Emitter
+                ctx.fillStyle = getComputedStyle(document.documentElement).getPropertyValue('--accent-color').trim();
+                ctx.fillRect(SIM_CONFIG.EMITTER_X - 10, SIM_CONFIG.CANVAS_HEIGHT / 2 - 15, 10, 30);
+                
+                // Barrier
+                ctx.fillStyle = getComputedStyle(document.documentElement).getPropertyValue('--text-color').trim();
+                ctx.fillRect(SIM_CONFIG.BARRIER_X, 0, 10, SIM_CONFIG.SLIT_Y1);
+                ctx.fillRect(SIM_CONFIG.BARRIER_X, SIM_CONFIG.SLIT_Y1 + SIM_CONFIG.SLIT_HEIGHT, 10, SIM_CONFIG.SLIT_Y2 - SIM_CONFIG.SLIT_Y1 - SIM_CONFIG.SLIT_HEIGHT);
+                ctx.fillRect(SIM_CONFIG.BARRIER_X, SIM_CONFIG.SLIT_Y2 + SIM_CONFIG.SLIT_HEIGHT, 10, SIM_CONFIG.CANVAS_HEIGHT - SIM_CONFIG.SLIT_Y2 - SIM_CONFIG.SLIT_HEIGHT);
+
+                // Detector Screen
+                ctx.strokeStyle = getComputedStyle(document.documentElement).getPropertyValue('--accent-color').trim();
+                ctx.lineWidth = 2;
+                ctx.beginPath();
+                ctx.moveTo(SIM_CONFIG.SCREEN_X, 0);
+                ctx.lineTo(SIM_CONFIG.SCREEN_X, SIM_CONFIG.CANVAS_HEIGHT);
+                ctx.stroke();
+            }
+            
+            function drawHits() {
+                ctx.fillStyle = getComputedStyle(document.documentElement).getPropertyValue('--particle-color').trim();
+                state.hits.forEach(hitY => {
+                    ctx.fillRect(SIM_CONFIG.SCREEN_X, hitY - 1, 5, 2);
+                });
+            }
+
+            function drawParticles() {
+                state.particles.forEach(p => {
+                    if (p.isWave) {
+                        ctx.strokeStyle = getComputedStyle(document.documentElement).getPropertyValue('--wave-color').trim();
+                        ctx.lineWidth = 2;
+                        ctx.beginPath();
+                        ctx.arc(p.x, p.y, p.radius, -Math.PI / 2, Math.PI / 2);
+                        ctx.stroke();
+                    } else {
+                        ctx.fillStyle = getComputedStyle(document.documentElement).getPropertyValue('--particle-color').trim();
+                        ctx.beginPath();
+                        ctx.arc(p.x, p.y, 2, 0, Math.PI * 2);
+                        ctx.fill();
+                    }
+                });
+            }
+            
+            function drawFlashes() {
+                state.flashes.forEach(flash => {
+                    ctx.fillStyle = `rgba(255, 255, 255, ${flash.alpha})`;
+                    ctx.beginPath();
+                    ctx.arc(flash.x, flash.y, flash.radius, 0, 2 * Math.PI);
+                    ctx.fill();
+                });
+            }
+
+            // --- Simulation Logic ---
+
+            // Gaussian function for probability distributions
+            function gaussian(x, mean, stdDev) {
+                return Math.exp(-0.5 * Math.pow((x - mean) / stdDev, 2));
+            }
+
+            function getWaveHitY() {
+                // This uses rejection sampling to pick a point from our probability distribution
+                const mean1 = SIM_CONFIG.SLIT_Y1 + SIM_CONFIG.SLIT_HEIGHT / 2;
+                const mean2 = SIM_CONFIG.SLIT_Y2 + SIM_CONFIG.SLIT_HEIGHT / 2;
+                const stdDev = 40;
+                const wavelength = 25; // Controls fringe density
+
+                while (true) {
+                    const y = Math.random() * SIM_CONFIG.CANVAS_HEIGHT;
+                    const envelope = gaussian(y, mean1, stdDev) + gaussian(y, mean2, stdDev);
+                    const interference = Math.pow(Math.cos((y - SIM_CONFIG.CANVAS_HEIGHT / 2) * Math.PI / wavelength), 2);
+                    const probability = envelope * interference;
+                    
+                    if (Math.random() < probability) {
+                        return y;
+                    }
+                }
+            }
+            
+            function getParticleHitY(slitCenter) {
+                // Box-Muller transform for a more accurate normal distribution
+                let u = 0, v = 0;
+                while(u === 0) u = Math.random(); //Converting [0,1) to (0,1)
+                while(v === 0) v = Math.random();
+                let z = Math.sqrt( -2.0 * Math.log( u ) ) * Math.cos( 2.0 * Math.PI * v );
+                
+                const stdDev = 20;
+                return slitCenter + z * stdDev;
+            }
+
+            function createParticle() {
+                state.particleCount++;
+                if (state.particleCount > 50 && detectorToggle.disabled) {
+                    detectorToggle.disabled = false;
+                    document.querySelector('.toggle-container').style.opacity = 1;
+                }
+
+                if (state.isDetectorOn) {
+                    const isTopSlit = Math.random() < 0.5;
+                    const slitY = isTopSlit ? SIM_CONFIG.SLIT_Y1 + SIM_CONFIG.SLIT_HEIGHT / 2 : SIM_CONFIG.SLIT_Y2 + SIM_CONFIG.SLIT_HEIGHT / 2;
+                    state.particles.push({
+                        x: SIM_CONFIG.EMITTER_X,
+                        y: SIM_CONFIG.CANVAS_HEIGHT / 2,
+                        vx: 5,
+                        vy: (slitY - SIM_CONFIG.CANVAS_HEIGHT / 2) / (SIM_CONFIG.BARRIER_X / 5),
+                        isWave: false,
+                        targetSlitY: slitY,
+                    });
+                } else {
+                    state.particles.push({
+                        x: SIM_CONFIG.EMITTER_X,
+                        y: SIM_CONFIG.CANVAS_HEIGHT / 2,
+                        radius: 0,
+                        isWave: true,
+                    });
+                }
+            }
+
+            function updateParticles() {
+                for (let i = state.particles.length - 1; i >= 0; i--) {
+                    const p = state.particles[i];
+                    if (p.isWave) {
+                        p.radius += 4;
+                        if (p.x + p.radius > SIM_CONFIG.SCREEN_X) {
+                            state.hits.push(getWaveHitY());
+                            state.particles.splice(i, 1);
+                        }
+                    } else {
+                        p.x += p.vx;
+                        p.y += p.vy;
+
+                        // Trigger flash at the slit
+                        if (Math.abs(p.x - SIM_CONFIG.BARRIER_X) < p.vx) {
+                            state.flashes.push({ x: SIM_CONFIG.BARRIER_X + 5, y: p.targetSlitY, radius: 5, alpha: 1, life: 20 });
+                        }
+
+                        if (p.x >= SIM_CONFIG.SCREEN_X) {
+                            state.hits.push(getParticleHitY(p.targetSlitY));
+                            state.particles.splice(i, 1);
+                        }
+                    }
+                }
+            }
+
+            function updateFlashes() {
+                for (let i = state.flashes.length - 1; i >= 0; i--) {
+                    const f = state.flashes[i];
+                    f.life--;
+                    f.radius += 0.5;
+                    f.alpha = f.life / 20;
+                    if (f.life <= 0) {
+                        state.flashes.splice(i, 1);
+                    }
+                }
+            }
+
+            // --- Main Loop ---
+            let lastFireTime = 0;
+            function animate(timestamp) {
+                ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+                drawScene();
+                drawHits();
+
+                if (state.isFiringStream && (timestamp - lastFireTime > 50)) {
+                    createParticle();
+                    lastFireTime = timestamp;
+                }
+                
+                updateParticles();
+                updateFlashes();
+
+                drawParticles();
+                drawFlashes();
+                
+                requestAnimationFrame(animate);
+            }
+
+            // --- Control Logic ---
+            function resetSimulation() {
+                state.isFiringStream = false;
+                fireStreamBtn.textContent = 'Fire Stream';
+                state.particles = [];
+                state.hits = [];
+                state.flashes = [];
+                state.particleCount = 0;
+            }
+
+            fireSingleBtn.addEventListener('click', createParticle);
+
+            fireStreamBtn.addEventListener('click', () => {
+                state.isFiringStream = !state.isFiringStream;
+                fireStreamBtn.textContent = state.isFiringStream ? 'Stop Stream' : 'Fire Stream';
+            });
+
+            resetBtn.addEventListener('click', resetSimulation);
+
+            detectorToggle.addEventListener('change', () => {
+                state.isDetectorOn = detectorToggle.checked;
+                resetSimulation();
+            });
+
+            // --- Initialisation ---
+            function init() {
+                setupCanvas();
+                window.addEventListener('resize', setupCanvas);
+
+                // Disable toggle initially
+                detectorToggle.disabled = true;
+                document.querySelector('.toggle-container').style.opacity = 0.5;
+
+                resetSimulation();
+                requestAnimationFrame(animate);
+            }
+
+            init();
+        });
+    </script>
+</body>
+</html>

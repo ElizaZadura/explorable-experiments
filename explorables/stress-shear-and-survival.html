@@ -1,0 +1,780 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Stress, Shear, and Survival</title>
+    <style>
+        /* --- CSS VARIABLES & RESET --- */
+        :root {
+            --bg-color: #1e293b;
+            --card-bg: #334155;
+            --text-color: #f1f5f9;
+            --accent-green: #00ff99;
+            --accent-pink: #ff0066;
+            --accent-yellow: #fbbf24;
+            --tape-silver: #cbd5e1;
+            --font-body: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            --font-mono: 'Courier New', Courier, monospace;
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+
+        body {
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            font-family: var(--font-body);
+            line-height: 1.6;
+            overflow-x: hidden;
+        }
+
+        /* --- LAYOUT --- */
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        section {
+            margin-bottom: 100px;
+            padding: 20px;
+            border-radius: 8px;
+            background: rgba(255,255,255,0.03);
+            border: 1px solid rgba(255,255,255,0.1);
+        }
+
+        h1, h2, h3 { margin-bottom: 10px; font-weight: 700; }
+        h1 { font-size: 2.5rem; text-align: center; color: var(--accent-green); }
+        .subtitle { text-align: center; color: var(--tape-silver); margin-bottom: 40px; font-style: italic; }
+        h2 { color: var(--tape-silver); border-bottom: 2px solid var(--accent-green); padding-bottom: 10px; margin-bottom: 20px; }
+
+        p { margin-bottom: 15px; font-size: 1.1rem; }
+
+        /* --- CANVAS WRAPPERS --- */
+        .canvas-container {
+            width: 100%;
+            height: 300px;
+            background: var(--card-bg);
+            border-radius: 8px;
+            margin: 20px 0;
+            position: relative;
+            overflow: hidden;
+            border: 1px solid #475569;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+        canvas { width: 100%; height: 100%; }
+
+        /* --- CONTROLS --- */
+        .controls {
+            background: rgba(0,0,0,0.3);
+            padding: 15px;
+            border-radius: 8px;
+            margin-top: 15px;
+        }
+
+        .control-group {
+            margin-bottom: 15px;
+            display: flex;
+            flex-direction: column;
+        }
+
+        label { font-family: var(--font-mono); font-size: 0.9rem; margin-bottom: 5px; color: var(--accent-green); }
+
+        input[type="range"] {
+            width: 100%;
+            cursor: pointer;
+            accent-color: var(--accent-green);
+        }
+
+        button {
+            background: var(--accent-green);
+            color: var(--bg-color);
+            border: none;
+            padding: 10px 20px;
+            font-weight: bold;
+            font-family: var(--font-mono);
+            cursor: pointer;
+            border-radius: 4px;
+            transition: transform 0.1s;
+            width: 100%;
+        }
+        button:active { transform: scale(0.98); }
+        button.secondary { background: var(--card-bg); color: var(--text-color); border: 1px solid var(--accent-green); }
+
+        /* --- MATH DISPLAY --- */
+        .equation-box {
+            font-family: var(--font-mono);
+            background: #0f172a;
+            padding: 15px;
+            border-radius: 4px;
+            text-align: center;
+            margin: 20px 0;
+            border-left: 4px solid var(--accent-yellow);
+        }
+        .var { font-weight: bold; }
+        .var-green { color: var(--accent-green); }
+        .var-pink { color: var(--accent-pink); }
+        .fraction { display: inline-block; vertical-align: middle; text-align: center; }
+        .top { border-bottom: 1px solid white; display: block; }
+        .bottom { display: block; }
+
+        /* --- ANIMATIONS --- */
+        @keyframes pulse {
+            0% { box-shadow: 0 0 0 0 rgba(0, 255, 153, 0.4); }
+            70% { box-shadow: 0 0 0 10px rgba(0, 255, 153, 0); }
+            100% { box-shadow: 0 0 0 0 rgba(0, 255, 153, 0); }
+        }
+        .highlight { color: var(--accent-green); font-weight: bold; }
+        .danger { color: var(--accent-pink); font-weight: bold; }
+
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <header>
+            <h1>Stress, Shear, and Survival</h1>
+            <p class="subtitle">Why you can’t pull duct tape apart, but you can rip it in half.</p>
+        </header>
+
+        <!-- SECTION 1: TENSILE STRENGTH -->
+        <section id="section-tensile">
+            <h2>1. The Trap (Tensile Strength)</h2>
+            <p class="hook">You are bound. Your first instinct is to pull your arms apart laterally. <span class="danger">This is a mistake.</span></p>
+            
+            <div class="canvas-container">
+                <canvas id="canvas-tensile"></canvas>
+            </div>
+
+            <div class="equation-box">
+                Stress (<span class="var">σ</span>) = 
+                <div class="fraction">
+                    <span class="top">Force (<span id="val-force">0</span> N)</span>
+                    <span class="bottom">Area (<span id="val-area-const">High</span>)</span>
+                </div>
+            </div>
+
+            <div class="controls">
+                <div class="control-group">
+                    <label>Pulling Force (N)</label>
+                    <input type="range" id="slider-force" min="0" max="100" value="0">
+                </div>
+                <p style="font-size: 0.9rem; color: #aaa;">
+                    Status: <span id="status-tensile" class="highlight">Intact</span>
+                </p>
+            </div>
+
+            <p>Duct tape has incredibly high <strong>Tensile Strength</strong>. When you pull apart, the Force ($F$) is distributed across the entire surface Area ($A$) of the tape. The Stress ($\sigma$) on any single fiber never gets high enough to break it.</p>
+        </section>
+
+        <!-- SECTION 2: SHEAR & CONCENTRATION -->
+        <section id="section-shear">
+            <h2>2. The Weakness (Stress Concentration)</h2>
+            <p>To escape, we must stop fighting the whole tape and fight one millimeter at a time. This is fracture mechanics.</p>
+
+            <div class="canvas-container">
+                <canvas id="canvas-shear"></canvas>
+            </div>
+
+            <div class="equation-box">
+                Stress (<span id="shear-sigma" class="var var-green">Low</span>) = 
+                <div class="fraction">
+                    <span class="top">Constant Force</span>
+                    <span class="bottom">Area (<span id="shear-area-val">Large</span>)</span>
+                </div>
+            </div>
+
+            <div class="controls">
+                <div class="control-group">
+                    <label>Load Mode</label>
+                    <div style="display: flex; gap: 10px;">
+                        <button id="btn-dist" class="secondary">Distributed Load</button>
+                        <button id="btn-edge">Edge Load (Shear)</button>
+                    </div>
+                </div>
+                <div class="control-group" id="area-control" style="opacity: 0.5; pointer-events: none;">
+                    <label>Area of Application (Drag to Concentrate Stress)</label>
+                    <input type="range" id="slider-area" min="5" max="100" value="100">
+                </div>
+            </div>
+
+            <p>If we apply the force to a tiny Area (the edge), the Stress skyrockets. Once the top fiber snaps, the load transfers to the next, creating a <span class="highlight">"Zipper" effect</span>.</p>
+        </section>
+
+        <!-- SECTION 3: BIOMECHANICS -->
+        <section id="section-bio">
+            <h2>3. The Technique (Biomechanics & Impulse)</h2>
+            <p>How do we create that "Edge Load" with our body? We use geometry and speed.</p>
+
+            <div class="canvas-container">
+                <canvas id="canvas-bio"></canvas>
+            </div>
+
+            <div class="controls">
+                <div class="control-group">
+                    <label>Starting Height (Potential Energy)</label>
+                    <input type="range" id="slider-height" min="0" max="100" value="20">
+                    <div style="display:flex; justify-content:space-between; font-size:0.8rem; color:#aaa;">
+                        <span>Chest</span><span>Overhead</span>
+                    </div>
+                </div>
+                <div class="control-group">
+                    <label>Strike Velocity (Impulse)</label>
+                    <input type="range" id="slider-velocity" min="10" max="100" value="30">
+                </div>
+                <div class="control-group">
+                    <button id="btn-strike">EXECUTE STRIKE</button>
+                </div>
+                <div class="control-group">
+                    <label style="display:flex; align-items:center; gap:10px; cursor:pointer;">
+                        <input type="checkbox" id="check-physics" style="width:auto;"> Show Physics Vectors
+                    </label>
+                </div>
+            </div>
+
+            <div id="bio-feedback" style="margin-top: 15px; padding: 10px; background: rgba(0,0,0,0.2); border-radius: 4px; display: none;">
+                <!-- JS will populate this -->
+            </div>
+        </section>
+
+        <!-- SECTION 4: CONCLUSION -->
+        <section style="text-align: center;">
+            <h2>Conclusion</h2>
+            <p>Duct tape is strong against <strong>Tension</strong>, but weak against <strong>Shear</strong>. The escape relies on physics, not brute strength.</p>
+            <button onclick="location.reload()" style="max-width: 200px; margin-top: 20px;">Reset Simulation</button>
+        </section>
+    </div>
+
+    <script>
+        /* -------------------------------------------------------
+           COMMON UTILS
+           ------------------------------------------------------- */
+        function lerp(start, end, t) {
+            return start * (1 - t) + end * t;
+        }
+
+        function drawArrow(ctx, fromx, fromy, tox, toy, color) {
+            const headlen = 10; 
+            const dx = tox - fromx;
+            const dy = toy - fromy;
+            const angle = Math.atan2(dy, dx);
+            ctx.strokeStyle = color;
+            ctx.fillStyle = color;
+            ctx.lineWidth = 2;
+            ctx.beginPath();
+            ctx.moveTo(fromx, fromy);
+            ctx.lineTo(tox, toy);
+            ctx.stroke();
+            ctx.beginPath();
+            ctx.moveTo(tox, toy);
+            ctx.lineTo(tox - headlen * Math.cos(angle - Math.PI / 6), toy - headlen * Math.sin(angle - Math.PI / 6));
+            ctx.lineTo(tox - headlen * Math.cos(angle + Math.PI / 6), toy - headlen * Math.sin(angle + Math.PI / 6));
+            ctx.fill();
+        }
+
+        /* -------------------------------------------------------
+           SECTION 1: TENSILE
+           ------------------------------------------------------- */
+        const canvasTensile = document.getElementById('canvas-tensile');
+        const ctxT = canvasTensile.getContext('2d');
+        const sliderForce = document.getElementById('slider-force');
+        const valForce = document.getElementById('val-force');
+        const statusTensile = document.getElementById('status-tensile');
+
+        // Resize handling
+        canvasTensile.width = canvasTensile.offsetWidth;
+        canvasTensile.height = canvasTensile.offsetHeight;
+
+        function drawTensile() {
+            const w = canvasTensile.width;
+            const h = canvasTensile.height;
+            const force = parseInt(sliderForce.value); // 0 to 100
+            
+            ctxT.clearRect(0, 0, w, h);
+
+            // Calculations for Poisson effect (stretching)
+            // Max stretch 20% width, shrink 10% height
+            const stretchFactor = (force / 100) * 0.2;
+            const shrinkFactor = (force / 100) * 0.1;
+
+            const baseW = w * 0.4;
+            const baseH = h * 0.4;
+
+            const curW = baseW * (1 + stretchFactor);
+            const curH = baseH * (1 - shrinkFactor);
+
+            const centerX = w / 2;
+            const centerY = h / 2;
+
+            // Color interpolation: Green -> Yellow -> Orange
+            let r, g, b;
+            if(force < 50) {
+                // Green to Yellow
+                r = Math.floor(lerp(0, 251, force/50));
+                g = 255;
+                b = Math.floor(lerp(153, 36, force/50));
+            } else {
+                // Yellow to Orange
+                r = 251; // keep high
+                g = Math.floor(lerp(255, 140, (force-50)/50));
+                b = 36;
+            }
+            const color = `rgb(${r}, ${g}, ${b})`;
+
+            // Draw Tape
+            ctxT.fillStyle = color;
+            ctxT.fillRect(centerX - curW/2, centerY - curH/2, curW, curH);
+
+            // Draw Texture (fibers)
+            ctxT.strokeStyle = "rgba(255,255,255,0.2)";
+            ctxT.beginPath();
+            for(let i = -curH/2 + 5; i < curH/2; i+=10) {
+                ctxT.moveTo(centerX - curW/2, centerY + i);
+                ctxT.lineTo(centerX + curW/2, centerY + i);
+            }
+            ctxT.stroke();
+
+            // Draw "Arms" (Blocks)
+            ctxT.fillStyle = "#64748b";
+            // Left Arm
+            ctxT.fillRect(centerX - curW/2 - 60, centerY - 40, 60, 80);
+            // Right Arm
+            ctxT.fillRect(centerX + curW/2, centerY - 40, 60, 80);
+
+            // Draw Force Arrows
+            if (force > 0) {
+                const arrowLen = force; 
+                drawArrow(ctxT, centerX - curW/2 - 30, centerY, centerX - curW/2 - 30 - arrowLen, centerY, "#fff");
+                drawArrow(ctxT, centerX + curW/2 + 30, centerY, centerX + curW/2 + 30 + arrowLen, centerY, "#fff");
+            }
+
+            // Update Text
+            valForce.textContent = (force * 10); // scale up visually
+            statusTensile.textContent = "Stretched (Not Broken)";
+            statusTensile.style.color = color;
+        }
+
+        sliderForce.addEventListener('input', drawTensile);
+        drawTensile();
+
+        /* -------------------------------------------------------
+           SECTION 2: SHEAR
+           ------------------------------------------------------- */
+        const canvasShear = document.getElementById('canvas-shear');
+        const ctxS = canvasShear.getContext('2d');
+        const btnDist = document.getElementById('btn-dist');
+        const btnEdge = document.getElementById('btn-edge');
+        const sliderArea = document.getElementById('slider-area');
+        const areaControl = document.getElementById('area-control');
+        const shearSigma = document.getElementById('shear-sigma');
+        const shearAreaVal = document.getElementById('shear-area-val');
+
+        canvasShear.width = canvasShear.offsetWidth;
+        canvasShear.height = canvasShear.offsetHeight;
+
+        let shearMode = 'distributed'; // or 'edge'
+        let zipperProgress = 0; // 0 to 1
+        let isZippering = false;
+
+        function resetShear() {
+            zipperProgress = 0;
+            isZippering = false;
+            drawShear();
+        }
+
+        btnDist.addEventListener('click', () => {
+            shearMode = 'distributed';
+            areaControl.style.opacity = "0.5";
+            areaControl.style.pointerEvents = "none";
+            sliderArea.value = 100;
+            btnDist.style.background = "var(--accent-green)";
+            btnDist.style.color = "var(--bg-color)";
+            btnEdge.style.background = "var(--card-bg)";
+            btnEdge.style.color = "var(--text-color)";
+            resetShear();
+        });
+
+        btnEdge.addEventListener('click', () => {
+            shearMode = 'edge';
+            areaControl.style.opacity = "1";
+            areaControl.style.pointerEvents = "auto";
+            btnEdge.style.background = "var(--accent-green)";
+            btnEdge.style.color = "var(--bg-color)";
+            btnDist.style.background = "var(--card-bg)";
+            btnDist.style.color = "var(--text-color)";
+            resetShear();
+        });
+
+        sliderArea.addEventListener('input', () => {
+            if(shearMode === 'edge') {
+                drawShear();
+                // Trigger zipper if area is small enough
+                if(parseInt(sliderArea.value) < 20 && !isZippering) {
+                    startZipper();
+                }
+            }
+        });
+
+        function startZipper() {
+            isZippering = true;
+            animateZipper();
+        }
+
+        function animateZipper() {
+            if(!isZippering) return;
+            zipperProgress += 0.05;
+            if(zipperProgress > 1.2) zipperProgress = 1.2; // go a bit past
+            drawShear();
+            if(zipperProgress < 1.2) {
+                requestAnimationFrame(animateZipper);
+            }
+        }
+
+        function drawShear() {
+            const w = canvasShear.width;
+            const h = canvasShear.height;
+            const areaVal = parseInt(sliderArea.value); // 100 down to 5
+            
+            ctxS.clearRect(0, 0, w, h);
+
+            const tapeW = 200;
+            const tapeH = 160;
+            const cx = w / 2;
+            const cy = h / 2;
+            const tapeX = cx - tapeW/2;
+            const tapeY = cy - tapeH/2;
+
+            // Update Math Text
+            if (shearMode === 'distributed') {
+                shearSigma.textContent = "Low";
+                shearSigma.className = "var var-green";
+                shearAreaVal.textContent = "Large";
+            } else {
+                // Edge mode
+                if (areaVal > 60) {
+                    shearSigma.textContent = "Medium";
+                    shearSigma.className = "var var-green";
+                    shearAreaVal.textContent = "Reduced";
+                } else if (areaVal > 20) {
+                    shearSigma.textContent = "HIGH";
+                    shearSigma.className = "var";
+                    shearSigma.style.color = "orange";
+                    shearAreaVal.textContent = "Small";
+                } else {
+                    shearSigma.textContent = "CRITICAL";
+                    shearSigma.className = "var var-pink";
+                    shearAreaVal.textContent = "Tiny";
+                }
+            }
+
+            // Draw Tape
+            ctxS.fillStyle = "#cbd5e1"; // Silver
+
+            if (!isZippering) {
+                // Normal Tape
+                ctxS.fillRect(tapeX, tapeY, tapeW, tapeH);
+                
+                // Stress Color Overlay
+                if(shearMode === 'edge') {
+                    // Gradient from top based on areaVal
+                    // The smaller the areaVal, the more intense and concentrated the red is at the top
+                    const intensity = (100 - areaVal) / 100;
+                    const grad = ctxS.createLinearGradient(0, tapeY, 0, tapeY + tapeH);
+                    grad.addColorStop(0, `rgba(255, 0, 102, ${intensity})`);
+                    grad.addColorStop(0.2, `rgba(255, 0, 102, 0)`);
+                    ctxS.fillStyle = grad;
+                    ctxS.fillRect(tapeX, tapeY, tapeW, tapeH);
+                }
+
+            } else {
+                // Broken Tape (Zipper Animation)
+                // Draw two polygons separating
+                const splitX = tapeX + tapeW/2; // Split down middle for visual simplicity in 2D
+                // Actually, let's split horizontally from top to bottom to match the "Edge Load" concept better?
+                // The prompt implies tearing from the side (fracture mechanics). 
+                // Let's visualize a crack propagating from the top edge downwards.
+                
+                const crackY = tapeY + (tapeH * zipperProgress);
+                
+                // Left piece (static-ish)
+                ctxS.beginPath();
+                ctxS.moveTo(tapeX, tapeY);
+                ctxS.lineTo(tapeX + tapeW/2 - (zipperProgress * 20), tapeY); // Pull apart at top
+                ctxS.lineTo(tapeX + tapeW/2, Math.min(crackY, tapeY + tapeH)); // Crack tip
+                ctxS.lineTo(tapeX + tapeW/2, tapeY + tapeH);
+                ctxS.lineTo(tapeX, tapeY + tapeH);
+                ctxS.closePath();
+                ctxS.fill();
+
+                // Right piece (peeling away)
+                ctxS.beginPath();
+                ctxS.moveTo(tapeX + tapeW, tapeY);
+                ctxS.lineTo(tapeX + tapeW/2 + (zipperProgress * 20), tapeY); // Pull apart
+                ctxS.lineTo(tapeX + tapeW/2, Math.min(crackY, tapeY + tapeH));
+                ctxS.lineTo(tapeX + tapeW/2, tapeY + tapeH);
+                ctxS.lineTo(tapeX + tapeW, tapeY + tapeH);
+                ctxS.closePath();
+                ctxS.fill();
+            }
+
+            // Draw Force Arrows
+            if (shearMode === 'distributed') {
+                // Many arrows pushing left and right
+                for(let i=0; i<5; i++) {
+                    let y = tapeY + 20 + (i*30);
+                    drawArrow(ctxS, tapeX - 30, y, tapeX, y, "#00ff99");
+                    drawArrow(ctxS, tapeX + tapeW + 30, y, tapeX + tapeW, y, "#00ff99");
+                }
+            } else {
+                // Edge Load: Single Big Arrow at Top
+                // Position depends on sliderArea
+                // We represent area shrinking by focusing arrows
+                
+                const focusWidth = (areaVal / 100) * tapeH; // How much of the height is being pushed
+                const startY = tapeY;
+                
+                // Draw arrow pushing OUT at the top edge
+                // To simulate the shear tear, we pull the top corners
+                drawArrow(ctxS, tapeX + tapeW/2, tapeY, tapeX + tapeW/2 - 50, tapeY - 20, "#ff0066");
+                drawArrow(ctxS, tapeX + tapeW/2, tapeY, tapeX + tapeW/2 + 50, tapeY - 20, "#ff0066");
+                
+                // Visual indicator of "Active Area"
+                ctxS.fillStyle = "rgba(255, 0, 102, 0.3)";
+                ctxS.fillRect(tapeX - 10, tapeY, tapeW + 20, Math.max(5, focusWidth));
+            }
+        }
+
+        // Init Section 2
+        btnDist.click(); // Set default
+
+        /* -------------------------------------------------------
+           SECTION 3: BIOMECHANICS (STICK FIGURE)
+           ------------------------------------------------------- */
+        const canvasBio = document.getElementById('canvas-bio');
+        const ctxB = canvasBio.getContext('2d');
+        const sliderHeight = document.getElementById('slider-height');
+        const sliderVelocity = document.getElementById('slider-velocity');
+        const btnStrike = document.getElementById('btn-strike');
+        const checkPhysics = document.getElementById('check-physics');
+        const bioFeedback = document.getElementById('bio-feedback');
+
+        canvasBio.width = canvasBio.offsetWidth;
+        canvasBio.height = canvasBio.offsetHeight;
+
+        let bioState = {
+            t: 0, // animation time 0 to 1
+            animating: false,
+            success: false,
+            startHeight: 0.2, // 0 to 1 (relative to range)
+            velocity: 0.3     // 0 to 1
+        };
+
+        function drawStickman() {
+            const w = canvasBio.width;
+            const h = canvasBio.height;
+            ctxB.clearRect(0, 0, w, h);
+
+            const cx = w / 2;
+            const floorY = h - 50;
+            
+            // Stickman Params
+            const headY = 60;
+            const shoulderY = 90;
+            const hipY = 180;
+            const armLen = 50;
+            const forearmLen = 50;
+
+            // Calculate Wrist Position based on animation
+            // Start Y: Based on sliderHeight. (High slider = Hands High/Overhead)
+            // End Y: Hip level (approx 180)
+            
+            // Map slider 0-100 to Y positions
+            // Slider 0 (Chest) -> Y=130
+            // Slider 100 (Overhead) -> Y=50
+            const startY = 130 - (bioState.startHeight * 80); 
+            const endY = hipY + 20; // Strike goes slightly past hips
+
+            let currentWristY = startY;
+            let currentWristXOffset = 0; // Horizontal separation
+            
+            if (bioState.animating) {
+                // Linear interpolation for Y
+                currentWristY = lerp(startY, endY, bioState.t);
+                
+                // If success and near end, flare out
+                if (bioState.success && bioState.t > 0.8) {
+                    // The "Snap"
+                    const snapT = (bioState.t - 0.8) * 5; // 0 to 1
+                    currentWristXOffset = snapT * 60;
+                }
+            } else if (bioState.t === 1 && bioState.success) {
+                currentWristY = endY;
+                currentWristXOffset = 60;
+            } else if (bioState.t === 1 && !bioState.success) {
+                currentWristY = endY;
+                currentWristXOffset = 0; // Stuck
+            } else {
+                // Reset state preview
+                currentWristY = 130 - (parseInt(sliderHeight.value)/100 * 80);
+            }
+
+            // IK Solver (Simple) for Elbows
+            // We know Shoulder (cx, shoulderY) and Wrist (cx +/- off, currentWristY)
+            // Find Elbow
+            function drawArm(side) { // -1 left, 1 right
+                const sx = cx + (side * 20); // Shoulder X
+                const sy = shoulderY;
+                const wx = cx + (side * 10) + (side * currentWristXOffset); // Wrist X (bound initially)
+                const wy = currentWristY;
+
+                // Draw Upper Body
+                ctxB.strokeStyle = "#fff";
+                ctxB.lineWidth = 4;
+                ctxB.lineCap = "round";
+
+                // Simple elbow calculation (stick out)
+                const ex = sx + (side * 30); 
+                const ey = (sy + wy) / 2;
+
+                ctxB.beginPath();
+                ctxB.moveTo(sx, sy);
+                ctxB.lineTo(ex, ey); // Upper arm
+                ctxB.lineTo(wx, wy); // Forearm
+                ctxB.stroke();
+
+                // Hand
+                ctxB.fillStyle = "#00ff99";
+                ctxB.beginPath();
+                ctxB.arc(wx, wy, 6, 0, Math.PI*2);
+                ctxB.fill();
+                
+                return { wx, wy };
+            }
+
+            // Draw Body
+            ctxB.strokeStyle = "#fff";
+            ctxB.lineWidth = 4;
+            
+            // Head
+            ctxB.beginPath();
+            ctxB.arc(cx, headY, 15, 0, Math.PI*2);
+            ctxB.stroke();
+            
+            // Torso
+            ctxB.beginPath();
+            ctxB.moveTo(cx, headY + 15);
+            ctxB.lineTo(cx, hipY);
+            ctxB.stroke();
+            
+            // Legs (Static)
+            ctxB.beginPath();
+            ctxB.moveTo(cx, hipY);
+            ctxB.lineTo(cx - 20, floorY);
+            ctxB.moveTo(cx, hipY);
+            ctxB.lineTo(cx + 20, floorY);
+            ctxB.stroke();
+
+            // Draw Tape (Connecting wrists)
+            // If broken, draw two pieces
+            const leftHand = drawArm(-1);
+            const rightHand = drawArm(1);
+
+            if (currentWristXOffset < 10) {
+                // Intact
+                ctxB.fillStyle = "#cbd5e1";
+                ctxB.fillRect(leftHand.wx, leftHand.wy - 10, (rightHand.wx - leftHand.wx), 20);
+            } else {
+                // Broken
+                ctxB.fillStyle = "#cbd5e1";
+                // Left piece
+                ctxB.fillRect(leftHand.wx, leftHand.wy - 10, 15, 20);
+                // Right piece
+                ctxB.fillRect(rightHand.wx - 15, rightHand.wy - 10, 15, 20);
+            }
+
+            // PHYSICS VECTORS
+            if (checkPhysics.checked) {
+                if (bioState.animating) {
+                    // Velocity Vector (Down)
+                    const vMag = parseInt(sliderVelocity.value) / 2;
+                    drawArrow(ctxB, cx + 60, (shoulderY+hipY)/2, cx + 60, (shoulderY+hipY)/2 + vMag, "#fbbf24");
+                    ctxB.fillStyle = "#fbbf24";
+                    ctxB.fillText("Velocity (v)", cx + 65, (shoulderY+hipY)/2 + vMag/2);
+                }
+                
+                if (bioState.success && bioState.t > 0.8) {
+                    // Impulse/Shear Vector (Outward)
+                    drawArrow(ctxB, leftHand.wx, leftHand.wy, leftHand.wx - 40, leftHand.wy, "#ff0066");
+                    drawArrow(ctxB, rightHand.wx, rightHand.wy, rightHand.wx + 40, rightHand.wy, "#ff0066");
+                    ctxB.fillStyle = "#ff0066";
+                    ctxB.fillText("Shear Impulse (J)", cx + 50, rightHand.wy + 30);
+                }
+            }
+        }
+
+        function animateBio() {
+            if (!bioState.animating) return;
+
+            // Speed of animation depends on velocity slider
+            const speed = 0.02 + (bioState.velocity * 0.05);
+            bioState.t += speed;
+
+            if (bioState.t >= 1) {
+                bioState.t = 1;
+                bioState.animating = false;
+                
+                // Show result
+                bioFeedback.style.display = "block";
+                if(bioState.success) {
+                    bioFeedback.innerHTML = "<span class='highlight'>FREEDOM!</span> High potential energy converted to kinetic energy. The sudden stop created a massive Impulse ($J=\\Delta p$) and shear force.";
+                    bioFeedback.style.borderLeft = "4px solid var(--accent-green)";
+                } else {
+                    bioFeedback.innerHTML = "<span class='danger'>FAILED.</span> Not enough energy. The tape absorbed the force through tension. Try raising your hands higher or striking faster.";
+                    bioFeedback.style.borderLeft = "4px solid var(--accent-pink)";
+                }
+            }
+
+            drawStickman();
+            
+            if (bioState.animating) {
+                requestAnimationFrame(animateBio);
+            }
+        }
+
+        btnStrike.addEventListener('click', () => {
+            const hVal = parseInt(sliderHeight.value);
+            const vVal = parseInt(sliderVelocity.value);
+            
+            bioState.startHeight = hVal / 100;
+            bioState.velocity = vVal / 100;
+            bioState.t = 0;
+            bioState.animating = true;
+            bioFeedback.style.display = "none";
+
+            // Logic: Needs High Height AND High Velocity
+            // Threshold: Height + Velocity > 120 (arbitrary game logic)
+            if ((hVal + vVal) > 130 && hVal > 40 && vVal > 40) {
+                bioState.success = true;
+            } else {
+                bioState.success = false;
+            }
+
+            animateBio();
+        });
+
+        // Live preview of starting pose
+        sliderHeight.addEventListener('input', () => {
+            if(!bioState.animating) drawStickman();
+        });
+
+        checkPhysics.addEventListener('change', () => {
+             if(!bioState.animating) drawStickman();
+        });
+
+        drawStickman();
+
+    </script>
+</body>
+</html>

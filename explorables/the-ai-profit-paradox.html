@@ -1,0 +1,607 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>The AI Profit Paradox</title>
+    <style>
+        /* --- CSS VARIABLES & THEME --- */
+        :root {
+            --bg-color: #faf9f6; /* Off-white */
+            --text-color: #333333;
+            --accent-fail: #ff6b6b; /* Tomato */
+            --accent-success: #51cf66; /* Emerald */
+            --accent-hype: #845ef7; /* Violet */
+            --accent-neutral: #e0e0e0;
+            --font-serif: 'Georgia', 'Times New Roman', serif;
+            --font-sans: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            --max-width: 650px;
+        }
+
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            margin: 0;
+            padding: 0;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            font-family: var(--font-sans);
+            line-height: 1.6;
+            -webkit-font-smoothing: antialiased;
+        }
+
+        /* --- TYPOGRAPHY --- */
+        h1, h2, h3 {
+            font-family: var(--font-serif);
+            font-weight: 700;
+            margin-bottom: 0.5em;
+        }
+
+        h1 { font-size: 2.5rem; line-height: 1.2; }
+        h2 { font-size: 1.8rem; margin-top: 2rem; }
+        p { margin-bottom: 1.5rem; font-size: 1.1rem; }
+
+        .highlight-fail { color: var(--accent-fail); font-weight: bold; }
+        .highlight-success { color: var(--accent-success); font-weight: bold; }
+        .highlight-hype { color: var(--accent-hype); font-weight: bold; }
+
+        /* --- LAYOUT --- */
+        header {
+            padding: 4rem 1rem;
+            max-width: var(--max-width);
+            margin: 0 auto;
+            text-align: center;
+            border-bottom: 1px solid #ddd;
+        }
+
+        main {
+            max-width: var(--max-width);
+            margin: 0 auto;
+            padding: 0 1rem 4rem 1rem;
+        }
+
+        section {
+            padding: 4rem 0;
+            border-bottom: 1px dashed #ddd;
+        }
+
+        section:last-child { border-bottom: none; }
+
+        /* --- VISUALIZATION CONTAINERS --- */
+        .viz-container {
+            background: #fff;
+            border: 1px solid #eee;
+            border-radius: 8px;
+            padding: 1.5rem;
+            margin: 2rem 0;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.02);
+            position: relative;
+            /* Sticky behavior for desktop scrollytelling feel */
+            position: sticky;
+            top: 20px;
+            z-index: 10;
+        }
+
+        canvas {
+            width: 100%;
+            height: auto;
+            display: block;
+        }
+
+        /* --- UI ELEMENTS --- */
+        button {
+            background-color: #333;
+            color: #fff;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 4px;
+            font-family: var(--font-sans);
+            font-weight: 600;
+            cursor: pointer;
+            transition: background 0.2s;
+            font-size: 0.9rem;
+        }
+
+        button:hover { background-color: #555; }
+        
+        button.btn-hype { background-color: var(--accent-hype); }
+        button.btn-boring { background-color: #777; }
+
+        .slider-container {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            margin-top: 1rem;
+        }
+
+        input[type=range] {
+            flex-grow: 1;
+            accent-color: var(--accent-success);
+        }
+
+        .stat-ticker {
+            font-family: monospace;
+            background: #f4f4f4;
+            padding: 0.5rem;
+            margin-top: 1rem;
+            border-radius: 4px;
+            text-align: center;
+            font-size: 0.9rem;
+        }
+
+        /* --- SPECIFIC SIM STYLES --- */
+        
+        /* Sim 1: Grid */
+        .grid-viz {
+            display: grid;
+            grid-template-columns: repeat(10, 1fr);
+            gap: 4px;
+            margin-bottom: 1rem;
+        }
+        .grid-cell {
+            aspect-ratio: 1;
+            background-color: var(--accent-neutral);
+            border-radius: 2px;
+            transition: background-color 0.5s ease;
+        }
+        .grid-cell.fail { background-color: var(--accent-fail); }
+        .grid-cell.profit { background-color: var(--accent-success); }
+
+        /* Sim 2: Equation */
+        .equation-box {
+            font-family: var(--font-serif);
+            font-size: 1.2rem;
+            text-align: center;
+            padding: 1rem;
+            background: #fdfdfd;
+        }
+        .eq-var {
+            display: inline-block;
+            padding: 2px 4px;
+            border-bottom: 2px solid transparent;
+        }
+        .eq-interactive {
+            border-bottom: 2px dashed var(--accent-hype);
+            cursor: ew-resize;
+            color: var(--accent-hype);
+            font-weight: bold;
+        }
+        .eq-result { font-weight: bold; font-size: 1.4rem; display: block; margin-top: 1rem; }
+        .eq-result.neg { color: var(--accent-fail); }
+        .eq-result.pos { color: var(--accent-success); }
+
+        /* Sim 3: Stock Chart Buttons */
+        .controls-row {
+            display: flex;
+            justify-content: center;
+            gap: 10px;
+            margin-top: 10px;
+        }
+
+        /* Sim 5: Progress Bar */
+        .progress-bg {
+            width: 100%;
+            height: 20px;
+            background: #eee;
+            border-radius: 10px;
+            overflow: hidden;
+            margin-top: 10px;
+        }
+        .progress-fill {
+            height: 100%;
+            background: var(--accent-success);
+            width: 5%;
+            transition: width 0.3s;
+        }
+
+    </style>
+</head>
+<body>
+
+    <header>
+        <h1>The AI Profit Paradox</h1>
+        <p style="font-style: italic; color: #666;">Why failure is a feature, not a bug, of the current AI economy.</p>
+    </header>
+
+    <main>
+
+        <!-- SECTION 1: THE REALITY -->
+        <section id="section-reality">
+            <h2>1. The 95% Reality</h2>
+            <p>An MIT study recently claimed that roughly <strong>95% of AI initiatives fail to turn a profit</strong>. To the average observer, this looks like a disaster. To the tech industry, this is business as usual.</p>
+            
+            <div class="viz-container">
+                <div id="pilot-grid" class="grid-viz">
+                    <!-- JS will inject 100 divs here -->
+                </div>
+                <div style="text-align: center;">
+                    <button id="btn-run-pilots">Run Pilot Programs</button>
+                </div>
+                <div class="stat-ticker" id="grid-ticker">
+                    Total Spent: $0 | Net Profit: $0
+                </div>
+            </div>
+            
+            <p>When you click "Run", notice the sea of red. In a traditional business, this P&L statement would get a CEO fired. In the AI economy, it's the cost of entry.</p>
+        </section>
+
+        <!-- SECTION 2: VC MATH -->
+        <section id="section-vc">
+            <h2>2. The "Winner-Takes-All" Equation</h2>
+            <p>Why do companies burn cash like this? Because they aren't playing for small margins. They are playing for <strong>Technological Dominance</strong>. In a winner-takes-all market, one massive success pays for a thousand failures.</p>
+            
+            <div class="viz-container">
+                <div class="equation-box">
+                    <div>
+                        E(v) = (<span class="eq-var">5%</span> × <span class="eq-var eq-interactive" id="payoff-val">$1M</span>) - (<span class="eq-var">95%</span> × <span class="eq-var">$1M</span>)
+                    </div>
+                    <div id="eq-result-display" class="eq-result neg">Expected Value: -$900k</div>
+                </div>
+                <div class="slider-container">
+                    <span style="font-size: 0.8rem;">Small Win</span>
+                    <input type="range" id="payoff-slider" min="1" max="100" value="1">
+                    <span style="font-size: 0.8rem;">"Unicorn" Win</span>
+                </div>
+                <p style="font-size: 0.9rem; color: #666; text-align: center; margin-top: 0.5rem;">
+                    Drag the slider to increase the potential Payoff.
+                </p>
+            </div>
+
+            <p>Investors (VCs) operate on <em>Power Law</em> mechanics. If the potential payoff of being the market leader is high enough (e.g., becoming the next Google), it is mathematically rational to lose money on 95% of bets, provided the one win is a "Unicorn."</p>
+        </section>
+
+        <!-- SECTION 3: THE BUBBLE -->
+        <section id="section-bubble">
+            <h2>3. The Visible vs. Useful Bubble</h2>
+            <p>It's not just about future tech. It's about current stock prices. The market currently rewards <span class="highlight-hype">"Visible AI"</span> (hype) over <span class="highlight-success">"Useful AI"</span> (back-office efficiency).</p>
+
+            <div class="viz-container">
+                <h4 style="margin-top:0; text-align:center;">CEO Simulator: Stock Price</h4>
+                <canvas id="stock-chart" width="600" height="300"></canvas>
+                <div class="controls-row">
+                    <button class="btn-boring" id="btn-boring">Option A: Boring Automation</button>
+                    <button class="btn-hype" id="btn-hype">Option B: AI Chatbot Hype</button>
+                </div>
+                <div class="stat-ticker" id="stock-ticker">
+                    Revenue: $100M | Stock Price: $50.00
+                </div>
+            </div>
+
+            <p><strong>Option A</strong> improves your bottom line but is invisible to the public. <strong>Option B</strong> costs a fortune and loses money, but signals to the market that you are an "AI Company," triggering a hype multiplier on your stock price. Which would you choose if your bonus depended on stock performance?</p>
+        </section>
+
+        <!-- SECTION 4: FOMO -->
+        <section id="section-fomo">
+            <h2>4. The FOMO Network</h2>
+            <p>Finally, there is pure peer pressure. This is the "Implementation Paradox." Companies adopt AI not for immediate profit, but to signal competence to the herd and avoid being left behind.</p>
+
+            <div class="viz-container">
+                <canvas id="network-canvas" width="600" height="350"></canvas>
+                <p style="text-align: center; font-size: 0.9rem; color: #666;">
+                    Hover over the center node (The Market Leader) to trigger the herd mentality.
+                </p>
+            </div>
+
+            <p>Once a market leader adopts a technology, it becomes a reputational risk for others <em>not</em> to have an AI strategy, regardless of the P&L statement.</p>
+        </section>
+
+        <!-- SECTION 5: CONCLUSION -->
+        <section id="section-solution">
+            <h2>5. The Path to Actual Success</h2>
+            <p>So, how do you actually become the 5% that succeeds? The MIT study suggests ignoring the hype benchmarks (can it write poetry?) and focusing on operational benchmarks (does it sort emails faster?).</p>
+
+            <div class="viz-container">
+                <div style="display: flex; justify-content: space-between; font-size: 0.9rem; font-weight: bold; margin-bottom: 10px;">
+                    <span style="color: var(--accent-hype);">Model Capabilities</span>
+                    <span style="color: var(--accent-success);">Workflow Integration</span>
+                </div>
+                
+                <input type="range" id="strategy-slider" min="0" max="100" value="0" style="width: 100%;">
+
+                <div id="strategy-text" style="margin-top: 15px; font-style: italic; min-height: 3em;">
+                    "We are trying to make the AI do everything perfectly out of the box."
+                </div>
+
+                <div style="margin-top: 15px;">
+                    <strong>Probability of Profit:</strong>
+                    <div class="progress-bg">
+                        <div id="success-bar" class="progress-fill"></div>
+                    </div>
+                    <div id="success-text" style="text-align: right; font-size: 0.8rem; margin-top: 5px;">5%</div>
+                </div>
+            </div>
+
+            <p><strong>Don't build for the demo. Build for the workflow.</strong> The profit paradox is solved when we stop treating AI as a magic trick and start treating it as a boring, efficient employee.</p>
+        </section>
+
+    </main>
+
+    <footer>
+        <p style="text-align: center; padding: 2rem; color: #999; font-size: 0.8rem;">
+            Concept based on "The AI Profit Paradox" video analysis.<br>
+            Interactive Design Demo.
+        </p>
+    </footer>
+
+    <script>
+        /* --- SIMULATION 1: THE GRID --- */
+        const gridContainer = document.getElementById('pilot-grid');
+        const runBtn = document.getElementById('btn-run-pilots');
+        const gridTicker = document.getElementById('grid-ticker');
+        let gridGenerated = false;
+
+        // Initialize Grid
+        for(let i=0; i<100; i++) {
+            const cell = document.createElement('div');
+            cell.classList.add('grid-cell');
+            gridContainer.appendChild(cell);
+        }
+
+        runBtn.addEventListener('click', () => {
+            const cells = document.querySelectorAll('.grid-cell');
+            let spent = 100; // millions
+            let profit = -80; // millions (loss)
+
+            cells.forEach((cell, index) => {
+                // Reset first
+                cell.className = 'grid-cell';
+                
+                // Trigger animation slight delay
+                setTimeout(() => {
+                    if (index < 95) {
+                        cell.classList.add('fail');
+                    } else {
+                        cell.classList.add('profit');
+                    }
+                }, index * 5);
+            });
+
+            gridTicker.innerHTML = `Total Spent: $${spent}M | <span class="highlight-fail">Net Loss: $80M</span>`;
+            runBtn.innerText = "Re-Run Pilots";
+        });
+
+
+        /* --- SIMULATION 2: THE EQUATION --- */
+        const payoffSlider = document.getElementById('payoff-slider');
+        const payoffDisplay = document.getElementById('payoff-val');
+        const resultDisplay = document.getElementById('eq-result-display');
+
+        function updateEquation() {
+            // Slider 1-100 maps to $1M to $500M roughly for visualization
+            const sliderVal = parseInt(payoffSlider.value);
+            // Non-linear scaling for dramatic effect
+            const payoffMillions = Math.floor(1 + Math.pow(sliderVal, 1.5)); 
+            
+            const cost = 1; // $1M
+            const pWin = 0.05;
+            const pLoss = 0.95;
+
+            const ev = (pWin * payoffMillions) - (pLoss * cost);
+            
+            payoffDisplay.innerText = `$${payoffMillions}M`;
+            
+            if (ev > 0) {
+                resultDisplay.innerText = `Expected Value: +$${ev.toFixed(2)}M`;
+                resultDisplay.className = 'eq-result pos';
+            } else {
+                resultDisplay.innerText = `Expected Value: -$${Math.abs(ev).toFixed(2)}M`;
+                resultDisplay.className = 'eq-result neg';
+            }
+        }
+
+        payoffSlider.addEventListener('input', updateEquation);
+        updateEquation(); // Init
+
+
+        /* --- SIMULATION 3: STOCK CHART --- */
+        const stockCanvas = document.getElementById('stock-chart');
+        const ctxStock = stockCanvas.getContext('2d');
+        const stockTicker = document.getElementById('stock-ticker');
+        
+        let revenue = 100;
+        let stockPrice = 50;
+        let historyData = [{rev: 100, price: 50}];
+        const maxPoints = 20;
+
+        function drawStockChart() {
+            ctxStock.clearRect(0, 0, stockCanvas.width, stockCanvas.height);
+            
+            // Draw axes
+            ctxStock.strokeStyle = '#eee';
+            ctxStock.beginPath();
+            ctxStock.moveTo(40, 10);
+            ctxStock.lineTo(40, stockCanvas.height - 20);
+            ctxStock.lineTo(stockCanvas.width, stockCanvas.height - 20);
+            ctxStock.stroke();
+
+            if (historyData.length < 2) return;
+
+            // Draw Price Line (Violet)
+            ctxStock.strokeStyle = '#845ef7';
+            ctxStock.lineWidth = 3;
+            ctxStock.beginPath();
+            
+            const xStep = (stockCanvas.width - 50) / (maxPoints - 1);
+            
+            // Scale Price (0 to 300 approx)
+            const mapY = (val) => (stockCanvas.height - 20) - (val / 300 * (stockCanvas.height - 40));
+
+            historyData.forEach((pt, i) => {
+                const x = 40 + i * xStep;
+                const y = mapY(pt.price);
+                if (i === 0) ctxStock.moveTo(x, y);
+                else ctxStock.lineTo(x, y);
+            });
+            ctxStock.stroke();
+        }
+
+        function updateStock(type) {
+            if (historyData.length >= maxPoints) {
+                historyData.shift(); // Scroll chart
+            }
+
+            if (type === 'boring') {
+                // Good revenue, bad stock movement
+                revenue += 5;
+                stockPrice += (Math.random() * 2 - 0.5); // Mostly flat
+            } else {
+                // Bad revenue, huge stock movement (Hype)
+                revenue -= 5;
+                stockPrice += (Math.random() * 20 + 10); // Spikes
+            }
+
+            historyData.push({rev: revenue, price: stockPrice});
+            drawStockChart();
+            
+            const revColor = revenue >= 100 ? 'black' : '#ff6b6b';
+            stockTicker.innerHTML = `Revenue: <span style="color:${revColor}">$${revenue}M</span> | Stock Price: <span class="highlight-hype">$${stockPrice.toFixed(2)}</span>`;
+        }
+
+        document.getElementById('btn-boring').addEventListener('click', () => updateStock('boring'));
+        document.getElementById('btn-hype').addEventListener('click', () => updateStock('hype'));
+        drawStockChart();
+
+
+        /* --- SIMULATION 4: FOMO NETWORK --- */
+        const netCanvas = document.getElementById('network-canvas');
+        const ctxNet = netCanvas.getContext('2d');
+        let nodes = [];
+        const numNodes = 30;
+        let infected = false;
+
+        class Node {
+            constructor(x, y, isCenter) {
+                this.x = x;
+                this.y = y;
+                this.isCenter = isCenter;
+                this.isInfected = false;
+                this.color = '#e0e0e0';
+            }
+
+            draw() {
+                ctxNet.beginPath();
+                ctxNet.arc(this.x, this.y, this.isCenter ? 10 : 6, 0, Math.PI * 2);
+                ctxNet.fillStyle = this.isInfected ? '#ffd43b' : this.color; // Gold or Grey
+                if (this.isCenter && !this.isInfected) ctxNet.fillStyle = '#333'; // Black initially
+                ctxNet.fill();
+                ctxNet.strokeStyle = '#fff';
+                ctxNet.stroke();
+            }
+        }
+
+        function initNetwork() {
+            nodes = [];
+            const cx = netCanvas.width / 2;
+            const cy = netCanvas.height / 2;
+
+            // Center node
+            nodes.push(new Node(cx, cy, true));
+
+            // Random nodes around
+            for(let i=0; i<numNodes; i++) {
+                const angle = Math.random() * Math.PI * 2;
+                const dist = 40 + Math.random() * 120;
+                nodes.push(new Node(cx + Math.cos(angle)*dist, cy + Math.sin(angle)*dist, false));
+            }
+        }
+
+        function drawNetwork() {
+            ctxNet.clearRect(0, 0, netCanvas.width, netCanvas.height);
+            
+            // Draw connections
+            ctxNet.strokeStyle = '#eee';
+            ctxNet.lineWidth = 1;
+            nodes.forEach((node, i) => {
+                nodes.forEach((other, j) => {
+                    if (i !== j) {
+                        const d = Math.hypot(node.x - other.x, node.y - other.y);
+                        if (d < 80) {
+                            ctxNet.beginPath();
+                            ctxNet.moveTo(node.x, node.y);
+                            ctxNet.lineTo(other.x, other.y);
+                            ctxNet.stroke();
+                        }
+                    }
+                });
+            });
+
+            nodes.forEach(n => n.draw());
+        }
+
+        function infectNeighbors() {
+            if (!infected) return;
+            let changed = false;
+            nodes.forEach(node => {
+                if (node.isInfected) {
+                    // Infect neighbors
+                    nodes.forEach(neighbor => {
+                        if (!neighbor.isInfected) {
+                            const d = Math.hypot(node.x - neighbor.x, node.y - neighbor.y);
+                            if (d < 80 && Math.random() > 0.92) { // Slow propagation
+                                neighbor.isInfected = true;
+                                changed = true;
+                            }
+                        }
+                    });
+                }
+            });
+            drawNetwork();
+            if (changed || nodes.some(n => !n.isInfected)) {
+                requestAnimationFrame(infectNeighbors);
+            }
+        }
+
+        netCanvas.addEventListener('mousemove', (e) => {
+            if (infected) return;
+            const rect = netCanvas.getBoundingClientRect();
+            const x = e.clientX - rect.left;
+            const y = e.clientY - rect.top;
+            
+            // Check center node hover
+            const center = nodes[0];
+            const d = Math.hypot(x - center.x, y - center.y);
+            
+            if (d < 20) {
+                infected = true;
+                center.isInfected = true;
+                infectNeighbors();
+            }
+        });
+
+        initNetwork();
+        drawNetwork();
+
+
+        /* --- SIMULATION 5: CONCLUSION SLIDER --- */
+        const stratSlider = document.getElementById('strategy-slider');
+        const stratText = document.getElementById('strategy-text');
+        const successBar = document.getElementById('success-bar');
+        const successText = document.getElementById('success-text');
+
+        stratSlider.addEventListener('input', (e) => {
+            const val = parseInt(e.target.value);
+            
+            // Update Progress
+            // Map 0-100 to 5%-60%
+            const prob = 5 + (val / 100 * 55);
+            successBar.style.width = `${prob}%`;
+            successText.innerText = `${Math.round(prob)}%`;
+
+            // Update Text
+            if (val < 30) {
+                stratText.innerText = `"We are trying to make the model solve the Riemann Hypothesis." (High Hype, Low Utility)`;
+                stratText.style.color = "var(--accent-hype)";
+            } else if (val < 70) {
+                stratText.innerText = `"We are starting to integrate it into existing databases."`;
+                stratText.style.color = "#666";
+            } else {
+                stratText.innerText = `"We are using a basic model to auto-tag support tickets." (Low Hype, High Utility)`;
+                stratText.style.color = "var(--accent-success)";
+            }
+        });
+
+    </script>
+</body>
+</html>

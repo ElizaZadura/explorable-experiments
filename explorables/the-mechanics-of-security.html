@@ -1,0 +1,864 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>The Mechanics of Security</title>
+    <style>
+        :root {
+            --bg: #f8f9fa;
+            --text: #2d3436;
+            --highlight: #0984e3;
+            --success: #00b894;
+            --danger: #d63031;
+            --metal: #636e72;
+            --metal-light: #b2bec3;
+            --font-stack: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+        }
+
+        body {
+            background-color: var(--bg);
+            color: var(--text);
+            font-family: var(--font-stack);
+            margin: 0;
+            padding: 0;
+            line-height: 1.6;
+        }
+
+        header {
+            text-align: center;
+            padding: 4rem 1rem;
+            background: white;
+            border-bottom: 1px solid #e0e0e0;
+        }
+
+        h1 {
+            margin: 0;
+            font-weight: 700;
+            letter-spacing: -0.5px;
+        }
+
+        h2 {
+            margin-top: 0;
+            font-weight: 600;
+        }
+
+        .subtitle {
+            color: var(--metal);
+            font-weight: 400;
+            margin-top: 0.5rem;
+        }
+
+        main {
+            max-width: 680px;
+            margin: 0 auto;
+            padding: 2rem 1rem;
+        }
+
+        section {
+            margin-bottom: 5rem;
+            padding-bottom: 2rem;
+            border-bottom: 1px dashed #dfe6e9;
+        }
+
+        section:last-child {
+            border-bottom: none;
+        }
+
+        p {
+            font-size: 1.1rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .canvas-container {
+            width: 100%;
+            background: white;
+            border: 1px solid #dfe6e9;
+            border-radius: 8px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+            margin: 2rem 0;
+            position: relative;
+            overflow: hidden;
+        }
+
+        canvas {
+            display: block;
+            width: 100%;
+            height: auto;
+            cursor: pointer;
+        }
+
+        .controls {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 1rem;
+            padding: 1rem;
+            background: #f1f2f6;
+            border-top: 1px solid #dfe6e9;
+            border-radius: 0 0 8px 8px;
+        }
+
+        .control-row {
+            display: flex;
+            align-items: center;
+            width: 100%;
+            gap: 1rem;
+        }
+
+        label {
+            font-weight: 600;
+            font-size: 0.9rem;
+            min-width: 100px;
+        }
+
+        input[type=range] {
+            flex-grow: 1;
+            cursor: pointer;
+        }
+
+        .status-text {
+            font-size: 0.9rem;
+            font-weight: 600;
+            color: var(--metal);
+            min-height: 1.5em;
+            text-align: center;
+            width: 100%;
+        }
+
+        .btn {
+            background: var(--highlight);
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 4px;
+            font-weight: 600;
+            cursor: pointer;
+            user-select: none;
+            touch-action: manipulation;
+        }
+
+        .btn:active, .btn.active {
+            background: #0769b5;
+            transform: translateY(1px);
+        }
+
+        .instruction {
+            font-size: 0.85rem;
+            color: var(--metal);
+            text-align: center;
+            margin-top: 0.5rem;
+        }
+
+        /* Mobile adjustments */
+        @media (max-width: 600px) {
+            header { padding: 2rem 1rem; }
+            p { font-size: 1rem; }
+        }
+    </style>
+</head>
+<body>
+
+<header>
+    <h1>The Mechanics of Security</h1>
+    <div class="subtitle">An Interactive Deconstruction of Physical Locks</div>
+</header>
+
+<main>
+
+    <!-- SECTION 1: SHEAR LINE -->
+    <section id="sec-shear">
+        <h2>1. The Theory of the Shear Line</h2>
+        <p>
+            A lock is a puzzle made of metal. Inside the brass cylinder are stacks of pins pushed down by springs. 
+            The <strong>Key Pins</strong> (bottom) and <strong>Driver Pins</strong> (top) meet at a specific point. 
+            To rotate the lock, the gap between these pins must align perfectly with the edge of the cylinder. 
+            This is called the <strong>Shear Line</strong>.
+        </p>
+
+        <div class="canvas-container">
+            <canvas id="canvas-shear"></canvas>
+            <div class="controls">
+                <div class="status-text" id="status-shear">Adjust key height to align pins.</div>
+                <div class="control-row">
+                    <label for="range-key">Key Height</label>
+                    <input type="range" id="range-key" min="0" max="100" value="0">
+                </div>
+            </div>
+        </div>
+        <p class="instruction">Drag the slider to insert the virtual key.</p>
+    </section>
+
+    <!-- SECTION 2: BINDING -->
+    <section id="sec-binding">
+        <h2>2. The Imperfection</h2>
+        <p>
+            If locks were perfect, picking would be impossible. But manufacturing is never perfect. 
+            The holes drilled for the pins are never perfectly straight. When you apply rotation (torque) 
+            with the tension wrench, the plug hits <strong>one</strong> pin stack before the others.
+        </p>
+
+        <div class="canvas-container">
+            <canvas id="canvas-binding"></canvas>
+            <div class="controls">
+                <div class="status-text" id="status-binding">Pins are loose. Apply tension.</div>
+                <div class="control-row">
+                    <label for="range-tension">Apply Tension</label>
+                    <input type="range" id="range-tension" min="0" max="100" value="0">
+                </div>
+            </div>
+        </div>
+        <p class="instruction">Increase tension to see which pin binds first.</p>
+    </section>
+
+    <!-- SECTION 3: PICKING -->
+    <section id="sec-picking">
+        <h2>3. The Attack (Picking)</h2>
+        <p>
+            Now we apply the hack. We use the tension wrench to rotate the plug and bind the pins. 
+            Then, we use the pick to lift the <strong>binding pin</strong> until it clears the shear line. 
+            The plug turns slightly more, trapping the driver pin above the line.
+        </p>
+
+        <div class="canvas-container">
+            <canvas id="canvas-picking"></canvas>
+            <div class="controls">
+                <div class="status-text" id="status-picking">Hold Tension, then lift the binding pin.</div>
+                <div class="control-row" style="justify-content: center;">
+                    <button id="btn-tension" class="btn">Hold Tension</button>
+                    <button id="btn-reset-pick" class="btn" style="background-color: var(--metal);">Reset</button>
+                </div>
+            </div>
+        </div>
+        <p class="instruction"><strong>Desktop:</strong> Hold Spacebar for Tension, Mouse to Pick.<br><strong>Mobile:</strong> Hold 'Tension' button, Drag finger to Pick.</p>
+    </section>
+
+    <!-- SECTION 4: SHIMMING -->
+    <section id="sec-shimming">
+        <h2>4. The Bypass (Shimming)</h2>
+        <p>
+            Picking attacks the pins. But sometimes, it's easier to attack the latch. 
+            Padlocks have a spring-loaded pawl that holds the shackle. By sliding a thin piece of metal (a shim) 
+            down the shackle, we can push the spring back directly, bypassing the key entirely.
+        </p>
+
+        <div class="canvas-container">
+            <canvas id="canvas-shim"></canvas>
+            <div class="controls">
+                <div class="status-text" id="status-shim">Insert shim to depress latch.</div>
+                <div class="control-row">
+                    <label for="range-shim">Shim Depth</label>
+                    <input type="range" id="range-shim" min="0" max="100" value="0">
+                </div>
+            </div>
+        </div>
+    </section>
+
+</main>
+
+<script>
+/**
+ * GLOBAL UTILITIES
+ */
+const COLORS = {
+    bg: '#f8f9fa',
+    text: '#2d3436',
+    highlight: '#0984e3',
+    success: '#00b894',
+    danger: '#d63031',
+    metal: '#636e72',
+    metalDark: '#2d3436',
+    metalLight: '#b2bec3',
+    brass: '#e1b12c'
+};
+
+function setupCanvas(canvasId, aspectRatio = 16/9) {
+    const canvas = document.getElementById(canvasId);
+    const ctx = canvas.getContext('2d');
+    
+    const resize = () => {
+        const parent = canvas.parentElement;
+        const width = parent.clientWidth;
+        canvas.width = width;
+        canvas.height = width / aspectRatio;
+    };
+    
+    window.addEventListener('resize', resize);
+    resize();
+    return { canvas, ctx };
+}
+
+// Helper to draw a spring
+function drawSpring(ctx, x, y, w, h, coils = 5) {
+    ctx.beginPath();
+    ctx.strokeStyle = COLORS.metalLight;
+    ctx.lineWidth = 2;
+    ctx.moveTo(x, y);
+    const step = h / coils;
+    for(let i=0; i<=coils; i++) {
+        ctx.lineTo(x + (i%2===0 ? w : -w), y + (step * i));
+    }
+    ctx.stroke();
+}
+
+// Helper to draw a pin
+function drawPin(ctx, x, y, w, h, type = 'driver', color = null) {
+    const r = 4; // corner radius
+    ctx.fillStyle = color ? color : (type === 'driver' ? COLORS.metal : COLORS.brass);
+    ctx.beginPath();
+    ctx.roundRect(x - w/2, y, w, h, r);
+    ctx.fill();
+    // Shine effect
+    ctx.fillStyle = 'rgba(255,255,255,0.3)';
+    ctx.fillRect(x - w/2 + 2, y, w/4, h);
+}
+
+/**
+ * SIMULATION 1: THE SHEAR LINE
+ */
+(function() {
+    const { canvas, ctx } = setupCanvas('canvas-shear');
+    const slider = document.getElementById('range-key');
+    const status = document.getElementById('status-shear');
+    
+    let keyVal = 0;
+    let unlocked = false;
+    
+    // Pin Configuration
+    const pins = [
+        { height: 40, bitting: 20 },
+        { height: 25, bitting: 35 },
+        { height: 50, bitting: 10 }
+    ];
+
+    function render() {
+        const w = canvas.width;
+        const h = canvas.height;
+        const pinW = w * 0.08;
+        const spacing = w * 0.15;
+        const startX = w * 0.35;
+        const shearLineY = h * 0.4;
+        const plugH = h * 0.4;
+        
+        ctx.clearRect(0, 0, w, h);
+
+        // Draw Housing
+        ctx.fillStyle = '#dfe6e9';
+        ctx.fillRect(0, 0, w, shearLineY);
+        
+        // Draw Plug
+        ctx.save();
+        if (unlocked) {
+            // Rotate visual logic simply by drawing plug angled? 
+            // For 2D side view, we just shift color to indicate success
+            ctx.fillStyle = '#dff9fb'; 
+        } else {
+            ctx.fillStyle = '#fff';
+        }
+        ctx.fillRect(0, shearLineY, w, plugH);
+        ctx.restore();
+
+        // Draw Shear Line Marker
+        ctx.strokeStyle = COLORS.danger;
+        ctx.setLineDash([5, 5]);
+        ctx.beginPath();
+        ctx.moveTo(0, shearLineY);
+        ctx.lineTo(w, shearLineY);
+        ctx.stroke();
+        ctx.setLineDash([]);
+
+        let alignedCount = 0;
+
+        // Draw Pins
+        pins.forEach((pin, i) => {
+            const x = startX + (i * spacing);
+            
+            // Calculate Lift
+            // Formula: The key lifts the pin up. 
+            // Max lift matches the bitting requirements.
+            const lift = (keyVal / 100) * pin.bitting * 2; 
+            
+            // Total height of key pin + lift
+            const currentKeyPinTop = (shearLineY + 60) - lift - pin.height; 
+            
+            // Check alignment
+            const gapY = currentKeyPinTop + pin.height; // The split point
+            const isAligned = Math.abs(gapY - shearLineY) < 3;
+            
+            if(isAligned) alignedCount++;
+
+            // Draw Spring
+            drawSpring(ctx, x, 10, 5, currentKeyPinTop - 10);
+
+            // Draw Driver Pin (Top)
+            const driverH = 50;
+            drawPin(ctx, x, currentKeyPinTop - driverH, pinW, driverH, 'driver', isAligned ? COLORS.success : null);
+
+            // Draw Key Pin (Bottom)
+            drawPin(ctx, x, currentKeyPinTop, pinW, pin.height, 'key');
+        });
+
+        // Key Graphic
+        ctx.fillStyle = COLORS.metalLight;
+        ctx.beginPath();
+        ctx.moveTo(0, h);
+        ctx.lineTo(w, h);
+        // Simple key shape rising
+        const keyTop = h - 20 - (keyVal/2);
+        ctx.lineTo(w, keyTop);
+        ctx.lineTo(0, keyTop);
+        ctx.fill();
+
+        // Logic Update
+        if (alignedCount === 3 && !unlocked) {
+            unlocked = true;
+            status.textContent = "Shear Line Aligned! Lock Open.";
+            status.style.color = COLORS.success;
+        } else if (alignedCount < 3) {
+            unlocked = false;
+            status.textContent = `Pin Height + Key Lift = Shear Height (${alignedCount}/3)`;
+            status.style.color = COLORS.text;
+        }
+    }
+
+    slider.addEventListener('input', (e) => {
+        keyVal = parseInt(e.target.value);
+        requestAnimationFrame(render);
+    });
+
+    // Initial draw
+    requestAnimationFrame(render);
+})();
+
+/**
+ * SIMULATION 2: BINDING (Top Down)
+ */
+(function() {
+    const { canvas, ctx } = setupCanvas('canvas-binding', 2); // Wider aspect
+    const slider = document.getElementById('range-tension');
+    const status = document.getElementById('status-binding');
+    
+    let tension = 0;
+
+    function render() {
+        const w = canvas.width;
+        const h = canvas.height;
+        const cx = w / 2;
+        const cy = h / 2;
+        const rOuter = h * 0.4;
+        const rInner = rOuter - 15;
+
+        ctx.clearRect(0, 0, w, h);
+
+        // Rotation based on tension
+        // Max rotation is limited by the binding pin
+        const rotation = (tension / 100) * 0.15; // Radians
+
+        // Draw Housing (Static)
+        ctx.strokeStyle = COLORS.metal;
+        ctx.lineWidth = 5;
+        ctx.beginPath();
+        ctx.arc(cx, cy, rOuter, 0, Math.PI * 2);
+        ctx.stroke();
+
+        // Draw Plug (Rotates)
+        ctx.save();
+        ctx.translate(cx, cy);
+        ctx.rotate(rotation);
+        ctx.fillStyle = '#dfe6e9';
+        ctx.beginPath();
+        ctx.arc(0, 0, rInner, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.strokeStyle = COLORS.text;
+        ctx.lineWidth = 2;
+        ctx.stroke();
+
+        // Draw Pin Holes
+        const pinRadius = 10;
+        const positions = [
+            { a: -0.5, r: rInner - 15, id: 1 },
+            { a: 0, r: rInner - 15, id: 2 }, // The Binding Pin
+            { a: 0.5, r: rInner - 15, id: 3 }
+        ];
+
+        positions.forEach(p => {
+            const px = Math.cos(p.a) * p.r;
+            const py = Math.sin(p.a) * p.r;
+            
+            ctx.beginPath();
+            ctx.arc(px, py, pinRadius, 0, Math.PI * 2);
+            
+            // Logic: If tension is high, Pin 2 hits the wall
+            if (p.id === 2 && tension > 60) {
+                ctx.fillStyle = COLORS.danger;
+            } else {
+                ctx.fillStyle = COLORS.highlight;
+            }
+            ctx.fill();
+            
+            // Draw force vector if binding
+            if (p.id === 2 && tension > 60) {
+                ctx.beginPath();
+                ctx.strokeStyle = COLORS.danger;
+                ctx.lineWidth = 3;
+                ctx.moveTo(px + 15, py);
+                ctx.lineTo(px + 30, py);
+                ctx.stroke();
+            }
+        });
+
+        ctx.restore();
+
+        // Wall bumpers (The imperfection)
+        // We draw a little nub on the housing wall near pin 2
+        ctx.fillStyle = COLORS.metal;
+        ctx.beginPath();
+        const bumpX = cx + rOuter - 5;
+        const bumpY = cy;
+        ctx.arc(bumpX, bumpY, 5, 0, Math.PI*2);
+        ctx.fill();
+
+        // Text Logic
+        if (tension > 60) {
+            status.textContent = "Pin #2 is BINDING (Red). It is trapped. Pick this first.";
+            status.style.color = COLORS.danger;
+        } else {
+            status.textContent = "Increase tension to rotate plug.";
+            status.style.color = COLORS.text;
+        }
+    }
+
+    slider.addEventListener('input', (e) => {
+        tension = parseInt(e.target.value);
+        requestAnimationFrame(render);
+    });
+    requestAnimationFrame(render);
+})();
+
+/**
+ * SIMULATION 3: THE PICKING GAME
+ */
+(function() {
+    const { canvas, ctx } = setupCanvas('canvas-picking');
+    const btnTension = document.getElementById('btn-tension');
+    const btnReset = document.getElementById('btn-reset-pick');
+    const status = document.getElementById('status-picking');
+
+    // Game State
+    let pins = [
+        { x: 0, y: 0, lift: 0, set: false, h: 40 },
+        { x: 0, y: 0, lift: 0, set: false, h: 30 },
+        { x: 0, y: 0, lift: 0, set: false, h: 45 },
+        { x: 0, y: 0, lift: 0, set: false, h: 35 },
+        { x: 0, y: 0, lift: 0, set: false, h: 40 }
+    ];
+    // Randomize binding order
+    let bindingOrder = [2, 0, 4, 1, 3]; 
+    let currentBindingIndex = 0; // Points to bindingOrder array
+
+    let tensionApplied = false;
+    let pickPos = { x: 50, y: 150 };
+    let isUnlocked = false;
+
+    // Physics constants
+    const GRAVITY = 2;
+    const SHEAR_LINE_Y = 100; // Relative coord, set in render
+
+    function resetGame() {
+        pins.forEach(p => { p.lift = 0; p.set = false; });
+        currentBindingIndex = 0;
+        isUnlocked = false;
+        status.textContent = "Reset. Hold Tension to start.";
+        status.style.color = COLORS.text;
+        bindingOrder = bindingOrder.sort(() => Math.random() - 0.5); // reshuffle
+    }
+
+    function updatePhysics() {
+        if (isUnlocked) return;
+
+        const w = canvas.width;
+        const h = canvas.height;
+        const shearY = h * 0.4;
+        const pinW = w * 0.06;
+        
+        // Check if pick is lifting a pin
+        let activePinIdx = -1;
+        
+        pins.forEach((pin, i) => {
+            // Hitbox detection
+            const pinLeft = pin.x - pinW/2;
+            const pinRight = pin.x + pinW/2;
+            
+            if (pickPos.x > pinLeft && pickPos.x < pinRight) {
+                // Pick is under this pin
+                // Calculate visual bottom of pin
+                const pinBottom = shearY + pin.h - pin.lift + 20; // +20 for key pin length
+                
+                if (pickPos.y < pinBottom && pickPos.y > shearY - 20) {
+                    // Lifting logic
+                    // Move pin up with pick
+                    pin.lift = Math.max(pin.lift, (shearY + pin.h + 20) - pickPos.y);
+                    activePinIdx = i;
+                }
+            }
+        });
+
+        // Gravity & Setting Logic
+        pins.forEach((pin, i) => {
+            if (pin.set) return; // Stay up if set
+
+            // Check if this is the current binding pin
+            const isBinding = (i === bindingOrder[currentBindingIndex]);
+            
+            // Check if at shear line
+            // Simplified: if lift is enough to push driver above line
+            // Let's say required lift is pin.h
+            const requiredLift = pin.h; 
+            
+            if (tensionApplied && isBinding && pin.lift >= requiredLift) {
+                pin.set = true;
+                pin.lift = requiredLift; // Snap to line
+                currentBindingIndex++;
+                // Visual feedback
+                status.textContent = "Click! Pin Set.";
+                // Check Win
+                if (currentBindingIndex >= pins.length) {
+                    isUnlocked = true;
+                    status.textContent = "OPEN! All pins set.";
+                    status.style.color = COLORS.success;
+                }
+            } else if (i !== activePinIdx) {
+                // Gravity falls
+                if (pin.lift > 0) {
+                    pin.lift -= GRAVITY;
+                    if (pin.lift < 0) pin.lift = 0;
+                }
+            }
+        });
+
+        // If tension released, everything drops
+        if (!tensionApplied && !isUnlocked) {
+             pins.forEach(p => { 
+                 p.set = false; 
+                 currentBindingIndex = 0;
+             });
+        }
+    }
+
+    function render() {
+        updatePhysics();
+        
+        const w = canvas.width;
+        const h = canvas.height;
+        const shearY = h * 0.4;
+        const pinW = w * 0.06;
+        const startX = w * 0.2;
+        const spacing = w * 0.12;
+
+        ctx.clearRect(0, 0, w, h);
+
+        // Draw Housing
+        ctx.fillStyle = '#dfe6e9';
+        ctx.fillRect(0, 0, w, shearY);
+        
+        // Draw Plug
+        ctx.fillStyle = isUnlocked ? '#dff9fb' : '#fff';
+        ctx.fillRect(0, shearY, w, h * 0.4);
+
+        // Shear Line
+        ctx.strokeStyle = COLORS.danger;
+        ctx.setLineDash([2, 2]);
+        ctx.beginPath();
+        ctx.moveTo(0, shearY);
+        ctx.lineTo(w, shearY);
+        ctx.stroke();
+        ctx.setLineDash([]);
+
+        // Draw Pins
+        pins.forEach((pin, i) => {
+            pin.x = startX + (i * spacing);
+            
+            // Driver Pin
+            const driverY = shearY - 50 - pin.lift;
+            let driverColor = COLORS.metal;
+            if (pin.set) driverColor = COLORS.success;
+            else if (tensionApplied && i === bindingOrder[currentBindingIndex]) driverColor = COLORS.danger; // Hint: Binding
+            
+            drawPin(ctx, pin.x, driverY, pinW, 50, 'driver', driverColor);
+
+            // Key Pin
+            const keyPinY = shearY - pin.lift;
+            drawPin(ctx, pin.x, keyPinY, pinW, pin.h + 20, 'brass');
+        });
+
+        // Draw Tension Wrench (Bottom)
+        ctx.strokeStyle = COLORS.metalDark;
+        ctx.lineWidth = 6;
+        ctx.beginPath();
+        ctx.moveTo(w * 0.1, h * 0.7);
+        ctx.lineTo(w * 0.3, h * 0.7);
+        ctx.lineTo(w * 0.3, h * 0.9);
+        if (tensionApplied) {
+            ctx.strokeStyle = COLORS.highlight; // Highlight when active
+        }
+        ctx.stroke();
+
+        // Draw Pick
+        ctx.strokeStyle = COLORS.metalDark;
+        ctx.lineWidth = 4;
+        ctx.beginPath();
+        ctx.moveTo(0, h); // handle
+        // Bezier curve to mouse pos
+        ctx.quadraticCurveTo(pickPos.x - 50, h, pickPos.x, pickPos.y);
+        // Hook tip
+        ctx.lineTo(pickPos.x + 5, pickPos.y - 5);
+        ctx.stroke();
+
+        requestAnimationFrame(render);
+    }
+
+    // Input Handlers
+    function setPickPos(evt) {
+        const rect = canvas.getBoundingClientRect();
+        const clientX = evt.touches ? evt.touches[0].clientX : evt.clientX;
+        const clientY = evt.touches ? evt.touches[0].clientY : evt.clientY;
+        
+        // Scale for canvas resolution
+        const scaleX = canvas.width / rect.width;
+        const scaleY = canvas.height / rect.height;
+
+        pickPos.x = (clientX - rect.left) * scaleX;
+        pickPos.y = (clientY - rect.top) * scaleY;
+    }
+
+    // Mouse/Touch for Pick
+    canvas.addEventListener('mousemove', setPickPos);
+    canvas.addEventListener('touchmove', (e) => { e.preventDefault(); setPickPos(e); }, {passive: false});
+
+    // Tension Controls
+    const startTension = () => { tensionApplied = true; btnTension.classList.add('active'); };
+    const endTension = () => { tensionApplied = false; btnTension.classList.remove('active'); };
+
+    btnTension.addEventListener('mousedown', startTension);
+    btnTension.addEventListener('mouseup', endTension);
+    btnTension.addEventListener('touchstart', (e) => { e.preventDefault(); startTension(); });
+    btnTension.addEventListener('touchend', (e) => { e.preventDefault(); endTension(); });
+
+    // Keyboard Access
+    window.addEventListener('keydown', (e) => { if(e.code === 'Space') startTension(); });
+    window.addEventListener('keyup', (e) => { if(e.code === 'Space') endTension(); });
+
+    btnReset.addEventListener('click', resetGame);
+
+    requestAnimationFrame(render);
+})();
+
+/**
+ * SIMULATION 4: SHIMMING
+ */
+(function() {
+    const { canvas, ctx } = setupCanvas('canvas-shim');
+    const slider = document.getElementById('range-shim');
+    const status = document.getElementById('status-shim');
+    
+    let shimDepth = 0;
+
+    function render() {
+        const w = canvas.width;
+        const h = canvas.height;
+        
+        const shackleX = w * 0.4;
+        const shackleW = w * 0.15;
+        const housingX = w * 0.4; // Where housing starts
+        
+        // Latch Logic
+        // As shimDepth goes 0->100, latch moves Left
+        const latchRetraction = (shimDepth / 100) * 30;
+        const latchX = shackleX + shackleW - 10 - latchRetraction; 
+
+        ctx.clearRect(0, 0, w, h);
+
+        // Draw Shackle (Vertical Bar)
+        ctx.fillStyle = COLORS.metal;
+        ctx.fillRect(shackleX, 20, shackleW, h - 20);
+        
+        // Draw Locking Cutout in Shackle
+        ctx.fillStyle = '#fff';
+        ctx.beginPath();
+        ctx.moveTo(shackleX + shackleW, h * 0.5);
+        ctx.lineTo(shackleX + shackleW - 20, h * 0.5);
+        ctx.lineTo(shackleX + shackleW - 20, h * 0.6);
+        ctx.lineTo(shackleX + shackleW, h * 0.6);
+        ctx.fill();
+
+        // Draw Housing Body (Right side)
+        ctx.fillStyle = '#dfe6e9';
+        ctx.fillRect(shackleX + shackleW + 5, 0, w, h);
+
+        // Draw Latch (Spring loaded wedge)
+        ctx.fillStyle = COLORS.brass;
+        ctx.beginPath();
+        // Triangle shape
+        ctx.moveTo(latchX, h * 0.55); // Tip
+        ctx.lineTo(latchX + 40, h * 0.5); // Top back
+        ctx.lineTo(latchX + 40, h * 0.65); // Bottom back
+        ctx.fill();
+
+        // Draw Spring behind latch
+        drawSpring(ctx, latchX + 40, h * 0.57, 10, 5, 5); // Horizontal spring? Just drawing line for now
+        ctx.strokeStyle = COLORS.metal;
+        ctx.beginPath();
+        ctx.moveTo(latchX + 40, h * 0.57);
+        ctx.lineTo(w, h * 0.57);
+        ctx.stroke();
+
+        // Draw Shim
+        const shimY = (shimDepth / 100) * (h * 0.6);
+        ctx.fillStyle = COLORS.highlight;
+        ctx.beginPath();
+        // Thin strip going down between shackle and housing
+        ctx.rect(shackleX + shackleW + 1, 0, 4, shimY);
+        ctx.fill();
+
+        // Force Vector Arrow (Physics visualization)
+        if (shimDepth > 10 && shimDepth < 90) {
+            ctx.strokeStyle = COLORS.danger;
+            ctx.lineWidth = 2;
+            const arrowX = shackleX + shackleW + 10;
+            const arrowY = shimY;
+            
+            // Down arrow
+            ctx.beginPath();
+            ctx.moveTo(arrowX, arrowY - 20);
+            ctx.lineTo(arrowX, arrowY);
+            ctx.stroke();
+            
+            // Left arrow (resultant force)
+            ctx.beginPath();
+            ctx.moveTo(arrowX, arrowY);
+            ctx.lineTo(arrowX - 20, arrowY);
+            ctx.stroke();
+        }
+
+        // Status
+        if (shimDepth > 80) {
+            status.textContent = "Latch Retracted. Lock Open.";
+            status.style.color = COLORS.success;
+            // Visually pop shackle up
+            ctx.clearRect(shackleX, 0, shackleW, 20); // Clear top overlap
+        } else {
+            status.textContent = "Slide shim down to push latch back.";
+            status.style.color = COLORS.text;
+        }
+    }
+
+    slider.addEventListener('input', (e) => {
+        shimDepth = parseInt(e.target.value);
+        requestAnimationFrame(render);
+    });
+    requestAnimationFrame(render);
+})();
+
+</script>
+</body>
+</html>

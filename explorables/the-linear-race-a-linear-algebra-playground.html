@@ -1,0 +1,396 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>The Linear Race: A Linear Algebra Playground</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@3.9.1/dist/chart.min.js"></script>
+    <style>
+        :root {
+            --primary-color: #007bff;
+            --secondary-color: #dc3545;
+            --background-color: #f8f9fa;
+            --text-color: #212529;
+            --border-color: #dee2e6;
+            --card-bg: #ffffff;
+            --label-color: #495057;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+            background-color: var(--background-color);
+            color: var(--text-color);
+            margin: 0;
+            padding: 1rem;
+            line-height: 1.6;
+        }
+
+        h1, h2, h3 {
+            font-weight: 300;
+            color: var(--primary-color);
+            margin-top: 0;
+        }
+        
+        h1 {
+            text-align: center;
+            margin-bottom: 2rem;
+        }
+
+        .container {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 2rem;
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        .column {
+            flex: 1;
+            min-width: 320px;
+            background-color: var(--card-bg);
+            padding: 1.5rem;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+            border: 1px solid var(--border-color);
+        }
+
+        .controls-section {
+            margin-bottom: 2rem;
+            padding-bottom: 1.5rem;
+            border-bottom: 1px solid var(--border-color);
+        }
+        .controls-section:last-child {
+            border-bottom: none;
+            margin-bottom: 0;
+        }
+
+        .control-group {
+            margin-bottom: 1rem;
+        }
+
+        .control-group label {
+            display: block;
+            font-weight: 600;
+            margin-bottom: 0.5rem;
+            color: var(--label-color);
+        }
+
+        .slider-container {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+
+        input[type="range"] {
+            flex-grow: 1;
+            cursor: pointer;
+        }
+
+        input[type="number"] {
+            width: 60px;
+            text-align: center;
+            border: 1px solid var(--border-color);
+            border-radius: 4px;
+            padding: 0.25rem;
+        }
+
+        .explanation-text {
+            font-size: 0.9rem;
+            color: #6c757d;
+            margin-top: 0.5rem;
+        }
+        
+        #math-explanation h3 {
+            margin-top: 1.5rem;
+            padding-top: 1rem;
+            border-top: 1px dashed var(--border-color);
+            color: #333;
+        }
+        
+        #math-explanation h3:first-child {
+            margin-top: 0;
+            padding-top: 0;
+            border-top: none;
+        }
+
+        #math-explanation code {
+            background-color: #e9ecef;
+            padding: 0.2em 0.4em;
+            border-radius: 3px;
+            font-family: "SFMono-Regular", Consolas, "Liberation Mono", Menlo, monospace;
+            font-size: 1.1em;
+        }
+        
+        #solution-container {
+            padding: 1rem;
+            border-radius: 5px;
+            margin-top: 1rem;
+            font-weight: 500;
+        }
+
+        .solution-one { background-color: #d4edda; border-left: 5px solid #28a745; }
+        .solution-none { background-color: #f8d7da; border-left: 5px solid #dc3545; }
+        .solution-infinite { background-color: #cce5ff; border-left: 5px solid #007bff; }
+
+        @media (max-width: 992px) {
+            .container {
+                flex-direction: column;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <h1>The Linear Race: A Linear Algebra Playground</h1>
+
+    <div class="container">
+        <!-- Left Column: Controls -->
+        <div class="column">
+            <h2>Controls Panel</h2>
+
+            <div class="controls-section">
+                <h3>Runner 1 (The Leader)</h3>
+                <div class="control-group">
+                    <label for="v1-slider">Speed (v1)</label>
+                    <div class="slider-container">
+                        <input type="range" id="v1-slider" min="0" max="20" step="0.5" value="15">
+                        <input type="number" id="v1-value" min="0" max="20" step="0.5" value="15"> m/s
+                    </div>
+                    <p class="explanation-text">Set the constant speed of Runner 1. This value represents the slope of Runner 1's line on the graph.</p>
+                </div>
+            </div>
+
+            <div class="controls-section">
+                <h3>Runner 2 (The Chaser)</h3>
+                <div class="control-group">
+                    <label for="t_start-slider">Head Start for Runner 1</label>
+                     <div class="slider-container">
+                        <input type="range" id="t_start-slider" min="0" max="30" step="1" value="5">
+                        <input type="number" id="t_start-value" min="0" max="30" step="1" value="5"> seconds
+                    </div>
+                    <p class="explanation-text">Set how many seconds Runner 1 gets to run before Runner 2 starts. This shifts Runner 2's starting point forward in time.</p>
+                </div>
+                <div class="control-group">
+                    <label for="v2-slider">Speed (v2)</label>
+                    <div class="slider-container">
+                        <input type="range" id="v2-slider" min="0" max="20" step="0.5" value="18">
+                        <input type="number" id="v2-value" min="0" max="20" step="0.5" value="18"> m/s
+                    </div>
+                    <p class="explanation-text">Set the constant speed of Runner 2. Notice how when this speed is greater than Runner 1's, a chase is possible. What happens if it's the same or less?</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Right Column: Visualization and Explanation -->
+        <div class="column">
+            <h2>Visualization & Explanation</h2>
+            
+            <div id="graph-visualization">
+                <canvas id="race-chart"></canvas>
+            </div>
+
+            <div id="math-explanation">
+                <h3>The Problem</h3>
+                <p id="problem-text"></p>
+
+                <h3>System of Equations</h3>
+                <p>This is a 'system of linear equations'. We are looking for the single point <code>(time, distance)</code> where both equations are true. This is the point where the lines cross on the graph.</p>
+                <p>Runner 1: <code id="eq1-text"></code></p>
+                <p>Runner 2: <code id="eq2-text"></code></p>
+
+                <h3>The Solution</h3>
+                <div id="solution-container"></div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // DOM Element Selection
+        const v1Slider = document.getElementById('v1-slider');
+        const v1Value = document.getElementById('v1-value');
+        const tStartSlider = document.getElementById('t_start-slider');
+        const tStartValue = document.getElementById('t_start-value');
+        const v2Slider = document.getElementById('v2-slider');
+        const v2Value = document.getElementById('v2-value');
+
+        const problemText = document.getElementById('problem-text');
+        const eq1Text = document.getElementById('eq1-text');
+        const eq2Text = document.getElementById('eq2-text');
+        const solutionContainer = document.getElementById('solution-container');
+
+        // Chart.js Setup
+        const ctx = document.getElementById('race-chart').getContext('2d');
+        const chartConfig = {
+            type: 'line',
+            data: {
+                labels: [],
+                datasets: [
+                    {
+                        label: 'Runner 1',
+                        data: [],
+                        borderColor: 'blue',
+                        backgroundColor: 'rgba(0, 0, 255, 0.1)',
+                        fill: false,
+                        tension: 0.1,
+                        borderWidth: 2
+                    },
+                    {
+                        label: 'Runner 2',
+                        data: [],
+                        borderColor: 'red',
+                        backgroundColor: 'rgba(255, 0, 0, 0.1)',
+                        fill: false,
+                        tension: 0.1,
+                        borderWidth: 2
+                    },
+                    {
+                        label: 'Intersection',
+                        data: [],
+                        borderColor: 'green',
+                        backgroundColor: 'green',
+                        pointRadius: 6,
+                        pointHoverRadius: 8,
+                        type: 'scatter',
+                        showLine: false,
+                    }
+                ]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: true,
+                scales: {
+                    x: {
+                        title: {
+                            display: true,
+                            text: 'Time (seconds)',
+                            font: { size: 14 }
+                        },
+                        beginAtZero: true
+                    },
+                    y: {
+                        title: {
+                            display: true,
+                            text: 'Distance (meters)',
+                            font: { size: 14 }
+                        },
+                        beginAtZero: true
+                    }
+                },
+                plugins: {
+                    tooltip: {
+                        callbacks: {
+                            label: function(context) {
+                                if (context.dataset.label === 'Intersection') {
+                                    return `Catch at (${context.parsed.x.toFixed(2)}s, ${context.parsed.y.toFixed(2)}m)`;
+                                }
+                                return `${context.dataset.label}: ${context.parsed.y.toFixed(2)} meters`;
+                            }
+                        }
+                    }
+                }
+            }
+        };
+        const raceChart = new Chart(ctx, chartConfig);
+
+        // Main Update Function
+        function updateApp() {
+            // 1. Get values from controls
+            const v1 = parseFloat(v1Slider.value);
+            const t_start = parseFloat(tStartSlider.value);
+            const v2 = parseFloat(v2Slider.value);
+
+            v1Value.value = v1;
+            tStartValue.value = t_start;
+            v2Value.value = v2;
+
+            // 2. Update the explanation text
+            problemText.innerHTML = `Runner 1 runs at <strong>${v1}</strong> m/s. Runner 2 starts <strong>${t_start}</strong> seconds later and runs at <strong>${v2}</strong> m/s. When and where will Runner 2 catch up to Runner 1?`;
+            eq1Text.textContent = `distance = ${v1} * time`;
+            eq2Text.textContent = `distance = ${v2} * (time - ${t_start})`;
+
+            // 3. Calculate the solution and handle cases
+            let t_catch = null;
+            let d_catch = null;
+            let solutionHtml = '';
+            let solutionClass = '';
+
+            if (v2 > v1) {
+                // Case 1: One Solution
+                t_catch = (v2 * t_start) / (v2 - v1);
+                d_catch = v1 * t_catch;
+                solutionClass = 'solution-one';
+                solutionHtml = `
+                    <p><strong>One Solution:</strong> The lines intersect.</p>
+                    <p>Setting the distances equal: <code>${v1} * time = ${v2} * (time - ${t_start})</code></p>
+                    <p>Runner 2 catches Runner 1 at <strong>${t_catch.toFixed(2)} seconds</strong> after Runner 1 started, at a distance of <strong>${d_catch.toFixed(2)} meters</strong>.</p>
+                `;
+            } else if (v2 === v1) {
+                if (t_start === 0) {
+                    // Case 3: Infinite Solutions
+                    solutionClass = 'solution-infinite';
+                    solutionHtml = `
+                        <p><strong>Infinite Solutions.</strong> Both runners have the same speed and start at the same time. They are always at the same position! The lines on the graph completely overlap.</p>
+                    `;
+                } else {
+                    // Case 2: No Solution (Parallel Lines)
+                    solutionClass = 'solution-none';
+                    solutionHtml = `
+                        <p><strong>No Solution.</strong> Both runners have the same speed, but Runner 2 starts later. Runner 2 can never make up the head start. The lines on the graph are parallel and will never intersect.</p>
+                    `;
+                }
+            } else { // v2 < v1
+                // Case 2: No Solution (Diverging Lines)
+                solutionClass = 'solution-none';
+                solutionHtml = `
+                    <p><strong>No Solution.</strong> Since Runner 2 is slower than Runner 1 and starts later, they will never catch up. The distance between them will only increase. The lines on the graph diverge.</p>
+                `;
+            }
+            solutionContainer.innerHTML = solutionHtml;
+            solutionContainer.className = solutionClass;
+
+            // 4. Update the Graph
+            const maxTime = 60; // Max time on the x-axis
+            const timeLabels = Array.from({ length: maxTime + 1 }, (_, i) => i);
+
+            const dataRunner1 = timeLabels.map(t => v1 * t);
+            const dataRunner2 = timeLabels.map(t => (t >= t_start) ? v2 * (t - t_start) : null);
+            
+            // Set the intersection point data
+            const intersectionData = [];
+            if (t_catch !== null && t_catch >= 0 && t_catch <= maxTime) {
+                intersectionData.push({ x: t_catch, y: d_catch });
+            }
+
+            // Update chart data
+            raceChart.data.labels = timeLabels;
+            raceChart.data.datasets[0].data = dataRunner1;
+            raceChart.data.datasets[1].data = dataRunner2;
+            // The spanGaps property makes the line stop and start correctly
+            raceChart.data.datasets[1].spanGaps = true; 
+            raceChart.data.datasets[2].data = intersectionData;
+            
+            // Dynamically adjust y-axis for better visibility
+            const maxDistance = Math.max(...dataRunner1, ...dataRunner2.filter(d => d !== null));
+            raceChart.options.scales.y.max = Math.ceil((maxDistance * 1.1) / 100) * 100; // Round up to nearest 100
+            
+            raceChart.update();
+        }
+
+        // Event Listeners
+        [v1Slider, tStartSlider, v2Slider].forEach(slider => {
+            slider.addEventListener('input', updateApp);
+        });
+
+        [v1Value, tStartValue, v2Value].forEach(input => {
+            input.addEventListener('change', (e) => {
+                const sliderId = e.target.id.replace('-value', '-slider');
+                document.getElementById(sliderId).value = e.target.value;
+                updateApp();
+            });
+        });
+
+        // Initial call on page load
+        window.onload = updateApp;
+    </script>
+</body>
+</html>

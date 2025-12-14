@@ -1,0 +1,736 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Agent Architecture Sandbox</title>
+    <style>
+        :root {
+            --bg-dark: #1e1e1e;
+            --panel-bg: #252526;
+            --border: #3e3e42;
+            --text-main: #d4d4d4;
+            --text-muted: #858585;
+            --accent: #007acc;
+            --accent-hover: #0062a3;
+            --node-idle: #3c3c3c;
+            --node-active: #007acc;
+            --success: #4ec9b0;
+            --warn: #ce9178;
+            --font-mono: 'Consolas', 'Monaco', 'Courier New', monospace;
+        }
+
+        * { box-sizing: border-box; }
+
+        body {
+            margin: 0;
+            padding: 0;
+            background-color: var(--bg-dark);
+            color: var(--text-main);
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            height: 100vh;
+            overflow: hidden;
+            display: flex;
+        }
+
+        /* --- Layout Columns --- */
+        .col-left {
+            width: 40%;
+            border-right: 1px solid var(--border);
+            display: flex;
+            flex-direction: column;
+            overflow-y: auto;
+        }
+
+        .col-right {
+            width: 60%;
+            display: flex;
+            flex-direction: column;
+            background-color: #1e1e1e;
+        }
+
+        /* --- Sections & Headers --- */
+        .section {
+            padding: 20px;
+            border-bottom: 1px solid var(--border);
+        }
+
+        h1 { font-size: 1.2rem; margin: 0 0 10px 0; color: #fff; }
+        h2 { font-size: 1rem; margin: 0 0 10px 0; color: var(--text-main); text-transform: uppercase; letter-spacing: 1px; }
+        p { font-size: 0.9rem; color: var(--text-muted); line-height: 1.4; margin-bottom: 15px; }
+
+        /* --- Controls --- */
+        label { display: block; margin-bottom: 5px; font-size: 0.85rem; font-weight: bold; }
+        
+        textarea {
+            width: 100%;
+            height: 80px;
+            background: #3c3c3c;
+            border: 1px solid var(--border);
+            color: var(--text-main);
+            padding: 10px;
+            font-family: var(--font-mono);
+            resize: none;
+            margin-bottom: 10px;
+        }
+
+        input[type="range"] { width: 100%; margin-bottom: 20px; }
+
+        /* --- Tool Cards --- */
+        .tool-card {
+            background: #2d2d30;
+            border: 1px solid var(--border);
+            padding: 10px;
+            margin-bottom: 10px;
+            border-radius: 4px;
+        }
+        
+        .tool-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 5px; }
+        .tool-name { font-family: var(--font-mono); color: var(--success); font-weight: bold; font-size: 0.9rem; }
+        
+        .toggle-switch { position: relative; display: inline-block; width: 34px; height: 20px; }
+        .toggle-switch input { opacity: 0; width: 0; height: 0; }
+        .slider { position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background-color: #ccc; transition: .4s; border-radius: 20px; }
+        .slider:before { position: absolute; content: ""; height: 14px; width: 14px; left: 3px; bottom: 3px; background-color: white; transition: .4s; border-radius: 50%; }
+        input:checked + .slider { background-color: var(--accent); }
+        input:checked + .slider:before { transform: translateX(14px); }
+
+        .tool-desc-input {
+            width: 100%;
+            background: #1e1e1e;
+            border: 1px solid #3e3e42;
+            color: var(--text-muted);
+            padding: 5px;
+            font-size: 0.8rem;
+            font-family: var(--font-mono);
+        }
+
+        /* --- Right Panel Components --- */
+        
+        /* Graph Visualization */
+        .graph-container {
+            height: 25%;
+            background: #252526;
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+        }
+        
+        .node-wrapper { display: flex; align-items: center; gap: 20px; }
+        .node {
+            width: 90px;
+            height: 90px;
+            border-radius: 50%;
+            background: var(--node-idle);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.75rem;
+            text-align: center;
+            border: 2px solid transparent;
+            transition: all 0.3s ease;
+            position: relative;
+            z-index: 2;
+        }
+        .node strong { display: block; font-size: 0.9rem; margin-bottom: 2px; }
+        
+        .node.active {
+            background: var(--node-active);
+            color: white;
+            box-shadow: 0 0 15px var(--accent);
+            transform: scale(1.1);
+        }
+
+        .arrow { font-size: 1.5rem; color: var(--text-muted); opacity: 0.3; transition: opacity 0.3s; }
+        .arrow.active { opacity: 1; color: var(--text-main); }
+
+        /* Internal Monologue */
+        .monologue-container {
+            height: 30%;
+            background: #1e1e1e;
+            border-bottom: 1px solid var(--border);
+            padding: 10px;
+            overflow-y: auto;
+            font-family: var(--font-mono);
+            font-size: 0.85rem;
+        }
+        .mono-line { margin-bottom: 4px; }
+        .mono-line.thought { color: var(--text-muted); }
+        .mono-line.action { color: var(--accent); font-weight: bold; }
+        .mono-line.observation { color: var(--success); }
+        .mono-line.error { color: var(--warn); }
+
+        /* Simulated Disk */
+        .disk-container {
+            height: 10%;
+            background: #2d2d30;
+            border-bottom: 1px solid var(--border);
+            padding: 0 20px;
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+        .disk-label { font-size: 0.8rem; color: var(--text-muted); margin-right: 10px; }
+        .file-icon {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            cursor: pointer;
+            width: 50px;
+        }
+        .file-icon svg { width: 24px; height: 24px; fill: var(--text-main); }
+        .file-icon span { font-size: 0.7rem; margin-top: 4px; }
+        .file-icon:hover svg { fill: var(--success); }
+
+        /* Chat Interface */
+        .chat-container {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            background: #1e1e1e;
+        }
+        
+        .chat-window {
+            flex: 1;
+            padding: 20px;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+
+        .message {
+            max-width: 80%;
+            padding: 10px 15px;
+            border-radius: 8px;
+            font-size: 0.9rem;
+            line-height: 1.4;
+        }
+        .message.user { align-self: flex-end; background: #3c3c3c; }
+        .message.agent { align-self: flex-start; background: var(--accent); color: white; }
+
+        .input-area {
+            padding: 15px;
+            background: #252526;
+            border-top: 1px solid var(--border);
+        }
+
+        .scenario-buttons {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 10px;
+            overflow-x: auto;
+            padding-bottom: 5px;
+        }
+
+        .scenario-btn {
+            background: #3c3c3c;
+            border: 1px solid var(--border);
+            color: var(--text-main);
+            padding: 5px 10px;
+            font-size: 0.75rem;
+            cursor: pointer;
+            white-space: nowrap;
+            border-radius: 15px;
+            transition: background 0.2s;
+        }
+        .scenario-btn:hover { background: #505050; }
+
+        .input-wrapper { display: flex; gap: 10px; }
+        
+        input[type="text"] {
+            flex: 1;
+            padding: 10px;
+            border-radius: 4px;
+            border: 1px solid var(--border);
+            background: #1e1e1e;
+            color: white;
+            font-family: inherit;
+        }
+
+        button.send-btn {
+            padding: 0 20px;
+            background: var(--success);
+            border: none;
+            color: #1e1e1e;
+            font-weight: bold;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+        button.send-btn:disabled { background: #555; cursor: not-allowed; }
+
+        /* Modal for File View */
+        .modal {
+            display: none; 
+            position: fixed; z-index: 100; left: 0; top: 0; width: 100%; height: 100%; 
+            background-color: rgba(0,0,0,0.7); 
+            align-items: center; justify-content: center;
+        }
+        .modal-content {
+            background-color: #252526; padding: 20px; border: 1px solid var(--border); 
+            width: 50%; max-height: 80%; overflow: auto; color: var(--text-main); font-family: var(--font-mono);
+            white-space: pre-wrap;
+        }
+        .close-modal { float: right; cursor: pointer; font-size: 1.5rem; }
+
+    </style>
+</head>
+<body>
+
+    <!-- LEFT COLUMN: BLUEPRINT -->
+    <div class="col-left">
+        <div class="section">
+            <h1>Building an AI Agent</h1>
+            <p>Configure the "Brain" (System) and "Hands" (Tools) of your agent. The logic engine simulates how an LLM uses context to select tools.</p>
+        </div>
+
+        <div class="section">
+            <h2>The "Brain" (System Context)</h2>
+            <label for="system-prompt">System Prompt</label>
+            <textarea id="system-prompt" placeholder="Enter system prompt...">You are a helpful assistant that generates sample data for applications.</textarea>
+            <p style="font-size: 0.75rem; margin-top: 0;">Try: "You are a rude pirate".</p>
+
+            <label for="temp-slider">Creativity (Temperature): <span id="temp-val">0.5</span></label>
+            <input type="range" id="temp-slider" min="0" max="1" step="0.1" value="0.5">
+        </div>
+
+        <div class="section">
+            <h2>The "Hands" (Tool Definitions)</h2>
+            <p>If a tool description is missing or misleading, the Agent won't know when to use it.</p>
+
+            <!-- Tool 1 -->
+            <div class="tool-card">
+                <div class="tool-header">
+                    <span class="tool-name">def generate_users(count)</span>
+                    <label class="toggle-switch">
+                        <input type="checkbox" id="tool-gen-users" checked>
+                        <span class="slider"></span>
+                    </label>
+                </div>
+                <input type="text" id="desc-gen-users" class="tool-desc-input" value="Generates a list of mock user data.">
+            </div>
+
+            <!-- Tool 2 -->
+            <div class="tool-card">
+                <div class="tool-header">
+                    <span class="tool-name">def write_json(filename, data)</span>
+                    <label class="toggle-switch">
+                        <input type="checkbox" id="tool-write-json" checked>
+                        <span class="slider"></span>
+                    </label>
+                </div>
+                <input type="text" id="desc-write-json" class="tool-desc-input" value="Saves data to a specific JSON file.">
+            </div>
+
+            <!-- Tool 3 -->
+            <div class="tool-card">
+                <div class="tool-header">
+                    <span class="tool-name">def get_current_time()</span>
+                    <label class="toggle-switch">
+                        <input type="checkbox" id="tool-get-time" checked>
+                        <span class="slider"></span>
+                    </label>
+                </div>
+                <input type="text" id="desc-get-time" class="tool-desc-input" value="Returns the current timestamp.">
+            </div>
+        </div>
+    </div>
+
+    <!-- RIGHT COLUMN: SIMULATION -->
+    <div class="col-right">
+        
+        <!-- 1. Visualization -->
+        <div class="graph-container">
+            <div class="node-wrapper">
+                <div class="node" id="node-input"><strong>Input</strong>User Query</div>
+                <div class="arrow" id="arrow-1">→</div>
+                <div class="node" id="node-llm"><strong>LLM</strong>Reasoning</div>
+                <div class="arrow" id="arrow-2">→</div>
+                <div class="node" id="node-tool"><strong>Tool</strong>Action</div>
+                <div class="arrow" id="arrow-3">→</div>
+                <div class="node" id="node-output"><strong>Output</strong>Response</div>
+            </div>
+        </div>
+
+        <!-- 2. Internal Monologue -->
+        <div class="monologue-container" id="monologue-log">
+            <div class="mono-line thought">// Agent logs will appear here...</div>
+        </div>
+
+        <!-- 3. Simulated Disk -->
+        <div class="disk-container" id="disk-area">
+            <span class="disk-label">Simulated Disk:</span>
+            <!-- Files will appear here -->
+        </div>
+
+        <!-- 4. Chat Interface -->
+        <div class="chat-container">
+            <div class="chat-window" id="chat-window">
+                <div class="message agent">Hello! I am your configurable AI agent. How can I help?</div>
+            </div>
+            
+            <div class="input-area">
+                <div class="scenario-buttons">
+                    <button class="scenario-btn" onclick="setScenario('What time is it?')">Time?</button>
+                    <button class="scenario-btn" onclick="setScenario('Tell me a joke')">Joke (No Tools)</button>
+                    <button class="scenario-btn" onclick="setScenario('Generate 5 users')">Gen Users</button>
+                    <button class="scenario-btn" onclick="setScenario('Generate 5 users and save to users.json')">Gen & Save (Multi-step)</button>
+                </div>
+                <div class="input-wrapper">
+                    <input type="text" id="user-input" placeholder="Ask the agent to do something..." autocomplete="off">
+                    <button class="send-btn" id="send-btn">Send</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal for File Viewing -->
+    <div id="file-modal" class="modal">
+        <div class="modal-content">
+            <span class="close-modal">&times;</span>
+            <div id="file-content-display"></div>
+        </div>
+    </div>
+
+    <script>
+        // --- Configuration & State ---
+        const state = {
+            messages: [],
+            isProcessing: false,
+            generatedData: null, // Short-term memory for the agent
+            loopCount: 0
+        };
+
+        const virtualDisk = {};
+
+        // --- DOM Elements ---
+        const chatWindow = document.getElementById('chat-window');
+        const monologueLog = document.getElementById('monologue-log');
+        const diskArea = document.getElementById('disk-area');
+        const userInput = document.getElementById('user-input');
+        const sendBtn = document.getElementById('send-btn');
+        
+        // Config Inputs
+        const sysPromptInput = document.getElementById('system-prompt');
+        const tempSlider = document.getElementById('temp-slider');
+        const tempVal = document.getElementById('temp-val');
+
+        // Tools
+        const tools = {
+            generate_users: {
+                id: 'tool-gen-users',
+                descId: 'desc-gen-users',
+                name: 'generate_users',
+                fn: (count) => {
+                    const users = [];
+                    for(let i=0; i<count; i++) {
+                        users.push({ id: i+1, name: `User_${Math.floor(Math.random()*1000)}`, role: 'customer' });
+                    }
+                    return users;
+                }
+            },
+            write_json: {
+                id: 'tool-write-json',
+                descId: 'desc-write-json',
+                name: 'write_json',
+                fn: (filename, data) => {
+                    virtualDisk[filename] = JSON.stringify(data, null, 2);
+                    renderDisk();
+                    return `File '${filename}' saved successfully.`;
+                }
+            },
+            get_current_time: {
+                id: 'tool-get-time',
+                descId: 'desc-get-time',
+                name: 'get_current_time',
+                fn: () => new Date().toLocaleTimeString()
+            }
+        };
+
+        // --- Event Listeners ---
+        tempSlider.addEventListener('input', (e) => tempVal.textContent = e.target.value);
+        sendBtn.addEventListener('click', handleUserSubmit);
+        userInput.addEventListener('keypress', (e) => { if(e.key === 'Enter') handleUserSubmit(); });
+
+        function setScenario(text) {
+            userInput.value = text;
+            userInput.focus();
+        }
+
+        // --- UI Helpers ---
+        function addMessage(role, text) {
+            const div = document.createElement('div');
+            div.className = `message ${role}`;
+            div.textContent = text;
+            chatWindow.appendChild(div);
+            chatWindow.scrollTop = chatWindow.scrollHeight;
+        }
+
+        function logMonologue(type, text) {
+            const div = document.createElement('div');
+            div.className = `mono-line ${type}`;
+            const prefix = type === 'thought' ? '> Thinking... ' : 
+                           type === 'action' ? '> Action: ' : 
+                           type === 'observation' ? '> Observation: ' : '> ';
+            div.textContent = prefix + text;
+            monologueLog.appendChild(div);
+            monologueLog.scrollTop = monologueLog.scrollHeight;
+        }
+
+        function highlightNode(nodeId) {
+            // Reset all
+            ['node-input', 'node-llm', 'node-tool', 'node-output'].forEach(id => {
+                document.getElementById(id).classList.remove('active');
+            });
+            ['arrow-1', 'arrow-2', 'arrow-3'].forEach(id => {
+                document.getElementById(id).classList.remove('active');
+            });
+
+            if(!nodeId) return;
+
+            document.getElementById(nodeId).classList.add('active');
+            
+            // Handle arrows based on state
+            if(nodeId === 'node-llm') document.getElementById('arrow-1').classList.add('active');
+            if(nodeId === 'node-tool') document.getElementById('arrow-2').classList.add('active');
+            if(nodeId === 'node-output') document.getElementById('arrow-3').classList.add('active'); // Simplified flow
+        }
+
+        function renderDisk() {
+            diskArea.innerHTML = '<span class="disk-label">Simulated Disk:</span>';
+            Object.keys(virtualDisk).forEach(filename => {
+                const icon = document.createElement('div');
+                icon.className = 'file-icon';
+                icon.innerHTML = `
+                    <svg viewBox="0 0 24 24"><path d="M14,2H6A2,2 0 0,0 4,4V20A2,2 0 0,0 6,22H18A2,2 0 0,0 20,20V8L14,2M18,20H6V4H13V9H18V20Z" /></svg>
+                    <span>${filename}</span>
+                `;
+                icon.onclick = () => openFile(filename);
+                diskArea.appendChild(icon);
+            });
+        }
+
+        // --- Modal Logic ---
+        const modal = document.getElementById('file-modal');
+        const closeBtn = document.querySelector('.close-modal');
+        closeBtn.onclick = () => modal.style.display = "none";
+        window.onclick = (event) => { if (event.target == modal) modal.style.display = "none"; };
+
+        function openFile(filename) {
+            document.getElementById('file-content-display').textContent = virtualDisk[filename];
+            modal.style.display = "flex";
+        }
+
+        // --- CORE LOGIC ENGINE (Simulating the LLM) ---
+
+        async function handleUserSubmit() {
+            const text = userInput.value.trim();
+            if(!text || state.isProcessing) return;
+
+            userInput.value = '';
+            state.isProcessing = true;
+            state.loopCount = 0;
+            state.generatedData = null; // Clear context for new turn
+
+            addMessage('user', text);
+            
+            // Start the ReAct Loop
+            highlightNode('node-input');
+            await delay(600);
+            runAgentLoop(text);
+        }
+
+        async function runAgentLoop(inputContext) {
+            // 1. LLM Thinking Node
+            highlightNode('node-llm');
+            
+            // Recursion Breaker
+            if (state.loopCount > 5) {
+                logMonologue('error', 'Recursion limit reached. Terminating loop.');
+                finalizeResponse("I'm stuck in a loop and can't complete the request.");
+                return;
+            }
+            state.loopCount++;
+
+            await delay(800);
+
+            // 2. Heuristic Decision Making
+            // This function simulates the LLM processing the prompt + tool definitions
+            const decision = decideNextStep(inputContext);
+
+            if (decision.action === 'tool_call') {
+                logMonologue('thought', decision.reasoning);
+                await delay(500);
+                
+                // 3. Tool Execution Node
+                highlightNode('node-tool');
+                logMonologue('action', `Calling ${decision.toolName}(${JSON.stringify(decision.args)})`);
+                
+                await delay(800); // Simulate processing time
+                
+                let output;
+                try {
+                    if (decision.toolName === 'generate_users') {
+                        output = tools.generate_users.fn(decision.args);
+                        state.generatedData = output; // Store in short-term memory
+                        output = `Generated ${output.length} users.`;
+                    } else if (decision.toolName === 'write_json') {
+                        // Heuristic: If prompt implied saving generated data, use memory
+                        const dataToSave = decision.args.data || state.generatedData || { error: "No data to save" };
+                        output = tools.write_json.fn(decision.args.filename, dataToSave);
+                    } else if (decision.toolName === 'get_current_time') {
+                        output = tools.get_current_time.fn();
+                    }
+                } catch (err) {
+                    output = "Error executing tool.";
+                }
+
+                logMonologue('observation', `Tool Output: ${output}`);
+                
+                // Loop back with new context
+                // We append the tool output to the context effectively
+                runAgentLoop(inputContext + " [Tool executed, result: " + output + "]");
+
+            } else {
+                // 4. Final Answer
+                logMonologue('thought', decision.reasoning);
+                finalizeResponse(decision.content);
+            }
+        }
+
+        function decideNextStep(context) {
+            const lowerContext = context.toLowerCase();
+            
+            // Helper to check if tool is enabled AND has a description
+            const isToolAvailable = (key) => {
+                const t = tools[key];
+                const enabled = document.getElementById(t.id).checked;
+                const desc = document.getElementById(t.descId).value.trim();
+                return enabled && desc.length > 0;
+            };
+
+            // LOGIC RULES (Heuristics)
+            
+            // 1. Check for broken tool descriptions (Pedagogical step)
+            // If user asks for something but description is empty, LLM fails to pick it up.
+            
+            // 2. Scenario: "Generate users and save" (Multi-step)
+            // Step A: Needs to generate first
+            if (lowerContext.includes('generate') && lowerContext.includes('user') && !lowerContext.includes('generated 5 users')) {
+                if (isToolAvailable('generate_users')) {
+                    return {
+                        action: 'tool_call',
+                        toolName: 'generate_users',
+                        args: 5, // defaulting to 5 for sim
+                        reasoning: "User wants to generate users. I have a tool 'generate_users'. Executing now."
+                    };
+                } else {
+                    // Tool disabled or no description
+                    return {
+                        action: 'final_answer',
+                        content: "I wanted to generate users, but I don't know how (check if the tool is enabled and has a description).",
+                        reasoning: "Intent detected, but tool definition missing."
+                    };
+                }
+            }
+
+            // Step B: Has generated data, now needs to save (if requested)
+            if ((lowerContext.includes('save') || lowerContext.includes('json')) && state.generatedData) {
+                if (isToolAvailable('write_json')) {
+                    return {
+                        action: 'tool_call',
+                        toolName: 'write_json',
+                        args: { filename: 'users.json', data: null }, // Logic will pull from state
+                        reasoning: "I have generated data and the user wants to save it. Calling 'write_json'."
+                    };
+                } else {
+                     return {
+                        action: 'final_answer',
+                        content: "I generated the users, but I cannot save files right now (Tool unavailable).",
+                        reasoning: "Cannot find tool to save file."
+                    };
+                }
+            }
+
+            // 3. Scenario: Time
+            if (lowerContext.includes('time')) {
+                if (isToolAvailable('get_current_time')) {
+                    // Check if we already called it to avoid loop
+                    if (context.includes('[Tool executed')) {
+                         return {
+                            action: 'final_answer',
+                            content: "The current time is " + context.split('result: ')[1].replace(']', ''),
+                            reasoning: "I have the time from the tool. Providing final answer."
+                        };
+                    }
+                    return {
+                        action: 'tool_call',
+                        toolName: 'get_current_time',
+                        args: {},
+                        reasoning: "User asked for time. Calling 'get_current_time'."
+                    };
+                }
+            }
+
+            // 4. Default / Completion
+            // If we just finished a tool (like save), confirm it.
+            if (context.includes('saved successfully')) {
+                return {
+                    action: 'final_answer',
+                    content: "I have generated the users and saved them to users.json.",
+                    reasoning: "Task chain complete."
+                };
+            }
+
+            if (context.includes('Generated')) {
+                 return {
+                    action: 'final_answer',
+                    content: "I have generated the user data for you.",
+                    reasoning: "Data generation complete, no save requested."
+                };
+            }
+
+            // Fallback for general chat or unknown requests
+            return {
+                action: 'final_answer',
+                content: "I can help you generate data, save files, or tell the time. What would you like to do?",
+                reasoning: "No specific tool intent detected in input."
+            };
+        }
+
+        async function finalizeResponse(rawContent) {
+            highlightNode('node-output');
+            await delay(500);
+            
+            // Apply System Persona Logic
+            const sysPrompt = sysPromptInput.value.toLowerCase();
+            let finalContent = rawContent;
+
+            // Pirate Persona
+            if (sysPrompt.includes('pirate')) {
+                finalContent = "Arrr! " + finalContent + " Matey!";
+            }
+            
+            // JSON Persona
+            if (sysPrompt.includes('json') && !sysPrompt.includes('pirate')) {
+                finalContent = JSON.stringify({ response: finalContent });
+            }
+
+            addMessage('agent', finalContent);
+            logMonologue('thought', 'Finished. Waiting for input.');
+            
+            await delay(1000);
+            highlightNode(null); // Reset graph
+            state.isProcessing = false;
+        }
+
+        function delay(ms) {
+            return new Promise(resolve => setTimeout(resolve, ms));
+        }
+
+    </script>
+</body>
+</html>

@@ -1,0 +1,726 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>The Algorithm of Salsa</title>
+    <style>
+        :root {
+            --bg-color: #111111;
+            --text-color: #f0f0f0;
+            --accent-green: #00ff9d;
+            --accent-red: #ff4d4d;
+            --accent-blue: #4da6ff;
+            --panel-bg: #1e1e1e;
+            --font-main: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            --font-mono: "Fira Code", "Courier New", monospace;
+        }
+
+        body {
+            margin: 0;
+            padding: 0;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            font-family: var(--font-main);
+            line-height: 1.6;
+            overflow-x: hidden;
+        }
+
+        h1, h2, h3 {
+            font-weight: 700;
+            letter-spacing: -0.02em;
+        }
+
+        h1 { font-size: 2.5rem; margin-bottom: 0.5rem; }
+        h2 { font-size: 1.8rem; margin-top: 0; color: var(--accent-blue); }
+
+        p {
+            max-width: 65ch;
+            font-size: 1.1rem;
+            margin-bottom: 1.5rem;
+            color: #ccc;
+        }
+
+        section {
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            padding: 2rem;
+            border-bottom: 1px solid #333;
+            box-sizing: border-box;
+        }
+
+        .container {
+            width: 100%;
+            max-width: 800px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        /* UI Controls */
+        button {
+            background: var(--accent-blue);
+            color: #000;
+            border: none;
+            padding: 12px 24px;
+            font-size: 1rem;
+            font-weight: bold;
+            cursor: pointer;
+            border-radius: 4px;
+            margin: 10px;
+            transition: transform 0.1s;
+        }
+        button:active { transform: scale(0.95); }
+        button:hover { opacity: 0.9; }
+
+        input[type=range] {
+            width: 100%;
+            max-width: 300px;
+            margin: 10px 0;
+        }
+
+        .code-block {
+            background: #000;
+            padding: 1rem;
+            border-radius: 6px;
+            font-family: var(--font-mono);
+            font-size: 0.9rem;
+            border-left: 4px solid var(--accent-green);
+            width: 100%;
+            max-width: 500px;
+            margin-top: 1rem;
+            white-space: pre-wrap;
+        }
+
+        /* Section 1: Temporal */
+        .rhythm-grid {
+            display: grid;
+            grid-template-columns: repeat(8, 1fr);
+            gap: 5px;
+            width: 100%;
+            max-width: 600px;
+            margin: 2rem 0;
+        }
+        .beat-box {
+            aspect-ratio: 1;
+            background: #333;
+            border-radius: 4px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-weight: bold;
+            font-size: 1.2rem;
+            transition: background 0.1s;
+        }
+        .beat-box.active-step { background: var(--accent-green); color: #000; box-shadow: 0 0 15px var(--accent-green); }
+        .beat-box.active-pause { background: var(--accent-red); color: #fff; box-shadow: 0 0 15px var(--accent-red); }
+        .status-label {
+            font-family: var(--font-mono);
+            font-size: 1.2rem;
+            height: 2rem;
+            color: var(--accent-blue);
+        }
+
+        /* Section 2: Spatial */
+        .floor-grid {
+            width: 300px;
+            height: 400px;
+            background-image: linear-gradient(#333 1px, transparent 1px), linear-gradient(90deg, #333 1px, transparent 1px);
+            background-size: 50px 50px;
+            background-color: #111;
+            border: 1px solid #444;
+            position: relative;
+            margin: 1rem 0;
+        }
+        .foot {
+            width: 40px;
+            height: 90px;
+            background: rgba(255,255,255,0.1);
+            border: 2px solid #fff;
+            border-radius: 20px;
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            transition: transform 0.3s cubic-bezier(0.25, 1, 0.5, 1), opacity 0.2s;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 0.8rem;
+            font-weight: bold;
+        }
+        .foot.left { margin-left: -30px; border-color: var(--accent-blue); color: var(--accent-blue); }
+        .foot.right { margin-left: 30px; border-color: var(--accent-green); color: var(--accent-green); }
+        .foot.active-weight { background: currentColor; color: #000; }
+
+        /* Section 3: Amplitude */
+        canvas {
+            background: #111;
+            border: 1px solid #333;
+            border-radius: 4px;
+            margin: 1rem 0;
+            max-width: 100%;
+        }
+        .lateness-meter {
+            width: 100%;
+            max-width: 400px;
+            height: 10px;
+            background: #333;
+            border-radius: 5px;
+            overflow: hidden;
+            margin-top: 5px;
+        }
+        .lateness-fill {
+            height: 100%;
+            width: 0%;
+            background: var(--accent-green);
+            transition: width 0.2s, background 0.2s;
+        }
+
+        /* Section 4: Z-Axis */
+        .stick-figure-container {
+            height: 300px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .energy-readout {
+            font-family: var(--font-mono);
+            margin-top: 1rem;
+        }
+
+        /* Footer */
+        footer {
+            padding: 2rem;
+            text-align: center;
+            font-size: 0.8rem;
+            color: #666;
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Intro -->
+    <section>
+        <div class="container">
+            <h1>The Algorithm of Salsa</h1>
+            <p>Salsa dancing is often perceived as pure feeling, but it is built on a rigid logical framework. By deconstructing the movement into variables—Timing, Space, and Energy—we can program the perfect Basic Step.</p>
+            <p style="text-align: center; font-style: italic; color: #666;">Scroll down to compile the code.</p>
+        </div>
+    </section>
+
+    <!-- Section 1: Temporal Grid -->
+    <section id="temporal">
+        <div class="container">
+            <h2>1. The Temporal Grid</h2>
+            <p>Salsa music is played in 4/4 time, creating an 8-count loop. However, we only step on 6 of those beats. The secret isn't when you move, but when you <strong>don't</strong>.</p>
+            
+            <div class="rhythm-grid" id="rhythm-display">
+                <!-- Generated by JS -->
+            </div>
+
+            <div class="status-label" id="rhythm-status">Status: Idle</div>
+            <button id="btn-rhythm">Play Rhythm Loop</button>
+        </div>
+    </section>
+
+    <!-- Section 2: Spatial Logic -->
+    <section id="spatial">
+        <div class="container">
+            <h2>2. The Spatial Logic</h2>
+            <p>The Basic Step is a linear oscillation along the Y-axis. We alternate moving one foot while the other acts as an anchor.</p>
+            
+            <div style="display: flex; flex-wrap: wrap; justify-content: center; align-items: center; gap: 2rem;">
+                <div class="floor-grid">
+                    <!-- Center Line -->
+                    <div style="position: absolute; top: 0; bottom: 0; left: 50%; border-left: 1px dashed #555;"></div>
+                    <div id="s2-left" class="foot left">L</div>
+                    <div id="s2-right" class="foot right">R</div>
+                </div>
+
+                <div>
+                    <div class="code-block" id="s2-code">
+// Code Logic
+if (count == 1) { ... }
+                    </div>
+                    <br>
+                    <label>Set Count: <span id="s2-count-val">1</span></label>
+                    <input type="range" id="s2-slider" min="1" max="8" step="1" value="1">
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Section 3: Amplitude -->
+    <section id="amplitude">
+        <div class="container">
+            <h2>3. Parameter: Step Size</h2>
+            <p>Why small steps? Because of <strong>Recovery Time</strong>. Large steps create distance that cannot be traversed before the next beat arrives.</p>
+            
+            <canvas id="amp-canvas" width="600" height="200"></canvas>
+            
+            <label>Step Amplitude (Meters)</label>
+            <input type="range" id="amp-slider" min="0.2" max="1.0" step="0.01" value="0.3">
+            
+            <div class="lateness-meter">
+                <div id="lateness-bar" class="lateness-fill"></div>
+            </div>
+            <p id="amp-feedback" style="font-size: 0.9rem; margin-top: 5px;">Efficiency: Optimal</p>
+        </div>
+    </section>
+
+    <!-- Section 4: Z-Axis -->
+    <section id="z-axis">
+        <div class="container">
+            <h2>4. The Z-Axis (Damping)</h2>
+            <p>Beginners tend to oscillate vertically (bounce). This wastes energy ($E_{total}$). Professional dancers isolate movement to the horizontal plane.</p>
+
+            <div class="stick-figure-container">
+                <svg width="200" height="300" viewBox="0 0 200 300">
+                    <!-- Floor -->
+                    <line x1="0" y1="280" x2="200" y2="280" stroke="#555" stroke-width="2"/>
+                    
+                    <!-- Stick Figure Group -->
+                    <g id="stick-figure">
+                        <!-- Legs (Simplified lines) -->
+                        <line id="leg-l" x1="100" y1="200" x2="80" y2="280" stroke="#fff" stroke-width="4"/>
+                        <line id="leg-r" x1="100" y1="200" x2="120" y2="280" stroke="#fff" stroke-width="4"/>
+                        <!-- Torso -->
+                        <line x1="100" y1="200" x2="100" y2="100" stroke="#fff" stroke-width="4"/>
+                        <!-- Head -->
+                        <circle cx="100" cy="80" r="20" stroke="#fff" stroke-width="4" fill="none"/>
+                        <!-- Hip Joint -->
+                        <circle cx="100" cy="200" r="5" fill="white"/>
+                    </g>
+                </svg>
+            </div>
+
+            <div class="energy-readout" id="energy-val">Potential Energy (ΔY): 0</div>
+            
+            <div style="margin-top: 1rem;">
+                <label><input type="radio" name="bounce" value="bounce" checked> Mode: Bouncing (Beginner)</label><br>
+                <label><input type="radio" name="bounce" value="glide"> Mode: Gliding (Pro)</label>
+            </div>
+        </div>
+    </section>
+
+    <!-- Section 5: Full Simulation -->
+    <section id="simulation">
+        <div class="container">
+            <h2>5. The Full Simulation</h2>
+            <p>Let's run the full algorithm with audio. Sync your breathing: Inhale on 1-2-3, Exhale on 5-6-7.</p>
+
+            <div class="floor-grid" style="height: 300px; width: 250px;">
+                 <div style="position: absolute; top: 0; bottom: 0; left: 50%; border-left: 1px dashed #555;"></div>
+                 <div id="sim-left" class="foot left">L</div>
+                 <div id="sim-right" class="foot right">R</div>
+            </div>
+
+            <div style="display: flex; gap: 10px; margin-top: 10px;">
+                <button id="btn-sim-start">Start Simulation</button>
+                <button id="btn-sim-role" style="background: #555; color: #fff;">Perspective: Leader</button>
+            </div>
+            
+            <div style="width: 100%; margin-top: 1rem;">
+                <label>Tempo: <span id="tempo-val">140</span> BPM</label>
+                <input type="range" id="tempo-slider" min="100" max="200" value="140">
+            </div>
+        </div>
+    </section>
+
+    <footer>
+        The Algorithm of Salsa &copy; Interactive Essay.<br>
+        Vanilla JS, Web Audio API, CSS Grid. No Libraries.
+    </footer>
+
+    <script>
+        /* --- AUDIO ENGINE (Web Audio API) --- */
+        const AudioEngine = (() => {
+            let ctx = null;
+            
+            function init() {
+                if (!ctx) ctx = new (window.AudioContext || window.webkitAudioContext)();
+            }
+
+            function playTone(freq, type, duration, vol = 0.1) {
+                if (!ctx) init();
+                const osc = ctx.createOscillator();
+                const gain = ctx.createGain();
+                
+                osc.type = type;
+                osc.frequency.value = freq;
+                
+                gain.gain.setValueAtTime(vol, ctx.currentTime);
+                gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + duration);
+                
+                osc.connect(gain);
+                gain.connect(ctx.destination);
+                
+                osc.start();
+                osc.stop(ctx.currentTime + duration);
+            }
+
+            function playDrum(type) {
+                if (!ctx) init();
+                const t = ctx.currentTime;
+                const osc = ctx.createOscillator();
+                const gain = ctx.createGain();
+
+                if (type === 'clave') {
+                    // Sharp woodblock sound
+                    osc.type = 'sine';
+                    osc.frequency.setValueAtTime(2500, t);
+                    gain.gain.setValueAtTime(0.3, t);
+                    gain.gain.exponentialRampToValueAtTime(0.01, t + 0.1);
+                    osc.connect(gain);
+                    gain.connect(ctx.destination);
+                    osc.start();
+                    osc.stop(t + 0.1);
+                } else if (type === 'conga_low') {
+                    // Low thud
+                    osc.frequency.setValueAtTime(200, t);
+                    osc.frequency.exponentialRampToValueAtTime(100, t + 0.15);
+                    gain.gain.setValueAtTime(0.5, t);
+                    gain.gain.exponentialRampToValueAtTime(0.01, t + 0.3);
+                    osc.connect(gain);
+                    gain.connect(ctx.destination);
+                    osc.start();
+                    osc.stop(t + 0.3);
+                } else if (type === 'conga_slap') {
+                    // Higher slap
+                    osc.type = 'triangle';
+                    osc.frequency.setValueAtTime(500, t);
+                    gain.gain.setValueAtTime(0.4, t);
+                    gain.gain.exponentialRampToValueAtTime(0.01, t + 0.1);
+                    osc.connect(gain);
+                    gain.connect(ctx.destination);
+                    osc.start();
+                    osc.stop(t + 0.1);
+                }
+            }
+
+            return { init, playTone, playDrum, getCtx: () => ctx };
+        })();
+
+        /* --- SECTION 1: TEMPORAL GRID --- */
+        const S1 = (() => {
+            const grid = document.getElementById('rhythm-display');
+            const status = document.getElementById('rhythm-status');
+            const btn = document.getElementById('btn-rhythm');
+            let isPlaying = false;
+            let currentBeat = 1;
+            let interval = null;
+            
+            // Init Grid
+            for(let i=1; i<=8; i++) {
+                const div = document.createElement('div');
+                div.className = 'beat-box';
+                div.innerText = i;
+                div.id = `beat-${i}`;
+                grid.appendChild(div);
+            }
+
+            function updateVisuals(beat) {
+                // Reset
+                document.querySelectorAll('.beat-box').forEach(b => {
+                    b.classList.remove('active-step', 'active-pause');
+                });
+
+                const el = document.getElementById(`beat-${beat}`);
+                const isPause = (beat === 4 || beat === 8);
+
+                if (isPause) {
+                    el.classList.add('active-pause');
+                    status.innerText = `Count ${beat}: PAUSE (Transfer Weight)`;
+                    status.style.color = "var(--accent-red)";
+                } else {
+                    el.classList.add('active-step');
+                    status.innerText = `Count ${beat}: STEP`;
+                    status.style.color = "var(--accent-green)";
+                }
+            }
+
+            function tick() {
+                // Audio
+                if (currentBeat === 1 || currentBeat === 5) AudioEngine.playTone(880, 'sine', 0.1); // High beep
+                else if (currentBeat === 4 || currentBeat === 8) AudioEngine.playTone(440, 'square', 0.2, 0.05); // Pause buzz
+                else AudioEngine.playTone(600, 'sine', 0.1); // Normal beat
+
+                updateVisuals(currentBeat);
+
+                currentBeat++;
+                if (currentBeat > 8) currentBeat = 1;
+            }
+
+            btn.addEventListener('click', () => {
+                if (isPlaying) {
+                    clearInterval(interval);
+                    isPlaying = false;
+                    btn.innerText = "Play Rhythm Loop";
+                    status.innerText = "Status: Idle";
+                } else {
+                    AudioEngine.init();
+                    currentBeat = 1;
+                    tick(); // Immediate start
+                    interval = setInterval(tick, 600); // 100 BPM approx
+                    isPlaying = true;
+                    btn.innerText = "Stop";
+                }
+            });
+        })();
+
+        /* --- SECTION 2: SPATIAL LOGIC --- */
+        const S2 = (() => {
+            const slider = document.getElementById('s2-slider');
+            const countLabel = document.getElementById('s2-count-val');
+            const codeBlock = document.getElementById('s2-code');
+            const lFoot = document.getElementById('s2-left');
+            const rFoot = document.getElementById('s2-right');
+
+            // Logic Data
+            const steps = {
+                1: { ly: -60, ry: 0, lw: true, rw: false, desc: "Left Step Forward", code: "Left.y = +1; // Forward\nRight.y = 0; // Center" },
+                2: { ly: -60, ry: 0, lw: false, rw: true, desc: "Right Step In Place", code: "Left.y = +1; // Hold\nRight.weight = 100%; // Transfer" },
+                3: { ly: 0, ry: 0, lw: true, rw: false, desc: "Left Step Back to Center", code: "Left.y = 0; // Return\nRight.y = 0;" },
+                4: { ly: 0, ry: 0, lw: false, rw: true, desc: "Pause (Weight Right)", code: "// PAUSE\nwait();" },
+                5: { ly: 0, ry: 60, lw: false, rw: true, desc: "Right Step Back", code: "Left.y = 0;\nRight.y = -1; // Back" },
+                6: { ly: 0, ry: 60, lw: true, rw: false, desc: "Left Step In Place", code: "Left.weight = 100%;\nRight.y = -1; // Hold" },
+                7: { ly: 0, ry: 0, lw: false, rw: true, desc: "Right Step Fwd to Center", code: "Left.y = 0;\nRight.y = 0; // Return" },
+                8: { ly: 0, ry: 0, lw: true, rw: false, desc: "Pause (Weight Left)", code: "// PAUSE\nwait();" }
+            };
+
+            function update(val) {
+                const data = steps[val];
+                countLabel.innerText = val;
+                codeBlock.innerText = `if (count == ${val}) {\n  ${data.code}\n  // ${data.desc}\n}`;
+
+                // Update Feet Visuals (using transform translate)
+                // Note: In CSS Y-axis, negative is up. 
+                // Logic: Forward is Up (-Y), Back is Down (+Y).
+                lFoot.style.transform = `translate(-50%, calc(-50% + ${data.ly}px))`;
+                rFoot.style.transform = `translate(-50%, calc(-50% + ${data.ry}px))`;
+
+                // Weight
+                if(data.lw) { lFoot.classList.add('active-weight'); rFoot.classList.remove('active-weight'); }
+                else { rFoot.classList.add('active-weight'); lFoot.classList.remove('active-weight'); }
+            }
+
+            slider.addEventListener('input', (e) => update(e.target.value));
+            update(1); // Init
+        })();
+
+        /* --- SECTION 3: AMPLITUDE GRAPH --- */
+        const S3 = (() => {
+            const cvs = document.getElementById('amp-canvas');
+            const ctx = cvs.getContext('2d');
+            const slider = document.getElementById('amp-slider');
+            const bar = document.getElementById('lateness-bar');
+            const feedback = document.getElementById('amp-feedback');
+            
+            let amplitude = 0.3;
+            let time = 0;
+
+            function draw() {
+                ctx.clearRect(0, 0, cvs.width, cvs.height);
+                ctx.fillStyle = '#111';
+                ctx.fillRect(0,0, cvs.width, cvs.height);
+                
+                // Draw Center Line
+                ctx.beginPath();
+                ctx.strokeStyle = '#333';
+                ctx.moveTo(0, cvs.height/2);
+                ctx.lineTo(cvs.width, cvs.height/2);
+                ctx.stroke();
+
+                // Draw Sine Wave
+                ctx.beginPath();
+                ctx.lineWidth = 3;
+                // Color based on amplitude
+                ctx.strokeStyle = amplitude > 0.7 ? '#ff4d4d' : '#00ff9d';
+                
+                for(let x=0; x<cvs.width; x++) {
+                    // Simulate distance over time
+                    const t = (x + time) * 0.05;
+                    // Scale amplitude for visuals (50px is base)
+                    const y = Math.sin(t) * (amplitude * 80); 
+                    ctx.lineTo(x, (cvs.height/2) + y);
+                }
+                ctx.stroke();
+
+                time += 2;
+                requestAnimationFrame(draw);
+            }
+
+            function updateLogic() {
+                amplitude = parseFloat(slider.value);
+                
+                // Lateness Math
+                // Assume Beat Window is 0.5s.
+                // Travel time increases with amplitude.
+                // Threshold: 0.7m
+                const maxSafe = 0.7;
+                const latenessPct = Math.min(100, (amplitude / maxSafe) * 80);
+                
+                bar.style.width = `${latenessPct}%`;
+                
+                if(amplitude > maxSafe) {
+                    bar.style.backgroundColor = 'var(--accent-red)';
+                    feedback.innerText = "Warning: Travel distance exceeds beat duration. Step is LATE.";
+                    feedback.style.color = 'var(--accent-red)';
+                } else {
+                    bar.style.backgroundColor = 'var(--accent-green)';
+                    feedback.innerText = "Efficiency: Optimal. Quick direction changes possible.";
+                    feedback.style.color = 'var(--accent-green)';
+                }
+            }
+
+            slider.addEventListener('input', updateLogic);
+            draw();
+            updateLogic();
+        })();
+
+        /* --- SECTION 4: Z-AXIS --- */
+        const S4 = (() => {
+            const figure = document.getElementById('stick-figure');
+            const radios = document.getElementsByName('bounce');
+            const readout = document.getElementById('energy-val');
+            
+            let mode = 'bounce';
+            let t = 0;
+
+            radios.forEach(r => r.addEventListener('change', (e) => mode = e.target.value));
+
+            function animate() {
+                t += 0.1;
+                let yOffset = 0;
+                
+                if (mode === 'bounce') {
+                    // High amplitude sine on Y
+                    yOffset = Math.abs(Math.sin(t)) * 20;
+                    readout.style.color = 'var(--accent-red)';
+                    readout.innerText = `Potential Energy (ΔY): HIGH (Wasted)`;
+                } else {
+                    // Glide
+                    yOffset = 0;
+                    readout.style.color = 'var(--accent-green)';
+                    readout.innerText = `Potential Energy (ΔY): CONSTANT (Efficient)`;
+                }
+
+                figure.setAttribute('transform', `translate(0, ${yOffset})`);
+                requestAnimationFrame(animate);
+            }
+            animate();
+        })();
+
+        /* --- SECTION 5: FULL SIMULATION --- */
+        const S5 = (() => {
+            const lFoot = document.getElementById('sim-left');
+            const rFoot = document.getElementById('sim-right');
+            const btn = document.getElementById('btn-sim-start');
+            const btnRole = document.getElementById('btn-sim-role');
+            const slider = document.getElementById('tempo-slider');
+            const tempoVal = document.getElementById('tempo-val');
+
+            let isRunning = false;
+            let count = 1; // 1-8
+            let bpm = 140;
+            let timer = null;
+            let isLeader = true;
+
+            // Mapped to logic in S2, but animated
+            // Y values: Forward = -60, Center = 0, Back = 60
+            function setFeet(c) {
+                let ly = 0, ry = 0;
+                let lw = false, rw = false;
+
+                // Standard Basic Logic
+                if(c==1) { ly = -60; ry = 0; lw=true; }
+                else if(c==2) { ly = -60; ry = 0; rw=true; } // In place
+                else if(c==3) { ly = 0; ry = 0; lw=true; }   // Collect
+                else if(c==4) { ly = 0; ry = 0; rw=true; }   // Pause
+                else if(c==5) { ly = 0; ry = 60; rw=true; }
+                else if(c==6) { ly = 0; ry = 60; lw=true; }  // In place
+                else if(c==7) { ly = 0; ry = 0; rw=true; }   // Collect
+                else if(c==8) { ly = 0; ry = 0; lw=true; }   // Pause
+
+                // If Follower, invert Y
+                if(!isLeader) {
+                    ly = -ly;
+                    ry = -ry;
+                }
+
+                lFoot.style.transform = `translate(-50%, calc(-50% + ${ly}px))`;
+                rFoot.style.transform = `translate(-50%, calc(-50% + ${ry}px))`;
+
+                if(lw) { lFoot.classList.add('active-weight'); rFoot.classList.remove('active-weight'); }
+                else { rFoot.classList.add('active-weight'); lFoot.classList.remove('active-weight'); }
+            }
+
+            function playBeat() {
+                // Visuals
+                setFeet(count);
+
+                // Audio (Salsa Loop Logic)
+                // Clave 2-3: Hits on 2, 3, 5, 6.5, 8
+                // Simplified Clave for demo: 1(rest), 2(hit), 3(hit), 4(rest), 5(hit), 6(rest), 7(rest), 8(hit) -> Actually let's do a simple beat
+                
+                // Conga Tumbao: Slap on 2, Open on 4, 4.5, Slap on 6, Open on 8, 8.5
+                // Let's keep it algorithmic:
+                
+                // Metronome
+                if(count === 1 || count === 5) AudioEngine.playDrum('conga_low');
+                else AudioEngine.playDrum('conga_slap');
+
+                // Clave Accent (Son Clave 2-3 approx mapped to 8 counts)
+                // 2, 3, 5, 6&, 8
+                if (count === 2 || count === 3 || count === 5 || count === 8) {
+                     AudioEngine.playDrum('clave');
+                }
+
+                // Increment
+                count++;
+                if(count > 8) count = 1;
+
+                // Loop
+                const ms = (60000 / bpm) / 2; // 8 counts = 2 bars? No, Salsa is counted 1-8 over 2 bars. 
+                // Actually, BPM in salsa is usually counted in quarter notes. 
+                // 1 beat = 60/BPM.
+                timer = setTimeout(playBeat, (60000 / bpm)); 
+            }
+
+            btn.addEventListener('click', () => {
+                if(isRunning) {
+                    clearTimeout(timer);
+                    isRunning = false;
+                    btn.innerText = "Start Simulation";
+                    btn.style.background = "var(--accent-blue)";
+                } else {
+                    AudioEngine.init();
+                    count = 1;
+                    playBeat();
+                    isRunning = true;
+                    btn.innerText = "Stop Simulation";
+                    btn.style.background = "var(--accent-red)";
+                }
+            });
+
+            slider.addEventListener('input', (e) => {
+                bpm = e.target.value;
+                tempoVal.innerText = bpm;
+            });
+
+            btnRole.addEventListener('click', () => {
+                isLeader = !isLeader;
+                btnRole.innerText = isLeader ? "Perspective: Leader" : "Perspective: Follower";
+                // Reset feet to center visually
+                lFoot.style.transform = `translate(-50%, -50%)`;
+                rFoot.style.transform = `translate(-50%, -50%)`;
+            });
+
+        })();
+    </script>
+</body>
+</html>

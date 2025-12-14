@@ -1,0 +1,821 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>The Trillion Sliders: Demystifying AI Parameters</title>
+    <style>
+        :root {
+            --bg: #050505;
+            --text: #e0e0e0;
+            --accent: #00ff9d;
+            --accent-dim: #004d2e;
+            --error: #ff3333;
+            --panel: #111;
+            --border: #333;
+            --font-mono: 'Courier New', Courier, monospace;
+        }
+
+        * { box-sizing: border-box; }
+
+        body {
+            background-color: var(--bg);
+            color: var(--text);
+            font-family: var(--font-mono);
+            margin: 0;
+            padding: 0;
+            line-height: 1.6;
+            overflow-x: hidden;
+        }
+
+        h1, h2, h3 { margin-top: 0; font-weight: normal; letter-spacing: -1px; }
+        h1 { font-size: 2.5rem; color: var(--accent); text-align: center; margin-bottom: 2rem; }
+        h2 { border-bottom: 1px solid var(--border); padding-bottom: 0.5rem; margin-bottom: 1.5rem; }
+        
+        p { margin-bottom: 1.5rem; opacity: 0.9; }
+        strong { color: #fff; }
+
+        section {
+            min-height: 100vh;
+            padding: 4rem 1rem;
+            max-width: 800px;
+            margin: 0 auto;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            border-bottom: 1px dashed var(--border);
+        }
+
+        .interactive-panel {
+            background: var(--panel);
+            border: 1px solid var(--border);
+            padding: 1.5rem;
+            border-radius: 4px;
+            margin: 2rem 0;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.5);
+        }
+
+        /* Controls */
+        input[type=range] {
+            -webkit-appearance: none;
+            width: 100%;
+            background: transparent;
+            margin: 10px 0;
+        }
+        input[type=range]:focus { outline: none; }
+        input[type=range]::-webkit-slider-runnable-track {
+            width: 100%;
+            height: 4px;
+            cursor: pointer;
+            background: var(--border);
+            border-radius: 2px;
+        }
+        input[type=range]::-webkit-slider-thumb {
+            height: 20px;
+            width: 10px;
+            border-radius: 2px;
+            background: var(--accent);
+            cursor: pointer;
+            -webkit-appearance: none;
+            margin-top: -8px; 
+            box-shadow: 0 0 10px var(--accent);
+        }
+        
+        button {
+            background: transparent;
+            border: 1px solid var(--accent);
+            color: var(--accent);
+            padding: 0.5rem 1rem;
+            font-family: var(--font-mono);
+            cursor: pointer;
+            transition: all 0.2s;
+            margin-right: 10px;
+        }
+        button:hover {
+            background: var(--accent);
+            color: var(--bg);
+            box-shadow: 0 0 15px var(--accent-dim);
+        }
+        button.active {
+            background: var(--accent);
+            color: var(--bg);
+        }
+
+        /* Section 1: Rent */
+        #rent-canvas { width: 100%; height: 300px; background: #000; border: 1px solid #222; }
+        .equation { font-size: 1.2rem; text-align: center; margin-bottom: 1rem; color: #fff; }
+        .loss-meter { height: 4px; background: #333; margin-top: 10px; position: relative; }
+        .loss-fill { height: 100%; width: 0%; background: var(--error); transition: background 0.3s, width 0.1s; }
+        
+        /* Section 2: Mixer */
+        .mixer-container { display: flex; justify-content: space-between; align-items: center; height: 300px; position: relative;}
+        .channel { display: flex; flex-direction: column; align-items: center; height: 100%; width: 15%; }
+        .channel-track { width: 4px; height: 150px; background: #222; position: relative; margin: 10px 0; border-radius: 2px; }
+        .channel-thumb { 
+            width: 30px; height: 50px; background: #333; border: 1px solid var(--accent); 
+            position: absolute; left: -13px; cursor: grab; 
+            display: flex; align-items: center; justify-content: center;
+            font-size: 10px; color: var(--accent);
+        }
+        .signal-bar { width: 100%; background: #222; height: 40px; margin-top: auto; position: relative; overflow: hidden; }
+        .signal-level { position: absolute; bottom: 0; left: 0; right: 0; background: var(--accent-dim); transition: height 0.1s; }
+        .output-node { width: 60px; height: 60px; border-radius: 50%; border: 2px solid var(--accent); display: flex; align-items: center; justify-content: center; font-weight: bold; }
+        
+        /* Section 3: Network */
+        #network-canvas { width: 100%; height: 400px; background: #080808; cursor: crosshair; }
+        .net-controls { display: flex; gap: 1rem; margin-top: 1rem; align-items: center; }
+        .tooltip { position: absolute; background: rgba(0,0,0,0.9); border: 1px solid var(--accent); padding: 5px; pointer-events: none; display: none; font-size: 0.8rem; z-index: 10; }
+
+        /* Section 4: Transformer */
+        .sentence-box { display: flex; flex-wrap: wrap; gap: 10px; margin-bottom: 20px; min-height: 40px; }
+        .token { background: #222; padding: 5px 10px; border-radius: 4px; border: 1px solid #444; position: relative; }
+        .token.highlight { border-color: var(--accent); color: var(--accent); }
+        .token.new { animation: popIn 0.3s ease-out; border-color: var(--accent); }
+        @keyframes popIn { 0% { transform: scale(0); } 80% { transform: scale(1.1); } 100% { transform: scale(1); } }
+        
+        .attn-matrix { display: grid; grid-template-columns: repeat(5, 1fr); gap: 2px; margin: 20px 0; }
+        .attn-cell { aspect-ratio: 1; background: var(--accent); opacity: 0.1; transition: opacity 0.2s; }
+        
+        .prob-chart { margin-top: 20px; }
+        .prob-bar-row { display: flex; align-items: center; margin-bottom: 5px; font-size: 0.9rem; }
+        .prob-label { width: 80px; }
+        .prob-track { flex-grow: 1; background: #222; height: 20px; position: relative; }
+        .prob-fill { height: 100%; background: var(--accent); transition: width 0.2s; }
+        .prob-val { margin-left: 10px; width: 40px; text-align: right; }
+
+        /* Section 5: Scale */
+        #scale-scroll-container { 
+            height: 400px; 
+            overflow-y: scroll; 
+            border: 1px solid var(--border); 
+            position: relative; 
+            background: repeating-linear-gradient(
+                0deg,
+                transparent,
+                transparent 9px,
+                #111 10px
+            );
+        }
+        #scale-content { height: 50000px; position: relative; } /* The illusion of height */
+        .scale-marker { position: absolute; left: 10px; right: 10px; border-top: 1px solid var(--accent); padding-top: 5px; color: var(--accent); }
+        .scale-overlay { 
+            position: sticky; top: 0; left: 0; right: 0; 
+            background: rgba(5,5,5,0.9); padding: 10px; 
+            border-bottom: 1px solid var(--border);
+            text-align: center; z-index: 10;
+        }
+
+        .math-block { background: #000; padding: 10px; border-left: 3px solid var(--accent); margin: 10px 0; font-size: 0.9rem; display: none; }
+        .show-math { display: block; }
+    </style>
+</head>
+<body>
+
+    <!-- Header -->
+    <header style="padding: 4rem 1rem; text-align: center;">
+        <h1>THE TRILLION SLIDERS</h1>
+        <p style="max-width: 600px; margin: 0 auto;">Demystifying AI Parameters</p>
+        <p style="font-size: 0.8rem; color: #666;">Scroll Down</p>
+    </header>
+
+    <!-- Section 1: The Rent Problem -->
+    <section id="section-rent">
+        <h2>1. The Rent Problem (The Foundation)</h2>
+        <p>Before AI, we had simple math. Imagine you want to estimate apartment rent. You have a formula: <br><code>Rent = (SqFt * A) + (Floor * B)</code>.</p>
+        <p>But what if you don't know <strong>A</strong> or <strong>B</strong>? You only have historical data (the dots below). Your job is to find the "Parameters" (A and B) that make the line fit the dots.</p>
+
+        <div class="interactive-panel">
+            <div class="equation">
+                Rent = (SqFt × <span id="val-a" style="color:var(--accent)">0</span>) + (Floor × <span id="val-b" style="color:var(--accent)">0</span>)
+            </div>
+            <canvas id="rent-canvas"></canvas>
+            
+            <div style="margin-top: 20px;">
+                <label>Slider A (Slope / SqFt Price)</label>
+                <input type="range" id="slider-a" min="-5" max="15" step="0.1" value="1">
+                
+                <label>Slider B (Bias / Base Price)</label>
+                <input type="range" id="slider-b" min="-50" max="100" step="1" value="0">
+            </div>
+
+            <div class="loss-meter">
+                <div id="loss-fill" class="loss-fill"></div>
+            </div>
+            <div style="text-align: right; font-size: 0.8rem; margin-top: 5px;">Error (Loss): <span id="loss-val">High</span></div>
+            
+            <button onclick="document.getElementById('math-1').classList.toggle('show-math')" style="margin-top: 15px; font-size: 0.8rem;">Deep Dive: The Math</button>
+            <div id="math-1" class="math-block">
+                The machine learns by minimizing <strong>Loss</strong>.<br>
+                Loss = Σ (Predicted_Rent - Actual_Rent)²<br>
+                The computer effectively "jiggles" the sliders automatically to make this number zero.
+            </div>
+        </div>
+    </section>
+
+    <!-- Section 2: The Sound Mixer -->
+    <section id="section-neuron">
+        <h2>2. The Sound Mixer (The Neuron)</h2>
+        <p>In AI, a single "Neuron" is just a fancy Rent Calculator. But instead of 2 inputs, it might have hundreds. Think of it like a sound mixing board.</p>
+        <p>The <strong>Weights</strong> are the volume faders. The <strong>Bias</strong> is the master gain.</p>
+
+        <div class="interactive-panel">
+            <div class="mixer-container" id="mixer">
+                <!-- Generated by JS -->
+            </div>
+            
+            <div style="display: flex; align-items: center; justify-content: space-between; margin-top: 20px;">
+                <div>
+                    <button id="btn-relu">Toggle Distortion (ReLU)</button>
+                </div>
+                <div style="text-align: right;">
+                    Output: <span id="mixer-output" style="color: var(--accent); font-size: 1.5rem;">0.00</span>
+                </div>
+            </div>
+            <p style="font-size: 0.8rem; margin-top: 10px;">
+                <span id="relu-status" style="color: #666;">Mode: Linear (Negative values allowed)</span>
+            </p>
+        </div>
+        <p><strong>Training</strong> is just moving these faders until the output matches what we want. <strong>Inference</strong> is locking the faders and playing the music.</p>
+    </section>
+
+    <!-- Section 3: The Network -->
+    <section id="section-network">
+        <h2>3. The Network (Mixers of Mixers)</h2>
+        <p>Modern AI isn't one mixer. It's a mixer... mixing the outputs of other mixers. This layering allows it to learn complex patterns, not just straight lines.</p>
+        
+        <div class="interactive-panel">
+            <canvas id="network-canvas"></canvas>
+            <div id="net-tooltip" class="tooltip"></div>
+            
+            <div class="net-controls">
+                <input type="text" id="net-input" value="The capital of France is" style="background: #222; border: 1px solid #444; color: #fff; padding: 5px; font-family: inherit; flex-grow: 1;">
+                <button id="btn-train">Run Training</button>
+            </div>
+            <div style="margin-top: 10px; font-size: 0.9rem;">
+                Status: <span id="train-status" style="color: var(--error)">Untrained (Random Weights)</span>
+            </div>
+        </div>
+        <p>When you click "Run Training", imagine 10,000 sound engineers furiously adjusting their sliders at once to minimize the error.</p>
+    </section>
+
+    <!-- Section 4: The Transformer -->
+    <section id="section-transformer">
+        <h2>4. The Transformer & The Illusion</h2>
+        <p>ChatGPT doesn't have a brain. It has a Next-Token Prediction engine. It looks at context and assigns probabilities to the next word.</p>
+
+        <div class="interactive-panel">
+            <div class="sentence-box" id="sentence-container">
+                <span class="token">The</span>
+                <span class="token">Capital</span>
+                <span class="token">Of</span>
+                <span class="token">France</span>
+                <span class="token">Is</span>
+            </div>
+
+            <!-- Attention Viz (Simplified) -->
+            <div style="font-size: 0.8rem; color: #666; margin-bottom: 5px;">Attention Map (simplified)</div>
+            <div class="attn-matrix" id="attn-matrix"></div>
+
+            <!-- Probability Controls -->
+            <div class="prob-chart" id="prob-chart">
+                <!-- Bars generated by JS -->
+            </div>
+
+            <div style="margin-top: 20px; border-top: 1px solid #333; padding-top: 10px;">
+                <label>Temperature (Randomness): <span id="temp-val">1.0</span></label>
+                <input type="range" id="slider-temp" min="0.1" max="2.0" step="0.1" value="1.0">
+                <button id="btn-generate" style="width: 100%; margin-top: 10px;">Generate Next Word</button>
+            </div>
+        </div>
+        <p>Every time a word is generated, it flies back into the input, and the process repeats. It's an auto-complete that reads its own writing.</p>
+    </section>
+
+    <!-- Section 5: Scale -->
+    <section id="section-scale">
+        <h2>5. Scale (The Trillion)</h2>
+        <p>We looked at a mixer with 4 sliders. Then a network with 50. GPT-4 has approximately <strong>1.7 Trillion</strong> parameters.</p>
+        <p>Scroll the box below. 1 pixel height = 1 Million Parameters.</p>
+
+        <div class="interactive-panel" style="padding: 0;">
+            <div class="scale-overlay">
+                Current Depth: <span id="scale-counter" style="color: var(--accent)">0</span> Parameters
+            </div>
+            <div id="scale-scroll-container">
+                <div id="scale-content">
+                    <div class="scale-marker" style="top: 0px;">Rent Estimator (2 Params)</div>
+                    <div class="scale-marker" style="top: 50px;">Use your imagination...</div>
+                    <div class="scale-marker" style="top: 110px;">GPT-1 (110M)</div>
+                    <div class="scale-marker" style="top: 1500px;">GPT-2 (1.5B)</div>
+                    <div class="scale-marker" style="top: 17500px;">GPT-3 (175B)</div>
+                    <!-- GPT-4 would be at 1,700,000px roughly in this scale, we truncate for browser sanity -->
+                    <div class="scale-marker" style="top: 49000px;">Getting closer to GPT-4...</div>
+                </div>
+            </div>
+        </div>
+        <p>Emergent Intelligence is a conjuring trick born from the sheer magnitude of these sliders.</p>
+    </section>
+
+    <script>
+        /* --- SECTION 1: RENT PROBLEM --- */
+        const rentCanvas = document.getElementById('rent-canvas');
+        const rentCtx = rentCanvas.getContext('2d');
+        const sliderA = document.getElementById('slider-a');
+        const sliderB = document.getElementById('slider-b');
+        const valA = document.getElementById('val-a');
+        const valB = document.getElementById('val-b');
+        const lossFill = document.getElementById('loss-fill');
+        const lossVal = document.getElementById('loss-val');
+
+        // Synthetic Data (True: y = 5x + 20)
+        const rentData = [];
+        for(let i=1; i<=10; i++) {
+            rentData.push({ x: i, y: (i * 5) + 20 + (Math.random() * 10 - 5) });
+        }
+
+        function drawRentGraph() {
+            const w = rentCanvas.width = rentCanvas.offsetWidth;
+            const h = rentCanvas.height = rentCanvas.offsetHeight;
+            const a = parseFloat(sliderA.value);
+            const b = parseFloat(sliderB.value);
+
+            // Update Text
+            valA.textContent = a.toFixed(1);
+            valB.textContent = b.toFixed(1);
+
+            rentCtx.clearRect(0, 0, w, h);
+
+            // Scale helpers
+            const maxX = 12;
+            const maxY = 100;
+            const mapX = (val) => (val / maxX) * w;
+            const mapY = (val) => h - (val / maxY) * h;
+
+            // Draw Axes
+            rentCtx.strokeStyle = '#333';
+            rentCtx.lineWidth = 1;
+            rentCtx.beginPath();
+            rentCtx.moveTo(mapX(0), mapY(0)); rentCtx.lineTo(mapX(0), mapY(maxY));
+            rentCtx.moveTo(mapX(0), mapY(0)); rentCtx.lineTo(mapX(maxX), mapY(0));
+            rentCtx.stroke();
+
+            // Draw Data Points
+            rentCtx.fillStyle = '#fff';
+            let totalError = 0;
+            rentData.forEach(p => {
+                rentCtx.beginPath();
+                rentCtx.arc(mapX(p.x), mapY(p.y), 4, 0, Math.PI * 2);
+                rentCtx.fill();
+
+                // Calculate Prediction & Error
+                const predY = (p.x * a) + b;
+                totalError += Math.pow(predY - p.y, 2);
+
+                // Draw residual line (visualize error)
+                rentCtx.strokeStyle = 'rgba(255, 50, 50, 0.3)';
+                rentCtx.beginPath();
+                rentCtx.moveTo(mapX(p.x), mapY(p.y));
+                rentCtx.lineTo(mapX(p.x), mapY(predY));
+                rentCtx.stroke();
+            });
+
+            // Draw Model Line
+            rentCtx.strokeStyle = '#00ff9d';
+            rentCtx.lineWidth = 2;
+            rentCtx.beginPath();
+            rentCtx.moveTo(mapX(0), mapY(b));
+            rentCtx.lineTo(mapX(maxX), mapY((maxX * a) + b));
+            rentCtx.stroke();
+
+            // Update Loss UI
+            const mse = Math.round(totalError / rentData.length);
+            lossVal.textContent = mse;
+            
+            // Color mapping for loss
+            let color = '#ff3333'; // Red
+            if(mse < 50) color = '#ffaa00'; // Orange
+            if(mse < 20) color = '#00ff9d'; // Green
+            
+            lossFill.style.backgroundColor = color;
+            // Invert width logic for visual "filling up with correctness" or "error bar"
+            // Let's do Error bar: wider = more error
+            const widthPct = Math.min(100, mse / 5); 
+            lossFill.style.width = widthPct + '%';
+        }
+
+        sliderA.addEventListener('input', drawRentGraph);
+        sliderB.addEventListener('input', drawRentGraph);
+        window.addEventListener('resize', drawRentGraph);
+        setTimeout(drawRentGraph, 100); // Init
+
+        /* --- SECTION 2: THE MIXER --- */
+        const mixerContainer = document.getElementById('mixer');
+        const mixerOutput = document.getElementById('mixer-output');
+        const btnRelu = document.getElementById('btn-relu');
+        const reluStatus = document.getElementById('relu-status');
+        
+        let useRelu = false;
+        const inputs = [0.2, 0.5, 0.8, 0.3]; // Simulating signal strength
+        const weights = [0.5, -0.5, 0.5, 0]; // Default slider positions (0-1 mapped to -1 to 1)
+
+        function initMixer() {
+            mixerContainer.innerHTML = '';
+            
+            // Create 4 Channels
+            inputs.forEach((inp, i) => {
+                const chan = document.createElement('div');
+                chan.className = 'channel';
+                
+                const track = document.createElement('div');
+                track.className = 'channel-track';
+                
+                const thumb = document.createElement('div');
+                thumb.className = 'channel-thumb';
+                thumb.textContent = 'W' + (i+1);
+                // Set initial position centered (0)
+                thumb.style.top = '50%'; 
+                
+                // Signal visualizer
+                const sigBar = document.createElement('div');
+                sigBar.className = 'signal-bar';
+                const sigLvl = document.createElement('div');
+                sigLvl.className = 'signal-level';
+                sigLvl.style.height = (inp * 100) + '%';
+                
+                sigBar.appendChild(sigLvl);
+                track.appendChild(thumb);
+                chan.appendChild(track);
+                chan.appendChild(sigBar);
+                
+                // Drag Logic
+                let isDragging = false;
+                thumb.addEventListener('mousedown', () => isDragging = true);
+                document.addEventListener('mouseup', () => isDragging = false);
+                document.addEventListener('mousemove', (e) => {
+                    if(!isDragging) return;
+                    const rect = track.getBoundingClientRect();
+                    let y = e.clientY - rect.top;
+                    y = Math.max(0, Math.min(y, 150));
+                    thumb.style.top = (y - 25) + 'px'; // Center thumb
+                    
+                    // Map 0-150px to 1.0 -> -1.0
+                    // Top is 1.0, Bottom is -1.0
+                    const val = 1.0 - (y / 75);
+                    weights[i] = val;
+                    updateMixer();
+                });
+
+                mixerContainer.appendChild(chan);
+            });
+
+            // Output Node
+            const outDiv = document.createElement('div');
+            outDiv.className = 'channel';
+            outDiv.style.justifyContent = 'center';
+            const node = document.createElement('div');
+            node.className = 'output-node';
+            node.textContent = '∑';
+            outDiv.appendChild(node);
+            mixerContainer.appendChild(outDiv);
+        }
+
+        function updateMixer() {
+            let sum = 0;
+            inputs.forEach((inp, i) => {
+                sum += inp * weights[i];
+            });
+            
+            // Bias (Simulated as constant 0.1 for simplicity here)
+            sum += 0.1; 
+
+            if(useRelu) {
+                sum = Math.max(0, sum);
+            }
+
+            mixerOutput.textContent = sum.toFixed(2);
+            mixerOutput.style.color = sum > 0 ? 'var(--accent)' : (useRelu ? '#666' : '#ff3333');
+        }
+
+        btnRelu.addEventListener('click', () => {
+            useRelu = !useRelu;
+            btnRelu.classList.toggle('active');
+            reluStatus.textContent = useRelu ? "Mode: ReLU (Negatives clipped to 0)" : "Mode: Linear (Negative values allowed)";
+            updateMixer();
+        });
+
+        initMixer();
+        updateMixer();
+
+        /* --- SECTION 3: THE NETWORK --- */
+        const netCanvas = document.getElementById('network-canvas');
+        const netCtx = netCanvas.getContext('2d');
+        const netTooltip = document.getElementById('net-tooltip');
+        const btnTrain = document.getElementById('btn-train');
+        const trainStatus = document.getElementById('train-status');
+
+        const layers = [4, 6, 6, 2];
+        let netNodes = [];
+        let netWeights = []; // array of arrays
+        let isTraining = false;
+        let particles = [];
+
+        function initNetwork() {
+            const w = netCanvas.width = netCanvas.offsetWidth;
+            const h = netCanvas.height = netCanvas.offsetHeight;
+            netNodes = [];
+            netWeights = [];
+
+            const layerGap = w / (layers.length + 1);
+            
+            layers.forEach((count, lIndex) => {
+                const x = layerGap * (lIndex + 1);
+                const nodeGap = h / (count + 1);
+                const layerNodes = [];
+                for(let i=0; i<count; i++) {
+                    layerNodes.push({
+                        x: x,
+                        y: nodeGap * (i + 1),
+                        val: Math.random()
+                    });
+                }
+                netNodes.push(layerNodes);
+
+                // Init weights connecting to previous layer
+                if (lIndex > 0) {
+                    const layerWeights = [];
+                    for(let i=0; i<count; i++) { // Current node
+                        for(let j=0; j<layers[lIndex-1]; j++) { // Prev node
+                            layerWeights.push({
+                                src: {l: lIndex-1, n: j},
+                                dest: {l: lIndex, n: i},
+                                w: (Math.random() * 2) - 1, // -1 to 1
+                                targetW: (Math.random() * 2) - 1
+                            });
+                        }
+                    }
+                    netWeights.push(layerWeights);
+                }
+            });
+        }
+
+        function drawNetwork() {
+            if(netCanvas.width !== netCanvas.offsetWidth) initNetwork();
+            const w = netCanvas.width;
+            const h = netCanvas.height;
+            netCtx.clearRect(0,0,w,h);
+
+            // Draw Weights (Edges)
+            netWeights.forEach(layerW => {
+                layerW.forEach(edge => {
+                    const n1 = netNodes[edge.src.l][edge.src.n];
+                    const n2 = netNodes[edge.dest.l][edge.dest.n];
+                    
+                    // Animate weight towards target if training
+                    if(isTraining) {
+                        edge.w += (edge.targetW - edge.w) * 0.1;
+                        // Randomly flicker target to simulate SGD
+                        if(Math.random() > 0.95) edge.targetW = (Math.random() * 2) - 1;
+                    }
+
+                    netCtx.beginPath();
+                    netCtx.moveTo(n1.x, n1.y);
+                    netCtx.lineTo(n2.x, n2.y);
+                    const alpha = Math.abs(edge.w);
+                    const color = edge.w > 0 ? `rgba(0, 255, 157, ${alpha})` : `rgba(255, 50, 50, ${alpha})`;
+                    netCtx.strokeStyle = isTraining ? color : `rgba(100,100,100,0.3)`;
+                    netCtx.lineWidth = isTraining ? Math.abs(edge.w) * 2 : 1;
+                    netCtx.stroke();
+                });
+            });
+
+            // Draw Nodes
+            netNodes.forEach(layer => {
+                layer.forEach(node => {
+                    netCtx.beginPath();
+                    netCtx.arc(node.x, node.y, 6, 0, Math.PI*2);
+                    netCtx.fillStyle = '#111';
+                    netCtx.fill();
+                    netCtx.strokeStyle = '#fff';
+                    netCtx.lineWidth = 2;
+                    netCtx.stroke();
+                });
+            });
+
+            // Draw Particles
+            updateParticles();
+            
+            requestAnimationFrame(drawNetwork);
+        }
+
+        function updateParticles() {
+            // Spawn particles at input
+            if(Math.random() > 0.8) {
+                const startNode = netNodes[0][Math.floor(Math.random() * layers[0])];
+                particles.push({
+                    x: startNode.x, y: startNode.y, 
+                    l: 0, 
+                    target: null,
+                    progress: 0
+                });
+            }
+
+            // Move particles
+            for(let i = particles.length - 1; i >= 0; i--) {
+                let p = particles[i];
+                if(!p.target) {
+                    // Find a target in next layer
+                    if(p.l < layers.length - 1) {
+                        const nextLayer = netNodes[p.l + 1];
+                        p.target = nextLayer[Math.floor(Math.random() * nextLayer.length)];
+                    } else {
+                        particles.splice(i, 1);
+                        continue;
+                    }
+                }
+
+                p.progress += 0.02;
+                // Lerp
+                p.x = p.x + (p.target.x - p.x) * 0.05;
+                p.y = p.y + (p.target.y - p.y) * 0.05;
+
+                // Draw
+                netCtx.fillStyle = '#fff';
+                netCtx.beginPath();
+                netCtx.arc(p.x, p.y, 2, 0, Math.PI*2);
+                netCtx.fill();
+
+                if(Math.abs(p.x - p.target.x) < 2) {
+                    p.x = p.target.x;
+                    p.y = p.target.y;
+                    p.l++;
+                    p.target = null;
+                }
+            }
+        }
+
+        btnTrain.addEventListener('click', () => {
+            isTraining = !isTraining;
+            btnTrain.textContent = isTraining ? "Stop Training" : "Run Training";
+            trainStatus.textContent = isTraining ? "Training... (Loss decreasing)" : "Paused";
+            trainStatus.style.color = isTraining ? "var(--accent)" : "var(--error)";
+        });
+
+        // Simple Hover Interaction
+        netCanvas.addEventListener('mousemove', (e) => {
+            const rect = netCanvas.getBoundingClientRect();
+            const mx = e.clientX - rect.left;
+            const my = e.clientY - rect.top;
+            let hit = false;
+
+            netNodes.forEach((layer, li) => {
+                layer.forEach((node, ni) => {
+                    const dx = mx - node.x;
+                    const dy = my - node.y;
+                    if(dx*dx + dy*dy < 100) {
+                        netTooltip.style.left = (e.pageX + 10) + 'px';
+                        netTooltip.style.top = (e.pageY + 10) + 'px';
+                        netTooltip.style.display = 'block';
+                        netTooltip.innerHTML = `<strong>Neuron L${li}:N${ni}</strong><br>Activation: ${(Math.random()).toFixed(2)}`;
+                        hit = true;
+                    }
+                });
+            });
+
+            if(!hit) netTooltip.style.display = 'none';
+        });
+
+        initNetwork();
+        drawNetwork();
+
+
+        /* --- SECTION 4: TRANSFORMER --- */
+        const sentenceContainer = document.getElementById('sentence-container');
+        const attnMatrix = document.getElementById('attn-matrix');
+        const probChart = document.getElementById('prob-chart');
+        const sliderTemp = document.getElementById('slider-temp');
+        const tempVal = document.getElementById('temp-val');
+        const btnGenerate = document.getElementById('btn-generate');
+
+        const vocab = ["Paris", "Lyon", "Baguette", "Rome", "Blue"];
+        const baseLogits = [10, 5, 2, 1, 0.1]; // Raw scores for vocab
+
+        function softmax(logits, temp) {
+            const exps = logits.map(l => Math.exp(l / temp));
+            const sum = exps.reduce((a,b) => a+b, 0);
+            return exps.map(e => e / sum);
+        }
+
+        function renderAttention() {
+            attnMatrix.innerHTML = '';
+            const tokens = document.querySelectorAll('.token');
+            const n = tokens.length;
+            attnMatrix.style.gridTemplateColumns = `repeat(${n}, 1fr)`;
+            
+            for(let i=0; i<n*n; i++) {
+                const cell = document.createElement('div');
+                cell.className = 'attn-cell';
+                // Fake attention pattern (diagonal + some random)
+                const row = Math.floor(i / n);
+                const col = i % n;
+                let opacity = 0.1;
+                if(col <= row) opacity = Math.random() * 0.8; // Causal mask look
+                cell.style.opacity = opacity;
+                attnMatrix.appendChild(cell);
+            }
+        }
+
+        function updateProbs() {
+            probChart.innerHTML = '';
+            const temp = parseFloat(sliderTemp.value);
+            tempVal.textContent = temp.toFixed(1);
+            
+            const probs = softmax(baseLogits, temp);
+            
+            // Sort for display
+            const data = vocab.map((word, i) => ({word, p: probs[i]}));
+            data.sort((a,b) => b.p - a.p);
+
+            data.forEach(d => {
+                const row = document.createElement('div');
+                row.className = 'prob-bar-row';
+                
+                const label = document.createElement('div');
+                label.className = 'prob-label';
+                label.textContent = d.word;
+                
+                const track = document.createElement('div');
+                track.className = 'prob-track';
+                
+                const fill = document.createElement('div');
+                fill.className = 'prob-fill';
+                fill.style.width = (d.p * 100) + '%';
+                
+                const val = document.createElement('div');
+                val.className = 'prob-val';
+                val.textContent = Math.round(d.p * 100) + '%';
+
+                track.appendChild(fill);
+                row.appendChild(label);
+                row.appendChild(track);
+                row.appendChild(val);
+                probChart.appendChild(row);
+            });
+        }
+
+        btnGenerate.addEventListener('click', () => {
+            const temp = parseFloat(sliderTemp.value);
+            const probs = softmax(baseLogits, temp);
+            
+            // Weighted Random Choice
+            let r = Math.random();
+            let selectedWord = vocab[vocab.length-1];
+            let cum = 0;
+            // Re-map to sorted vocab to match logic
+            const data = vocab.map((word, i) => ({word, p: probs[i]}));
+            
+            for(let d of data) {
+                cum += d.p;
+                if(r <= cum) {
+                    selectedWord = d.word;
+                    break;
+                }
+            }
+
+            const token = document.createElement('span');
+            token.className = 'token new';
+            token.textContent = selectedWord;
+            sentenceContainer.appendChild(token);
+            
+            // Reset animation class
+            setTimeout(() => token.classList.remove('new'), 500);
+            
+            renderAttention();
+        });
+
+        sliderTemp.addEventListener('input', updateProbs);
+        renderAttention();
+        updateProbs();
+
+
+        /* --- SECTION 5: SCALE --- */
+        const scaleContainer = document.getElementById('scale-scroll-container');
+        const scaleCounter = document.getElementById('scale-counter');
+
+        scaleContainer.addEventListener('scroll', () => {
+            const scrollTop = scaleContainer.scrollTop;
+            // 1px = 1 Million Params
+            const params = Math.round(scrollTop * 1000000); 
+            
+            // Format number
+            let fmt = params;
+            if(params > 1000000000) {
+                fmt = (params / 1000000000).toFixed(2) + " Billion";
+            } else {
+                fmt = (params / 1000000).toFixed(1) + " Million";
+            }
+            
+            scaleCounter.textContent = fmt;
+        });
+
+    </script>
+</body>
+</html>

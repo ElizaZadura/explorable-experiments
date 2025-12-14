@@ -1,0 +1,677 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>The Anatomy of an AI Agent</title>
+    <style>
+        /* --- IDE THEME VARIABLES --- */
+        :root {
+            --bg-main: #1e1e1e;       /* Editor Background */
+            --bg-panel: #252526;      /* Sidebar/Panel */
+            --text-main: #d4d4d4;     /* Default Text */
+            --border: #3e3e42;        /* Borders */
+            
+            /* Syntax Highlighting Colors */
+            --syn-keyword: #c678dd;   /* Purple (def, return) */
+            --syn-func: #61afef;      /* Blue (function names) */
+            --syn-string: #98c379;    /* Green (strings) */
+            --syn-comment: #7f848e;   /* Grey (comments) */
+            --syn-num: #d19a66;       /* Orange (numbers) */
+            --accent: #e06c75;        /* Red (Actions/Errors) */
+            
+            --font-ui: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            --font-code: "Fira Code", "Consolas", "Courier New", monospace;
+        }
+
+        /* --- GLOBAL STYLES --- */
+        body {
+            background-color: var(--bg-main);
+            color: var(--text-main);
+            font-family: var(--font-ui);
+            margin: 0;
+            padding: 0;
+            line-height: 1.6;
+            overflow-x: hidden;
+        }
+
+        h1, h2, h3 { color: #fff; margin-top: 0; }
+        h1 { font-size: 2.5rem; margin-bottom: 0.5rem; }
+        h2 { border-bottom: 1px solid var(--border); padding-bottom: 10px; margin-bottom: 20px; color: var(--syn-func); }
+        
+        a { color: var(--syn-func); text-decoration: none; }
+        p { margin-bottom: 1.5rem; }
+
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        section {
+            min-height: 90vh; /* Full screen feel per section */
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            padding: 40px 0;
+            border-bottom: 1px solid var(--border);
+        }
+
+        /* --- UI COMPONENTS --- */
+        .card {
+            background-color: var(--bg-panel);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 25px;
+            margin: 20px 0;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+        }
+
+        .btn {
+            background-color: var(--syn-func);
+            color: #1e1e1e;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 4px;
+            font-weight: bold;
+            cursor: pointer;
+            font-family: var(--font-ui);
+            transition: filter 0.2s, transform 0.1s;
+            margin-right: 10px;
+            margin-bottom: 10px;
+        }
+        .btn:hover { filter: brightness(1.1); }
+        .btn:active { transform: translateY(1px); }
+        
+        .btn.secondary {
+            background-color: transparent;
+            border: 1px solid var(--text-main);
+            color: var(--text-main);
+        }
+        .btn.secondary:hover { background-color: rgba(255,255,255,0.1); }
+
+        .code-display {
+            background-color: #111;
+            padding: 15px;
+            border-radius: 6px;
+            font-family: var(--font-code);
+            font-size: 0.9rem;
+            overflow-x: auto;
+            white-space: pre;
+            border-left: 4px solid var(--syn-func);
+            margin-bottom: 15px;
+        }
+
+        /* Syntax Highlighting Helpers */
+        .k { color: var(--syn-keyword); }
+        .f { color: var(--syn-func); }
+        .s { color: var(--syn-string); }
+        .c { color: var(--syn-comment); }
+        .n { color: var(--syn-num); }
+
+        /* --- SECTION 1: BRAIN IN BOX --- */
+        .visual-stage {
+            height: 250px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            position: relative;
+            background: radial-gradient(circle at center, #2d2d2d 0%, #1e1e1e 70%);
+            border-radius: 8px;
+            margin-bottom: 20px;
+            overflow: hidden;
+        }
+
+        .brain {
+            font-size: 5rem;
+            z-index: 2;
+            transition: transform 0.5s ease;
+        }
+
+        .glass-box {
+            position: absolute;
+            width: 140px;
+            height: 140px;
+            border: 2px solid rgba(255,255,255,0.3);
+            background: rgba(255,255,255,0.02);
+            border-radius: 12px;
+            box-shadow: 0 0 15px rgba(255,255,255,0.05);
+            transition: all 0.6s cubic-bezier(0.68, -0.55, 0.27, 1.55);
+        }
+
+        .robotic-arm {
+            position: absolute;
+            right: -80px;
+            font-size: 3rem;
+            opacity: 0;
+            transition: all 0.6s ease;
+            transform: rotate(-20deg);
+        }
+
+        /* State: Agent Mode Active */
+        .agent-mode .glass-box {
+            transform: scale(1.5);
+            opacity: 0;
+            border-color: transparent;
+        }
+        .agent-mode .robotic-arm {
+            right: 30%;
+            opacity: 1;
+        }
+        
+        .status-text {
+            font-family: var(--font-code);
+            min-height: 1.2em;
+            color: var(--syn-comment);
+            text-align: center;
+            margin-bottom: 15px;
+        }
+
+        /* --- SECTION 2: TOOLS --- */
+        .interactive-string {
+            cursor: pointer;
+            border-bottom: 1px dashed var(--syn-string);
+            transition: background 0.2s;
+        }
+        .interactive-string:hover { background: rgba(152, 195, 121, 0.1); }
+
+        /* --- SECTION 3: FLOWCHART --- */
+        .flowchart {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin: 30px 0;
+            position: relative;
+        }
+        
+        .node {
+            background: var(--bg-main);
+            border: 2px solid var(--border);
+            color: var(--syn-comment);
+            padding: 12px 20px;
+            border-radius: 50px;
+            font-weight: bold;
+            font-size: 0.9rem;
+            transition: all 0.3s;
+            z-index: 2;
+        }
+
+        .node.active {
+            border-color: var(--syn-func);
+            color: #fff;
+            box-shadow: 0 0 15px rgba(97, 175, 239, 0.4);
+            transform: scale(1.1);
+        }
+
+        .connector {
+            flex-grow: 1;
+            height: 2px;
+            background: var(--border);
+            margin: 0 5px;
+            position: relative;
+        }
+        .connector::after {
+            content: '►';
+            position: absolute;
+            right: -5px;
+            top: -8px;
+            color: var(--border);
+        }
+
+        /* --- SECTION 4: CHAT SIMULATION --- */
+        .split-view {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            height: 400px;
+        }
+
+        .panel-window {
+            background: #111;
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        .panel-header {
+            background: var(--bg-panel);
+            padding: 8px 15px;
+            font-size: 0.8rem;
+            border-bottom: 1px solid var(--border);
+            font-weight: bold;
+            color: var(--syn-comment);
+            display: flex;
+            justify-content: space-between;
+        }
+
+        .panel-content {
+            flex: 1;
+            overflow-y: auto;
+            padding: 15px;
+            font-size: 0.9rem;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        /* Chat Bubbles */
+        .bubble {
+            padding: 10px 14px;
+            border-radius: 12px;
+            max-width: 85%;
+            line-height: 1.4;
+            animation: popIn 0.3s ease;
+        }
+        @keyframes popIn { from { transform: scale(0.9); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+
+        .user-msg { align-self: flex-end; background: var(--syn-func); color: #1e1e1e; border-bottom-right-radius: 2px; }
+        .ai-msg { align-self: flex-start; background: var(--bg-panel); border: 1px solid var(--border); border-bottom-left-radius: 2px; }
+        .tool-msg { 
+            align-self: center; 
+            font-family: var(--font-code); 
+            font-size: 0.8rem; 
+            color: var(--syn-comment);
+            border: 1px dashed var(--border);
+            background: rgba(255,255,255,0.03);
+            width: 90%;
+        }
+
+        /* Log View */
+        .log-entry {
+            font-family: var(--font-code);
+            font-size: 0.8rem;
+            border-bottom: 1px solid #333;
+            padding-bottom: 8px;
+            margin-bottom: 8px;
+            color: var(--syn-string);
+        }
+        .log-role { color: var(--syn-keyword); margin-right: 5px; }
+
+        .input-area {
+            display: flex;
+            gap: 10px;
+            margin-top: 15px;
+        }
+        .chat-input {
+            flex: 1;
+            background: #111;
+            border: 1px solid var(--border);
+            color: white;
+            padding: 10px;
+            border-radius: 4px;
+            font-family: var(--font-ui);
+        }
+        .chat-input:focus { outline: 1px solid var(--syn-func); }
+
+        /* Mobile Responsiveness */
+        @media (max-width: 768px) {
+            .split-view { grid-template-columns: 1fr; height: auto; }
+            .panel-window { height: 300px; }
+            .robotic-arm { font-size: 2rem; }
+            .flowchart { flex-direction: column; gap: 10px; }
+            .connector { height: 20px; width: 2px; margin: 0; transform: rotate(90deg); }
+            .connector::after { display: none; }
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    
+    <!-- HEADER -->
+    <header style="text-align: center; padding: 60px 0 20px 0;">
+        <div style="color: var(--syn-func); font-family: var(--font-code); margin-bottom: 10px;">class AIAgent(LLM):</div>
+        <h1>The Anatomy of an AI Agent</h1>
+        <p style="color: var(--syn-comment);">Demystifying the "ReAct" pattern, Tools, and LangGraph logic.</p>
+    </header>
+
+    <!-- SECTION 1: BRAIN IN A BOX -->
+    <section>
+        <h2>1. The Brain in a Box</h2>
+        <p>
+            A standard LLM (like ChatGPT) is just a text prediction engine. It lives in a "glass box." 
+            It can't browse the web, run code, or save files on its own. It can only <em>hallucinate</em> answers based on training data.
+        </p>
+        
+        <div class="card">
+            <div class="visual-stage" id="stage1">
+                <div class="glass-box"></div>
+                <div class="brain">🧠</div>
+                <div class="robotic-arm">🦾</div>
+            </div>
+
+            <div style="text-align: center;">
+                <div id="brain-log" class="status-text">System: Waiting for input...</div>
+                
+                <div style="margin-bottom: 20px;">
+                    <button class="btn secondary" onclick="askBrain('calc')">User: "Calculate 349 * 1239"</button>
+                    <button class="btn secondary" onclick="askBrain('save')">User: "Save this file"</button>
+                </div>
+
+                <label style="cursor: pointer; user-select: none; display: inline-flex; align-items: center; gap: 10px; padding: 10px; border: 1px solid var(--syn-func); border-radius: 4px;">
+                    <input type="checkbox" id="agentToggle" onchange="toggleAgentMode()">
+                    <span style="font-weight: bold; color: var(--syn-func);">Enable Agent Mode (Give Tools)</span>
+                </label>
+            </div>
+        </div>
+        <p>
+            <strong>The Shift:</strong> When we turn it into an Agent, we aren't changing the brain. We are giving it 
+            <strong>Tools</strong> (functions) and a loop to decide when to use them.
+        </p>
+    </section>
+
+    <!-- SECTION 2: DEFINING TOOLS -->
+    <section>
+        <h2>2. Giving it Hands (Tools)</h2>
+        <p>
+            Tools are just Python functions. But how does the LLM know <em>how</em> to use them? 
+            It reads the <strong>Docstring</strong> (the text inside the quotes).
+        </p>
+        <p>
+            <span style="color:var(--accent)">Try clicking the green text</span> below to change the docstring and see how the Agent reacts.
+        </p>
+
+        <div class="card">
+            <div class="code-display">
+<span class="k">@tool</span>
+<span class="k">def</span> <span class="f">write_json</span>(filepath: <span class="f">str</span>, data: <span class="f">dict</span>):
+    <span class="s">"""</span>
+    <span class="s interactive-string" id="docstring-text" onclick="cycleDocstring()">Writes a dictionary to a file as JSON.</span>
+    <span class="s">"""</span>
+    <span class="k">with</span> <span class="f">open</span>(filepath, <span class="s">'w'</span>) <span class="k">as</span> f:
+        json.dump(data, f)
+            </div>
+
+            <div style="border-top: 1px solid var(--border); padding-top: 15px;">
+                <strong>Agent's Internal Thought:</strong>
+                <div id="agent-thought" style="color: var(--syn-func); font-family: var(--font-code); margin-top: 5px;">
+                    "I understand. I will call this function when the user wants to save data."
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- SECTION 3: THE LOOP -->
+    <section>
+        <h2>3. The ReAct Loop (Logic)</h2>
+        <p>
+            This is the "Heart" of the agent (managed by LangGraph). It's a loop called <strong>ReAct</strong>:
+            <strong>Re</strong>ason, then <strong>Act</strong>.
+        </p>
+
+        <div class="card">
+            <div class="flowchart">
+                <div class="node" id="node-start">Start</div>
+                <div class="connector"></div>
+                <div class="node" id="node-llm">LLM (Think)</div>
+                <div class="connector"></div>
+                <div class="node" id="node-tool">Tool (Act)</div>
+                <div class="connector"></div>
+                <div class="node" id="node-end">End</div>
+            </div>
+
+            <div class="code-display" style="height: 100px; overflow-y: auto;" id="loop-console">
+<span class="c"># Debug Console</span>
+<span class="c"># Waiting for simulation...</span>
+            </div>
+
+            <div style="text-align: center; margin-top: 15px;">
+                <button class="btn" onclick="runLoopSimulation()">Simulate: "Generate users & Save"</button>
+            </div>
+        </div>
+        <p>
+            Note the arrow going from <strong>Tool</strong> back to <strong>LLM</strong>. The Agent sees the tool's output 
+            and decides what to do next. It loops until the task is done.
+        </p>
+    </section>
+
+    <!-- SECTION 4: FULL SIMULATION -->
+    <section>
+        <h2>4. The DataGen Agent</h2>
+        <p>
+            Let's put it all together. This is a simulation of the "DataGen" agent from the video. 
+            It has two tools: <code>generate_data</code> and <code>save_file</code>.
+        </p>
+
+        <div class="card">
+            <div class="split-view">
+                <!-- Left: Chat Interface -->
+                <div class="panel-window">
+                    <div class="panel-header">
+                        <span>Chat Interface</span>
+                        <span>● Online</span>
+                    </div>
+                    <div class="panel-content" id="chat-history">
+                        <div class="bubble ai-msg">Hello! I can generate sample user data and save it to JSON files.</div>
+                    </div>
+                </div>
+
+                <!-- Right: Under the Hood -->
+                <div class="panel-window">
+                    <div class="panel-header">
+                        <span>State Graph History (Raw Logs)</span>
+                        <span>JSON</span>
+                    </div>
+                    <div class="panel-content" id="log-history" style="background: #000;">
+                        <div class="log-entry"><span class="c"># Session Initialized</span></div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="input-area">
+                <input type="text" class="chat-input" id="user-input" placeholder="Try: 'Generate 3 users' or 'Save the data'...">
+                <button class="btn" onclick="handleChat()">Send</button>
+            </div>
+            <div style="margin-top: 10px; font-size: 0.85rem; color: var(--syn-comment);">
+                Quick Prompts: 
+                <a href="#" onclick="fillChat('Generate 5 fake users')">Generate Users</a> | 
+                <a href="#" onclick="fillChat('Save them to users.json')">Save File</a>
+            </div>
+        </div>
+    </section>
+</div>
+
+<!-- JAVASCRIPT LOGIC -->
+<script>
+    // --- SECTION 1: BRAIN LOGIC ---
+    let isAgentMode = false;
+
+    function toggleAgentMode() {
+        isAgentMode = document.getElementById('agentToggle').checked;
+        const stage = document.getElementById('stage1');
+        const log = document.getElementById('brain-log');
+
+        if (isAgentMode) {
+            stage.classList.add('agent-mode');
+            log.innerHTML = "<span class='f'>System</span>: Tools Loaded [Calculator, FileSystem].";
+        } else {
+            stage.classList.remove('agent-mode');
+            log.innerHTML = "System: Standard LLM Mode.";
+        }
+    }
+
+    function askBrain(type) {
+        const log = document.getElementById('brain-log');
+        
+        if (type === 'calc') {
+            if (isAgentMode) {
+                log.innerHTML = "<span class='s'>Thought</span>: Use Calculator -> 349 * 1239 = <span class='n'>432,411</span>";
+            } else {
+                log.innerHTML = "<span class='accent'>LLM</span>: I think it's around 400,000? (Guessing)";
+            }
+        } else if (type === 'save') {
+            if (isAgentMode) {
+                log.innerHTML = "<span class='s'>Thought</span>: Use FileSystem -> File Saved.";
+            } else {
+                log.innerHTML = "<span class='accent'>Error</span>: I am a text model. I cannot access files.";
+            }
+        }
+    }
+
+    // --- SECTION 2: DOCSTRING LOGIC ---
+    const docOptions = [
+        { text: "Writes a dictionary to a file as JSON.", thought: "Clear. I will use this to save data.", color: "var(--syn-func)" },
+        { text: "Do stuff with the thing.", thought: "Confused. 'Stuff'? 'Thing'? I don't know when to use this.", color: "var(--accent)" },
+        { text: "save(path, obj)", thought: "Vague. What format is 'obj'? Text? Binary? I might crash.", color: "#d19a66" }
+    ];
+    let docIndex = 0;
+
+    function cycleDocstring() {
+        docIndex = (docIndex + 1) % docOptions.length;
+        const opt = docOptions[docIndex];
+        
+        document.getElementById('docstring-text').innerText = opt.text;
+        const thoughtEl = document.getElementById('agent-thought');
+        thoughtEl.innerText = `"${opt.thought}"`;
+        thoughtEl.style.color = opt.color;
+    }
+
+    // --- SECTION 3: LOOP LOGIC ---
+    const sleep = (ms) => new Promise(r => setTimeout(r, ms));
+
+    async function runLoopSimulation() {
+        const nodes = ['node-start', 'node-llm', 'node-tool', 'node-llm', 'node-end']; // Sequence including recursion
+        const consoleDiv = document.getElementById('loop-console');
+        
+        // Reset
+        consoleDiv.innerHTML = "";
+        document.querySelectorAll('.node').forEach(n => n.classList.remove('active'));
+
+        const log = (msg) => {
+            consoleDiv.innerHTML += `<div>${msg}</div>`;
+            consoleDiv.scrollTop = consoleDiv.scrollHeight;
+        }
+
+        log("<span class='c'># Starting ReAct Loop...</span>");
+
+        // 1. Start
+        document.getElementById('node-start').classList.add('active');
+        await sleep(800);
+        document.getElementById('node-start').classList.remove('active');
+
+        // 2. LLM (First pass)
+        document.getElementById('node-llm').classList.add('active');
+        log("<span class='k'>LLM</span>: Input received. I need to generate data.");
+        log("<span class='k'>LLM</span>: Decided to call tool: <span class='f'>generate_data()</span>");
+        await sleep(1500);
+        document.getElementById('node-llm').classList.remove('active');
+
+        // 3. Tool Execution
+        document.getElementById('node-tool').classList.add('active');
+        log("<span class='n'>Tool</span>: Executing Python code...");
+        log("<span class='n'>Tool</span>: Returning [Alice, Bob, Eve] to LLM.");
+        await sleep(1500);
+        document.getElementById('node-tool').classList.remove('active');
+
+        // 4. LLM (Recursion - Second pass)
+        document.getElementById('node-llm').classList.add('active');
+        log("<span class='k'>LLM</span>: I have data. Now user wants to save.");
+        log("<span class='k'>LLM</span>: Decided to call tool: <span class='f'>save_file()</span>");
+        await sleep(1500);
+        
+        // 4b. Tool Execution 2 (Simplified for visual flow, we stay on LLM for decision then jump to end for brevity in simple viz)
+        log("<span class='n'>Tool</span>: File saved successfully.");
+        log("<span class='k'>LLM</span>: Task complete.");
+        document.getElementById('node-llm').classList.remove('active');
+
+        // 5. End
+        document.getElementById('node-end').classList.add('active');
+        log("<span class='s'>Final</span>: 'I have generated and saved the users.'");
+        await sleep(1000);
+        document.getElementById('node-end').classList.remove('active');
+    }
+
+    // --- SECTION 4: CHAT SIMULATION ---
+    let hasGeneratedData = false;
+
+    function fillChat(txt) {
+        document.getElementById('user-input').value = txt;
+    }
+
+    function addBubble(text, type) {
+        const chat = document.getElementById('chat-history');
+        const div = document.createElement('div');
+        div.className = `bubble ${type}`;
+        div.innerText = text;
+        chat.appendChild(div);
+        chat.scrollTop = chat.scrollHeight;
+    }
+
+    function addLog(role, content) {
+        const log = document.getElementById('log-history');
+        const div = document.createElement('div');
+        div.className = 'log-entry';
+        // Simple JSON syntax highlighting imitation
+        let jsonStr = JSON.stringify(content);
+        div.innerHTML = `<span class='log-role'>${role}</span>: <span class='s'>${jsonStr}</span>`;
+        log.appendChild(div);
+        log.scrollTop = log.scrollHeight;
+    }
+
+    async function handleChat() {
+        const inputEl = document.getElementById('user-input');
+        const text = inputEl.value.trim();
+        if (!text) return;
+
+        inputEl.value = "";
+        
+        // 1. User Input
+        addBubble(text, 'user-msg');
+        addLog('HumanMessage', text);
+
+        // 2. Simulate Thinking
+        await sleep(500);
+
+        const lowerText = text.toLowerCase();
+
+        if (lowerText.includes('generate')) {
+            // THOUGHT PROCESS
+            addLog('AIMessage', { tool_calls: [{name: "generate_data", args: {count: 5}}] });
+            
+            // TOOL ACTION
+            await sleep(600);
+            addBubble("⚙️ Calling Tool: generate_data()...", "tool-msg");
+            await sleep(800);
+            
+            hasGeneratedData = true;
+            const fakeData = ["Alice", "Bob", "Charlie", "Diana", "Eve"];
+            addLog('ToolMessage', { result: fakeData });
+
+            // FINAL RESPONSE
+            addBubble("I've generated 5 sample users: Alice, Bob, Charlie, Diana, and Eve.", "ai-msg");
+            addLog('AIMessage', "Done generating.");
+        } 
+        else if (lowerText.includes('save')) {
+            if (!hasGeneratedData) {
+                addLog('AIMessage', "Error: No data context");
+                addBubble("I don't have any data to save yet! Please ask me to generate some users first.", "ai-msg");
+            } else {
+                // THOUGHT PROCESS
+                addLog('AIMessage', { tool_calls: [{name: "write_json", args: {filename: "users.json"}}] });
+
+                // TOOL ACTION
+                await sleep(600);
+                addBubble("⚙️ Calling Tool: write_json('users.json')...", "tool-msg");
+                await sleep(800);
+                addLog('ToolMessage', { status: "success", path: "./users.json" });
+
+                // FINAL RESPONSE
+                addBubble("Successfully saved the data to users.json.", "ai-msg");
+            }
+        } 
+        else {
+            addBubble("I'm a demo agent. Try asking me to 'Generate users' or 'Save file'.", "ai-msg");
+        }
+    }
+    
+    // Allow Enter key in chat
+    document.getElementById('user-input').addEventListener('keypress', function (e) {
+        if (e.key === 'Enter') handleChat();
+    });
+
+</script>
+
+</body>
+</html>

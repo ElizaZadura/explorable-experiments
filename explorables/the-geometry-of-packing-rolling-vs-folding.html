@@ -1,0 +1,631 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>The Geometry of Packing: Rolling vs. Folding</title>
+    
+    <!-- Typography -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Merriweather:ital,wght@0,300;0,400;0,700;1,300&family=Roboto+Mono:wght@400;500&family=Work+Sans:wght@400;600&display=swap" rel="stylesheet">
+    
+    <!-- Physics Engine -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/matter-js/0.19.0/matter.min.js"></script>
+
+    <style>
+        :root {
+            --bg-color: #f9f9f7;
+            --text-color: #333333;
+            --accent-sage: #8DA399;
+            --accent-slate: #6B7A8F;
+            --accent-clay: #C27D75;
+            --stage-bg: #e8e8e4;
+            --font-serif: 'Merriweather', serif;
+            --font-sans: 'Work Sans', sans-serif;
+            --font-mono: 'Roboto Mono', monospace;
+        }
+
+        * { box-sizing: border-box; }
+
+        body {
+            margin: 0;
+            padding: 0;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            font-family: var(--font-serif);
+            line-height: 1.7;
+        }
+
+        /* Layout */
+        main {
+            max-width: 650px;
+            margin: 0 auto;
+            padding: 2rem 1.5rem;
+        }
+
+        h1, h2, h3 {
+            font-family: var(--font-sans);
+            color: #1a1a1a;
+        }
+
+        h1 { font-size: 2.5rem; letter-spacing: -1px; margin-bottom: 0.5rem; }
+        h2 { font-size: 1.5rem; margin-top: 3rem; border-bottom: 2px solid var(--accent-sage); padding-bottom: 0.5rem; display: inline-block; }
+        p { margin-bottom: 1.5rem; font-size: 1.1rem; }
+
+        .credits { font-size: 0.9rem; color: #777; margin-top: 4rem; border-top: 1px solid #ddd; padding-top: 1rem; }
+
+        /* Interactive Stages */
+        .stage {
+            background-color: var(--stage-bg);
+            border-radius: 8px;
+            padding: 1.5rem;
+            margin: 2rem 0;
+            box-shadow: inset 0 2px 6px rgba(0,0,0,0.05);
+            font-family: var(--font-sans);
+            overflow: hidden;
+            position: relative;
+        }
+
+        .controls {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 1rem;
+            margin-bottom: 1rem;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.9rem;
+        }
+
+        button {
+            background: #fff;
+            border: 1px solid #ccc;
+            padding: 0.5rem 1rem;
+            border-radius: 4px;
+            cursor: pointer;
+            font-family: var(--font-sans);
+            font-weight: 600;
+            transition: all 0.2s;
+        }
+
+        button:hover { background: var(--accent-slate); color: white; border-color: var(--accent-slate); }
+        button.active { background: var(--accent-sage); color: white; border-color: var(--accent-sage); }
+
+        input[type=range] {
+            accent-color: var(--accent-slate);
+            vertical-align: middle;
+        }
+
+        label { font-weight: 600; font-size: 0.85rem; text-transform: uppercase; letter-spacing: 0.5px; }
+
+        .data-display {
+            font-family: var(--font-mono);
+            background: #fff;
+            padding: 0.5rem;
+            border-radius: 4px;
+            text-align: center;
+            margin-top: 1rem;
+            border: 1px solid #ddd;
+        }
+
+        /* Section 1: Prediction */
+        #prediction-visual {
+            height: 200px;
+            display: flex;
+            justify-content: center;
+            align-items: flex-end;
+            gap: 20px;
+            position: relative;
+        }
+        .suitcase-col {
+            width: 80px;
+            height: 100%;
+            border: 2px solid #555;
+            border-top: none;
+            position: relative;
+            display: flex;
+            align-items: flex-end;
+        }
+        .suitcase-col::after { content: attr(data-label); position: absolute; bottom: -25px; left: 0; width: 100%; text-align: center; font-size: 0.8rem; }
+        .clothes-fill {
+            width: 100%;
+            background-color: var(--accent-slate);
+            transition: height 1s cubic-bezier(0.25, 1, 0.5, 1);
+            height: 0%;
+            position: relative;
+        }
+        .clothes-fill.roll { background-color: var(--accent-sage); }
+        .prediction-line {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            border-top: 2px dashed var(--accent-clay);
+            z-index: 10;
+            transition: bottom 0.3s;
+        }
+        .prediction-line::before { content: "Your Guess"; background: var(--accent-clay); color: white; font-size: 0.7rem; padding: 2px 4px; position: absolute; right: 0; top: -10px; }
+
+        /* Section 2: Volume */
+        #volume-stage { height: 250px; display: flex; flex-direction: column; align-items: center; justify-content: center; }
+        #shirt-visual {
+            width: 200px;
+            height: 100px;
+            background: var(--accent-slate);
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: rgba(255,255,255,0.7);
+            font-size: 0.8rem;
+        }
+        .mode-fold #shirt-visual { border-radius: 2px; height: 60px; width: 200px; }
+        .mode-roll #shirt-visual { border-radius: 50%; height: 110px; width: 110px; background: var(--accent-sage); }
+        .math-eq { font-size: 1.2rem; margin-top: 1rem; }
+        .math-var { display: inline-block; transition: color 0.3s; }
+
+        /* Section 3: Physics */
+        #physics-canvas-container {
+            width: 100%;
+            height: 300px;
+            background: #fff;
+            border: 2px solid #555;
+            border-radius: 4px;
+            position: relative;
+            overflow: hidden;
+        }
+        .void-meter {
+            position: absolute;
+            top: 10px; right: 10px;
+            background: rgba(255,255,255,0.9);
+            padding: 5px 10px;
+            border-radius: 4px;
+            font-family: var(--font-mono);
+            font-size: 0.8rem;
+            pointer-events: none;
+        }
+
+        /* Section 4: Efficiency */
+        .chart-row {
+            display: flex;
+            align-items: center;
+            margin-bottom: 10px;
+            font-size: 0.9rem;
+        }
+        .chart-label { width: 60px; font-weight: bold; }
+        .chart-bar-container { flex-grow: 1; background: #fff; height: 30px; border-radius: 15px; overflow: hidden; margin: 0 10px; }
+        .chart-bar { height: 100%; transition: width 0.5s ease; display: flex; align-items: center; padding-left: 10px; color: white; font-size: 0.8rem; white-space: nowrap; }
+        .bar-fold { background-color: var(--accent-slate); width: 50%; }
+        .bar-roll { background-color: var(--accent-sage); width: 30%; }
+
+        /* Section 5: Structure */
+        #shirt-svg-container {
+            width: 200px;
+            margin: 0 auto;
+            cursor: crosshair;
+        }
+        .shirt-path { fill: white; stroke: #333; stroke-width: 2; transition: fill 0.3s; }
+        .zone-info {
+            position: absolute;
+            background: #333;
+            color: #fff;
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 0.75rem;
+            pointer-events: none;
+            opacity: 0;
+            transition: opacity 0.2s;
+            transform: translate(-50%, -120%);
+        }
+        .warning-box {
+            margin-top: 10px;
+            color: var(--accent-clay);
+            font-weight: bold;
+            min-height: 1.5em;
+            text-align: center;
+        }
+
+    </style>
+</head>
+<body>
+
+    <main>
+        <header>
+            <h1>The Geometry of Packing</h1>
+            <p style="color: var(--accent-slate); font-weight: 600;">Rolling vs. Folding: An Interactive Essay</p>
+        </header>
+
+        <!-- SECTION 1: INTUITION -->
+        <section>
+            <h2>1. Intuition vs. Reality</h2>
+            <p>When packing for a trip, the eternal debate is Folding vs. Rolling. Intuition suggests that rolling clothes compresses them, saving massive amounts of space. But is that true?</p>
+            
+            <div class="stage">
+                <div class="controls">
+                    <label>Guess space saved by rolling:</label>
+                    <input type="range" id="guess-slider" min="0" max="50" value="25">
+                    <span id="guess-output">25%</span>
+                    <button id="reveal-btn">Reveal Reality</button>
+                </div>
+                
+                <div id="prediction-visual">
+                    <div class="suitcase-col" data-label="Fold">
+                        <div class="clothes-fill" id="fill-fold"></div>
+                    </div>
+                    <div class="suitcase-col" data-label="Roll">
+                        <div class="clothes-fill roll" id="fill-roll">
+                            <div class="prediction-line" id="pred-line"></div>
+                        </div>
+                    </div>
+                </div>
+                <div class="data-display" id="reality-text">Adjust the slider to make your prediction.</div>
+            </div>
+
+            <p>Surprising? In controlled experiments, both methods consume the <strong>exact same volume</strong>. A cotton fiber is a solid; you can't change its volume just by bending it differently. However, that doesn't mean the methods are equal.</p>
+        </section>
+
+        <!-- SECTION 2: CONSERVATION OF VOLUME -->
+        <section>
+            <h2>2. Conservation of Volume</h2>
+            <p>A t-shirt is a deformable solid. Whether you fold it into a rectangle or roll it into a cylinder, the amount of fabric remains constant. The only variable that changes volume is <strong>Air</strong>.</p>
+
+            <div class="stage" id="vol-stage-container">
+                <div class="controls">
+                    <button class="mode-btn active" onclick="setMode('fold')">Folded Mode</button>
+                    <button class="mode-btn" onclick="setMode('roll')">Rolled Mode</button>
+                </div>
+                <div class="controls">
+                    <label>Compression Force (Squeeze Air):</label>
+                    <input type="range" id="compression-slider" min="1" max="1.5" step="0.01" value="1">
+                </div>
+
+                <div id="volume-stage" class="mode-fold">
+                    <div id="shirt-visual">Mass</div>
+                </div>
+
+                <div class="data-display math-eq">
+                    Volume = Mass / <span class="math-var" id="density-val">Density</span>
+                </div>
+                <div class="data-display" style="font-size: 0.8rem; border: none;">
+                    Changing shape does not change volume. Only Compression (Force) does.
+                </div>
+            </div>
+        </section>
+
+        <!-- SECTION 3: BIN PACKING -->
+        <section>
+            <h2>3. The Bin Packing Problem</h2>
+            <p>If volume is conserved, why do travelers prefer rolling? It solves the <strong>Bin Packing Problem</strong>. Suitcases aren't perfect rectangles—they have wheel wells and handle ridges. Large rigid shapes (folded clothes) waste space in corners.</p>
+
+            <div class="stage">
+                <div class="controls">
+                    <button onclick="addStack()">+ Add Folded Stack</button>
+                    <button onclick="addRoll()">+ Add Rolled Cylinders</button>
+                    <button onclick="clearPhysics()">Clear Case</button>
+                </div>
+                <div id="physics-canvas-container">
+                    <div class="void-meter" id="void-msg">Items: 0</div>
+                </div>
+                <div class="data-display" style="border:none; text-align: left; font-size: 0.9rem;">
+                    <strong>Observation:</strong> Notice how "Folded" blocks bridge over the corner wheel-wells, creating empty void space (white gaps). "Rolled" units tumble into the gaps.
+                </div>
+            </div>
+        </section>
+
+        <!-- SECTION 4: EFFICIENCY -->
+        <section>
+            <h2>4. The Algorithm of Time</h2>
+            <p>The most significant difference found in the experiment wasn't space, but <strong>Time</strong>. Rolling is a simpler algorithm to execute with fewer steps (Fold half, Roll fast) versus Folding (Align seams, flatten, fold, fold, smooth).</p>
+
+            <div class="stage">
+                <div class="controls">
+                    <label>Items to Pack:</label>
+                    <input type="range" id="items-slider" min="1" max="30" value="15">
+                    <span id="items-val">15</span>
+                </div>
+                <div class="controls">
+                    <label>Perfectionism Level:</label>
+                    <input type="range" id="perf-slider" min="1" max="3" step="0.1" value="1.5">
+                </div>
+
+                <div id="chart-container">
+                    <div class="chart-row">
+                        <div class="chart-label">Fold</div>
+                        <div class="chart-bar-container">
+                            <div class="chart-bar bar-fold" id="bar-fold" style="width: 50%">15m</div>
+                        </div>
+                    </div>
+                    <div class="chart-row">
+                        <div class="chart-label">Roll</div>
+                        <div class="chart-bar-container">
+                            <div class="chart-bar bar-roll" id="bar-roll" style="width: 30%">9m</div>
+                        </div>
+                    </div>
+                </div>
+                <div class="data-display">
+                    Rolling is O(n) efficient. Folding scales poorly with perfectionism.
+                </div>
+            </div>
+        </section>
+
+        <!-- SECTION 5: STRUCTURAL INTEGRITY -->
+        <section>
+            <h2>5. The Exception</h2>
+            <p>Algorithms have edge cases. The video notes one major exception: <strong>The Collared Shirt</strong>. Rolling applies stress to the fabric structure.</p>
+
+            <div class="stage">
+                <div class="controls">
+                    <button id="toggle-roll-force">Toggle: Apply Roll Force</button>
+                </div>
+                
+                <div style="position: relative; height: 220px; display: flex; align-items: center;">
+                    <div id="shirt-svg-container">
+                        <svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
+                            <!-- Sleeves -->
+                            <path d="M 10 30 L 30 30 L 30 70 L 10 60 Z" class="shirt-path" id="sleeve-l" data-rigid="low"></path>
+                            <path d="M 90 30 L 70 30 L 70 70 L 90 60 Z" class="shirt-path" id="sleeve-r" data-rigid="low"></path>
+                            <!-- Body -->
+                            <path d="M 30 30 L 70 30 L 70 90 L 30 90 Z" class="shirt-path" id="body" data-rigid="medium"></path>
+                            <!-- Collar -->
+                            <path d="M 35 30 L 50 40 L 65 30 L 65 20 L 35 20 Z" class="shirt-path" id="collar" data-rigid="high"></path>
+                        </svg>
+                        <div class="zone-info" id="zone-tooltip">Info</div>
+                    </div>
+                </div>
+                
+                <div class="warning-box" id="structure-warning">Status: Safe (Flat)</div>
+            </div>
+        </section>
+
+        <footer class="credits">
+            <p><strong>The Verdict:</strong> Roll for speed and gap-filling. Fold for structure and organization. Space is (mostly) an illusion.</p>
+            <p>Concept based on "Rolling vs Folding" experiments. Built with Vanilla JS & Matter.js.</p>
+        </footer>
+    </main>
+
+    <script>
+        // --- SECTION 1: PREDICTION ---
+        const guessSlider = document.getElementById('guess-slider');
+        const guessOutput = document.getElementById('guess-output');
+        const predLine = document.getElementById('pred-line');
+        const revealBtn = document.getElementById('reveal-btn');
+        const fillFold = document.getElementById('fill-fold');
+        const fillRoll = document.getElementById('fill-roll');
+        const realityText = document.getElementById('reality-text');
+
+        guessSlider.addEventListener('input', (e) => {
+            const val = e.target.value;
+            guessOutput.textContent = val + "%";
+            // Map 0-50% guess to visual height difference
+            // Base height 80%, if guess is 50% saved, roll line should be at 40%
+            const rollHeight = 80 * (1 - (val/100)); 
+            predLine.style.bottom = rollHeight + "%";
+        });
+
+        revealBtn.addEventListener('click', () => {
+            // Animate to reality (Equal volume)
+            fillFold.style.height = "80%";
+            fillRoll.style.height = "80%";
+            predLine.style.opacity = "0";
+            realityText.innerHTML = "<strong>Actual Difference: ~0%.</strong><br>Both piles consume the same physical volume.";
+            revealBtn.disabled = true;
+            revealBtn.textContent = "Revealed";
+        });
+
+        // --- SECTION 2: VOLUME ---
+        const volStage = document.getElementById('volume-stage');
+        const shirtVis = document.getElementById('shirt-visual');
+        const compSlider = document.getElementById('compression-slider');
+        const densityText = document.getElementById('density-val');
+        let currentMode = 'fold';
+
+        function setMode(mode) {
+            currentMode = mode;
+            document.querySelectorAll('.mode-btn').forEach(b => b.classList.remove('active'));
+            event.target.classList.add('active');
+            
+            if(mode === 'fold') {
+                volStage.className = 'mode-fold';
+            } else {
+                volStage.className = 'mode-roll';
+            }
+        }
+
+        compSlider.addEventListener('input', (e) => {
+            const compression = e.target.value;
+            const scale = 1 / compression;
+            
+            // Visual feedback
+            shirtVis.style.transform = `scale(${scale})`;
+            
+            // Equation feedback
+            if(compression > 1.05) {
+                densityText.style.color = "var(--accent-clay)";
+                densityText.style.fontWeight = "bold";
+                densityText.textContent = "Density ↑";
+            } else {
+                densityText.style.color = "inherit";
+                densityText.style.fontWeight = "normal";
+                densityText.textContent = "Density";
+            }
+        });
+
+        // --- SECTION 3: PHYSICS (MATTER.JS) ---
+        // Setup module aliases
+        const Engine = Matter.Engine,
+              Render = Matter.Render,
+              Runner = Matter.Runner,
+              Bodies = Matter.Bodies,
+              Composite = Matter.Composite;
+
+        // Create engine
+        const engine = Engine.create();
+        const world = engine.world;
+
+        // Create renderer
+        const container = document.getElementById('physics-canvas-container');
+        const render = Render.create({
+            element: container,
+            engine: engine,
+            options: {
+                width: container.clientWidth,
+                height: 300,
+                background: '#ffffff',
+                wireframes: false
+            }
+        });
+
+        // Create Static Walls (Suitcase)
+        const wallOptions = { isStatic: true, render: { fillStyle: '#333' } };
+        const w = container.clientWidth;
+        const h = 300;
+        
+        // Walls
+        const ground = Bodies.rectangle(w/2, h+25, w, 50, wallOptions); // Floor
+        const leftWall = Bodies.rectangle(0, h/2, 20, h, wallOptions);
+        const rightWall = Bodies.rectangle(w, h/2, 20, h, wallOptions);
+        
+        // Wheel Wells (Triangles/Chamfers in corners)
+        const leftWell = Bodies.trapezoid(30, h-30, 60, 60, 1, { isStatic: true, render: { fillStyle: '#999' }, angle: Math.PI/4 });
+        const rightWell = Bodies.trapezoid(w-30, h-30, 60, 60, 1, { isStatic: true, render: { fillStyle: '#999' }, angle: -Math.PI/4 });
+
+        Composite.add(world, [ground, leftWall, rightWall, leftWell, rightWell]);
+
+        Render.run(render);
+        const runner = Runner.create();
+        Runner.run(runner, engine);
+
+        let itemCount = 0;
+        const voidMsg = document.getElementById('void-msg');
+
+        function addStack() {
+            // Add a large rigid rectangle (Folded)
+            const box = Bodies.rectangle(w/2 + (Math.random()*20 - 10), 50, 140, 40, {
+                render: { fillStyle: '#6B7A8F' }, // Slate
+                friction: 0.5,
+                restitution: 0.1
+            });
+            Composite.add(world, box);
+            updateCount();
+        }
+
+        function addRoll() {
+            // Add 3 small circles (Rolled)
+            for(let i=0; i<3; i++) {
+                const circle = Bodies.circle(w/2 + (Math.random()*40 - 20), 50 - (i*30), 18, {
+                    render: { fillStyle: '#8DA399' }, // Sage
+                    friction: 0.3,
+                    restitution: 0.4
+                });
+                Composite.add(world, circle);
+            }
+            updateCount();
+        }
+
+        function clearPhysics() {
+            Composite.clear(world, false); // Keep static bodies? No, clears everything.
+            Composite.add(world, [ground, leftWall, rightWall, leftWell, rightWell]); // Re-add walls
+            itemCount = 0;
+            updateCount();
+        }
+
+        function updateCount() {
+            itemCount++;
+            voidMsg.innerText = `Batches Added: ${itemCount}`;
+        }
+        
+        // Handle Resize
+        window.addEventListener('resize', () => {
+            render.canvas.width = container.clientWidth;
+            // Reposition right wall
+            Matter.Body.setPosition(rightWall, { x: container.clientWidth, y: h/2 });
+            Matter.Body.setPosition(rightWell, { x: container.clientWidth-30, y: h-30 });
+        });
+
+
+        // --- SECTION 4: EFFICIENCY CALCULATOR ---
+        const itemsSlider = document.getElementById('items-slider');
+        const perfSlider = document.getElementById('perf-slider');
+        const barFold = document.getElementById('bar-fold');
+        const barRoll = document.getElementById('bar-roll');
+        const itemsVal = document.getElementById('items-val');
+
+        function updateTime() {
+            const items = parseInt(itemsSlider.value);
+            const perfectionism = parseFloat(perfSlider.value);
+
+            // Arbitrary time units based on video logic
+            // Roll: 0.5 min base + 0.1 friction
+            // Fold: 0.8 min base * perfectionism multiplier
+            
+            const rollTime = items * 0.6; 
+            const foldTime = items * (0.8 * perfectionism);
+
+            const max = Math.max(rollTime, foldTime) * 1.1; // Scale factor
+
+            barFold.style.width = (foldTime / max * 100) + "%";
+            barRoll.style.width = (rollTime / max * 100) + "%";
+            
+            barFold.innerText = foldTime.toFixed(1) + "m";
+            barRoll.innerText = rollTime.toFixed(1) + "m";
+            itemsVal.innerText = items;
+        }
+
+        itemsSlider.addEventListener('input', updateTime);
+        perfSlider.addEventListener('input', updateTime);
+        updateTime(); // Init
+
+        // --- SECTION 5: STRUCTURE ---
+        const shirtContainer = document.getElementById('shirt-svg-container');
+        const tooltip = document.getElementById('zone-tooltip');
+        const paths = document.querySelectorAll('.shirt-path');
+        const forceBtn = document.getElementById('toggle-roll-force');
+        const warningBox = document.getElementById('structure-warning');
+        
+        let forceApplied = false;
+
+        // Tooltip Logic
+        shirtContainer.addEventListener('mousemove', (e) => {
+            const target = e.target;
+            if(target.classList.contains('shirt-path')) {
+                const rigid = target.getAttribute('data-rigid');
+                tooltip.style.opacity = 1;
+                tooltip.style.left = e.offsetX + 'px';
+                tooltip.style.top = e.offsetY + 'px';
+                
+                let text = "";
+                if(rigid === 'high') text = "Collar: High Rigidity Needed";
+                if(rigid === 'medium') text = "Body: Flexible";
+                if(rigid === 'low') text = "Sleeve: Very Flexible";
+                
+                tooltip.innerText = text;
+            } else {
+                tooltip.style.opacity = 0;
+            }
+        });
+
+        shirtContainer.addEventListener('mouseleave', () => {
+            tooltip.style.opacity = 0;
+        });
+
+        // Toggle Force Logic
+        forceBtn.addEventListener('click', () => {
+            forceApplied = !forceApplied;
+            
+            if(forceApplied) {
+                forceBtn.classList.add('active');
+                warningBox.innerText = "Status: CRITICAL. Collar Crushed.";
+                document.getElementById('collar').style.fill = "var(--accent-clay)"; // Red
+                document.getElementById('body').style.fill = "#ddd";
+                document.getElementById('sleeve-l').style.fill = "#ddd";
+                document.getElementById('sleeve-r').style.fill = "#ddd";
+            } else {
+                forceBtn.classList.remove('active');
+                warningBox.innerText = "Status: Safe (Flat)";
+                paths.forEach(p => p.style.fill = "white");
+            }
+        });
+
+    </script>
+</body>
+</html>

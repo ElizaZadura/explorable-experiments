@@ -1,0 +1,688 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Neural Network Playground</title>
+    <style>
+        :root {
+            --bg-color: #1a1a1a;
+            --text-color: #e0e0e0;
+            --primary-color: #00aaff;
+            --secondary-color: #333;
+            --border-color: #444;
+            --positive-weight-color: #00ff88;
+            --negative-weight-color: #ff4444;
+            --neuron-bright-color: #ffffff;
+            --neuron-dim-color: #000000;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            margin: 0;
+            display: flex;
+            justify-content: center;
+            align-items: flex-start;
+            min-height: 100vh;
+        }
+
+        .container {
+            display: flex;
+            flex-wrap: wrap;
+            width: 100%;
+            max-width: 1600px;
+            padding: 20px;
+            box-sizing: border-box;
+        }
+
+        .column {
+            padding: 15px;
+            box-sizing: border-box;
+        }
+
+        #controls-column {
+            flex: 1;
+            min-width: 350px;
+            max-width: 500px;
+        }
+
+        #visualization-column {
+            flex: 2;
+            min-width: 400px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            position: relative;
+        }
+
+        @media (max-width: 900px) {
+            .container {
+                flex-direction: column;
+            }
+            #controls-column, #visualization-column {
+                max-width: 100%;
+            }
+        }
+
+        h1, h2 {
+            color: var(--primary-color);
+            border-bottom: 1px solid var(--border-color);
+            padding-bottom: 5px;
+            margin-top: 0;
+        }
+
+        h2 {
+            margin-top: 30px;
+        }
+
+        p, li {
+            line-height: 1.6;
+        }
+
+        .control-group {
+            margin-bottom: 20px;
+            background-color: var(--secondary-color);
+            padding: 15px;
+            border-radius: 8px;
+        }
+
+        .control-group label {
+            display: block;
+            margin-bottom: 10px;
+        }
+
+        .control-group label span {
+            float: right;
+            font-weight: bold;
+            color: var(--primary-color);
+        }
+
+        input[type="range"], select {
+            width: 100%;
+            cursor: pointer;
+        }
+        
+        select {
+            background-color: #555;
+            color: var(--text-color);
+            border: 1px solid var(--border-color);
+            padding: 8px;
+            border-radius: 4px;
+        }
+        
+        #input-activations-container .input-slider-group {
+            margin-bottom: 5px;
+        }
+        
+        .code {
+            background-color: #282c34;
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-family: 'Courier New', Courier, monospace;
+        }
+
+        .prompt {
+            background-color: rgba(0, 170, 255, 0.1);
+            border-left: 3px solid var(--primary-color);
+            padding: 10px 15px;
+            margin: 15px 0;
+            font-size: 0.9em;
+        }
+
+        #network-svg {
+            width: 100%;
+            height: 600px;
+            background-color: #222;
+            border-radius: 8px;
+            border: 1px solid var(--border-color);
+        }
+
+        #tooltip {
+            position: absolute;
+            background-color: rgba(20, 20, 20, 0.9);
+            border: 1px solid var(--primary-color);
+            border-radius: 5px;
+            padding: 10px;
+            color: var(--text-color);
+            font-size: 0.9em;
+            pointer-events: none;
+            opacity: 0;
+            transition: opacity 0.1s ease-in-out;
+            max-width: 300px;
+            word-wrap: break-word;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <div class="column" id="controls-column">
+            <header>
+                <h1>Neural Network Playground</h1>
+                <p>What is a neural network? At its heart, it's a mathematical function inspired by the brain, designed to recognize patterns. It's built from layers of simple units called 'neurons'. This playground lets you build your own network from the ground up and see exactly how it processes information, one layer at a time.</p>
+            </header>
+
+            <section id="section-inputs">
+                <h2>Section 1: The Input Layer</h2>
+                <p>The network's journey begins at the <strong>Input Layer</strong>. Each neuron here represents a single piece of input data. A neuron's value, called its <strong>'activation'</strong>, is just a number between 0 (off/black) and 1 (on/white). Use the sliders below to set the initial activations for your network.</p>
+                <div class="control-group">
+                    <label for="num-inputs">Number of Input Neurons: <span id="num-inputs-value">3</span></label>
+                    <input type="range" id="num-inputs" min="2" max="10" value="3">
+                </div>
+                <div class="control-group" id="input-activations-container">
+                    <!-- Input sliders will be generated here -->
+                </div>
+            </section>
+
+            <section id="section-layers">
+                <h2>Section 2: Hidden & Output Layers</h2>
+                <p>The real work happens in the <strong>Hidden Layers</strong>. These intermediate layers allow the network to combine the initial inputs in increasingly complex ways. The final <strong>Output Layer</strong> gives the result. The neuron with the highest activation in this last layer is the network's 'guess'.</p>
+                <div class="control-group">
+                    <label for="num-hidden-layers">Number of Hidden Layers: <span id="num-hidden-layers-value">1</span></label>
+                    <input type="range" id="num-hidden-layers" min="0" max="2" value="1">
+                </div>
+                <div class="control-group">
+                    <label for="neurons-per-layer">Neurons per Hidden Layer: <span id="neurons-per-layer-value">4</span></label>
+                    <input type="range" id="neurons-per-layer" min="2" max="10" value="4">
+                </div>
+                <div class="control-group">
+                    <label for="num-outputs">Number of Output Neurons: <span id="num-outputs-value">2</span></label>
+                    <input type="range" id="num-outputs" min="2" max="8" value="2">
+                </div>
+            </section>
+
+            <section id="section-logic">
+                <h2>Section 3: How Neurons "Think"</h2>
+                <p>A neuron calculates a <strong>weighted sum</strong> of all incoming activations. It adds a personal <strong>'bias'</strong>, then passes the result through an <strong>Activation Function</strong> to 'squish' it into a useful range (e.g., 0 to 1).</p>
+                <p style="text-align: center; font-size: 1.2em;"><code class="code">Activation = σ(Weighted Sum + Bias)</code></p>
+                <div class="control-group">
+                    <label for="activation-function">Activation Function:</label>
+                    <select id="activation-function">
+                        <option value="sigmoid" selected>Sigmoid</option>
+                        <option value="relu">ReLU</option>
+                    </select>
+                </div>
+                <div class="control-group">
+                     <label>Activation Function Graph:</label>
+                     <svg id="activation-plot-svg" width="100%" height="150" style="background-color:#222; border-radius:4px;"></svg>
+                </div>
+                <div class="prompts">
+                    <div class="prompt"><strong>Hover over any connection line</strong> to see its weight. Green is positive, red is negative. Thicker lines have a stronger influence.</div>
+                    <div class="prompt"><strong>Hover over any hidden/output neuron</strong> to see its bias and the calculation that determines its activation.</div>
+                    <div class="prompt"><strong>Click a connection or neuron</strong> to manually edit its weight or bias. Try setting a weight to a large number like <code class="code">10</code> and see how it dominates the calculation!</div>
+                </div>
+            </section>
+        </div>
+
+        <div class="column" id="visualization-column">
+            <svg id="network-svg"></svg>
+            <div id="tooltip"></div>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            // --- DOM ELEMENT REFERENCES ---
+            const controls = {
+                numInputs: document.getElementById('num-inputs'),
+                numInputsValue: document.getElementById('num-inputs-value'),
+                inputActivationsContainer: document.getElementById('input-activations-container'),
+                numHiddenLayers: document.getElementById('num-hidden-layers'),
+                numHiddenLayersValue: document.getElementById('num-hidden-layers-value'),
+                neuronsPerLayer: document.getElementById('neurons-per-layer'),
+                neuronsPerLayerValue: document.getElementById('neurons-per-layer-value'),
+                numOutputs: document.getElementById('num-outputs'),
+                numOutputsValue: document.getElementById('num-outputs-value'),
+                activationFunction: document.getElementById('activation-function'),
+            };
+
+            const viz = {
+                networkSvg: document.getElementById('network-svg'),
+                activationPlotSvg: document.getElementById('activation-plot-svg'),
+                tooltip: document.getElementById('tooltip'),
+            };
+
+            const SVG_NS = "http://www.w3.org/2000/svg";
+
+            // --- STATE MANAGEMENT ---
+            let state = {
+                networkStructure: [],
+                inputActivations: [],
+                weights: [],
+                biases: [],
+                activations: [],
+                preActivations: [],
+                activationFn: 'sigmoid',
+                hoveredNeuron: null,
+            };
+
+            // --- ACTIVATION FUNCTIONS ---
+            const activationFunctions = {
+                sigmoid: x => 1 / (1 + Math.exp(-x)),
+                relu: x => Math.max(0, x),
+            };
+            
+            // --- CORE LOGIC ---
+
+            function initializeNetwork() {
+                updateNetworkStructure();
+                rebuildInputSliders();
+                initializeParameters();
+                runFullUpdate();
+            }
+
+            function updateNetworkStructure() {
+                const numInputs = parseInt(controls.numInputs.value);
+                const numHiddenLayers = parseInt(controls.numHiddenLayers.value);
+                const neuronsPerLayer = parseInt(controls.neuronsPerLayer.value);
+                const numOutputs = parseInt(controls.numOutputs.value);
+                
+                state.networkStructure = [numInputs];
+                for (let i = 0; i < numHiddenLayers; i++) {
+                    state.networkStructure.push(neuronsPerLayer);
+                }
+                state.networkStructure.push(numOutputs);
+            }
+
+            function rebuildInputSliders() {
+                const numInputs = state.networkStructure[0];
+                controls.inputActivationsContainer.innerHTML = '';
+                state.inputActivations = [];
+
+                for (let i = 0; i < numInputs; i++) {
+                    const group = document.createElement('div');
+                    group.className = 'input-slider-group';
+
+                    const label = document.createElement('label');
+                    label.htmlFor = `input-${i}`;
+                    label.textContent = `Input ${i + 1}: `;
+                    const valueSpan = document.createElement('span');
+                    valueSpan.id = `input-value-${i}`;
+                    label.appendChild(valueSpan);
+
+                    const slider = document.createElement('input');
+                    slider.type = 'range';
+                    slider.id = `input-${i}`;
+                    slider.min = '0';
+                    slider.max = '1';
+                    slider.step = '0.01';
+                    const initialValue = Math.random();
+                    slider.value = initialValue;
+                    state.inputActivations[i] = initialValue;
+                    valueSpan.textContent = initialValue.toFixed(2);
+
+                    slider.addEventListener('input', () => {
+                        state.inputActivations[i] = parseFloat(slider.value);
+                        valueSpan.textContent = slider.value;
+                        runFullUpdate();
+                    });
+
+                    group.appendChild(label);
+                    group.appendChild(slider);
+                    controls.inputActivationsContainer.appendChild(group);
+                }
+            }
+
+            function initializeParameters() {
+                state.weights = [];
+                state.biases = [];
+
+                for (let i = 0; i < state.networkStructure.length - 1; i++) {
+                    const inputSize = state.networkStructure[i];
+                    const outputSize = state.networkStructure[i + 1];
+
+                    // Weights
+                    const layerWeights = [];
+                    for (let j = 0; j < outputSize; j++) {
+                        const neuronWeights = [];
+                        for (let k = 0; k < inputSize; k++) {
+                            neuronWeights.push(Math.random() * 2 - 1); // Random between -1 and 1
+                        }
+                        layerWeights.push(neuronWeights);
+                    }
+                    state.weights.push(layerWeights);
+
+                    // Biases
+                    const layerBiases = [];
+                    for (let j = 0; j < outputSize; j++) {
+                        layerBiases.push(Math.random() * 2 - 1);
+                    }
+                    state.biases.push(layerBiases);
+                }
+            }
+
+            function feedForward() {
+                state.activations = [state.inputActivations];
+                state.preActivations = [[]]; // Input layer has no pre-activation
+                let currentActivations = state.inputActivations;
+
+                for (let i = 0; i < state.weights.length; i++) {
+                    const W = state.weights[i];
+                    const b = state.biases[i];
+                    const nextActivations = [];
+                    const nextPreActivations = [];
+
+                    for (let j = 0; j < W.length; j++) { // For each neuron in the next layer
+                        let weightedSum = 0;
+                        for (let k = 0; k < currentActivations.length; k++) { // From each neuron in the current layer
+                            weightedSum += currentActivations[k] * W[j][k];
+                        }
+                        weightedSum += b[j];
+                        nextPreActivations.push(weightedSum);
+                        nextActivations.push(activationFunctions[state.activationFn](weightedSum));
+                    }
+                    state.preActivations.push(nextPreActivations);
+                    state.activations.push(nextActivations);
+                    currentActivations = nextActivations;
+                }
+            }
+
+            function runFullUpdate() {
+                feedForward();
+                drawNetwork();
+                drawActivationPlot();
+            }
+            
+            // --- DRAWING & VISUALIZATION ---
+
+            function drawNetwork() {
+                viz.networkSvg.innerHTML = '';
+                const { width, height } = viz.networkSvg.getBoundingClientRect();
+
+                const layerCount = state.networkStructure.length;
+                const maxNeurons = Math.max(...state.networkStructure);
+                
+                const neuronRadius = Math.min(25, height / (maxNeurons * 2.5));
+                const layerMargin = width / (layerCount + 1);
+                
+                const neuronPositions = [];
+
+                // Calculate neuron positions
+                for (let i = 0; i < layerCount; i++) {
+                    const layerPositions = [];
+                    const numNeurons = state.networkStructure[i];
+                    const x = layerMargin * (i + 1);
+                    const y_margin = (height - numNeurons * neuronRadius * 2.5) / 2;
+                    for (let j = 0; j < numNeurons; j++) {
+                        const y = y_margin + neuronRadius * 1.25 + j * neuronRadius * 2.5;
+                        layerPositions.push({ x, y });
+                    }
+                    neuronPositions.push(layerPositions);
+                }
+
+                // Draw connections
+                for (let i = 0; i < state.weights.length; i++) {
+                    const layerWeights = state.weights[i];
+                    for (let j = 0; j < layerWeights.length; j++) {
+                        for (let k = 0; k < layerWeights[j].length; k++) {
+                            const weight = layerWeights[j][k];
+                            const line = document.createElementNS(SVG_NS, 'line');
+                            const startPos = neuronPositions[i][k];
+                            const endPos = neuronPositions[i + 1][j];
+                            
+                            line.setAttribute('x1', startPos.x);
+                            line.setAttribute('y1', startPos.y);
+                            line.setAttribute('x2', endPos.x);
+                            line.setAttribute('y2', endPos.y);
+                            
+                            const color = weight > 0 ? 'var(--positive-weight-color)' : 'var(--negative-weight-color)';
+                            const thickness = Math.min(10, Math.abs(weight) * 2);
+
+                            line.style.stroke = color;
+                            line.style.strokeWidth = thickness;
+                            line.style.opacity = 0.6;
+                            line.style.transition = 'opacity 0.2s';
+                            line.classList.add('connection-line');
+                            
+                            // Add interactivity
+                            line.addEventListener('mouseenter', (e) => handleConnectionHover(e, i, k, j));
+                            line.addEventListener('mouseleave', hideTooltip);
+                            line.addEventListener('click', () => handleConnectionClick(i, k, j));
+                            
+                            viz.networkSvg.appendChild(line);
+                        }
+                    }
+                }
+
+                // Draw neurons
+                for (let i = 0; i < layerCount; i++) {
+                    for (let j = 0; j < state.networkStructure[i]; j++) {
+                        const pos = neuronPositions[i][j];
+                        const activation = state.activations[i][j];
+                        
+                        const neuronGroup = document.createElementNS(SVG_NS, 'g');
+                        neuronGroup.style.cursor = 'pointer';
+
+                        const circle = document.createElementNS(SVG_NS, 'circle');
+                        circle.setAttribute('cx', pos.x);
+                        circle.setAttribute('cy', pos.y);
+                        circle.setAttribute('r', neuronRadius);
+                        
+                        // Color interpolation
+                        const r = Math.round(255 * activation);
+                        const g = Math.round(255 * activation);
+                        const b = Math.round(255 * activation);
+                        circle.style.fill = `rgb(${r},${g},${b})`;
+                        circle.style.stroke = 'var(--primary-color)';
+                        circle.style.strokeWidth = '2';
+                        circle.style.transition = 'transform 0.2s';
+
+                        const text = document.createElementNS(SVG_NS, 'text');
+                        text.setAttribute('x', pos.x);
+                        text.setAttribute('y', pos.y);
+                        text.setAttribute('dy', '0.3em'); // Vertical alignment
+                        text.textContent = activation.toFixed(2);
+                        text.style.textAnchor = 'middle';
+                        text.style.fill = activation > 0.5 ? 'black' : 'white';
+                        text.style.fontSize = `${neuronRadius * 0.6}px`;
+                        text.style.pointerEvents = 'none';
+
+                        neuronGroup.appendChild(circle);
+                        neuronGroup.appendChild(text);
+                        
+                        if (i > 0) { // Not input layer
+                           neuronGroup.addEventListener('mouseenter', (e) => handleNeuronHover(e, i, j));
+                           neuronGroup.addEventListener('mouseleave', handleNeuronMouseLeave);
+                           neuronGroup.addEventListener('click', () => handleNeuronClick(i, j));
+                        }
+                        
+                        viz.networkSvg.appendChild(neuronGroup);
+                    }
+                }
+            }
+            
+            function drawActivationPlot() {
+                const svg = viz.activationPlotSvg;
+                svg.innerHTML = '';
+                const { width, height } = svg.getBoundingClientRect();
+                const padding = { top: 10, right: 10, bottom: 20, left: 30 };
+                const plotWidth = width - padding.left - padding.right;
+                const plotHeight = height - padding.top - padding.bottom;
+
+                // Define plot range
+                const xRange = [-5, 5];
+                const yRange = state.activationFn === 'relu' ? [0, 5] : [0, 1];
+
+                const xScale = x => padding.left + ((x - xRange[0]) / (xRange[1] - xRange[0])) * plotWidth;
+                const yScale = y => padding.top + plotHeight - ((y - yRange[0]) / (yRange[1] - yRange[0])) * plotHeight;
+
+                // Draw axes
+                const xAxis = document.createElementNS(SVG_NS, 'line');
+                xAxis.setAttribute('x1', padding.left);
+                xAxis.setAttribute('y1', yScale(0));
+                xAxis.setAttribute('x2', width - padding.right);
+                xAxis.setAttribute('y2', yScale(0));
+                xAxis.style.stroke = '#888';
+                svg.appendChild(xAxis);
+
+                const yAxis = document.createElementNS(SVG_NS, 'line');
+                yAxis.setAttribute('x1', xScale(0));
+                yAxis.setAttribute('y1', padding.top);
+                yAxis.setAttribute('x2', xScale(0));
+                yAxis.setAttribute('y2', height - padding.bottom);
+                yAxis.style.stroke = '#888';
+                svg.appendChild(yAxis);
+
+                // Plot the function
+                const path = document.createElementNS(SVG_NS, 'path');
+                let d = '';
+                const steps = 100;
+                for (let i = 0; i <= steps; i++) {
+                    const x = xRange[0] + (i / steps) * (xRange[1] - xRange[0]);
+                    const y = activationFunctions[state.activationFn](x);
+                    const px = xScale(x);
+                    const py = yScale(y);
+                    if (i === 0) d += `M ${px} ${py}`;
+                    else d += ` L ${px} ${py}`;
+                }
+                path.setAttribute('d', d);
+                path.style.fill = 'none';
+                path.style.stroke = 'var(--primary-color)';
+                path.style.strokeWidth = 2;
+                svg.appendChild(path);
+                
+                // Draw hovered neuron point
+                if (state.hoveredNeuron) {
+                    const { layer, neuron } = state.hoveredNeuron;
+                    const preActivation = state.preActivations[layer][neuron];
+                    const activation = state.activations[layer][neuron];
+                    
+                    if (preActivation >= xRange[0] && preActivation <= xRange[1]) {
+                        const point = document.createElementNS(SVG_NS, 'circle');
+                        point.setAttribute('cx', xScale(preActivation));
+                        point.setAttribute('cy', yScale(activation));
+                        point.setAttribute('r', 5);
+                        point.style.fill = 'var(--positive-weight-color)';
+                        svg.appendChild(point);
+                    }
+                }
+            }
+
+
+            // --- INTERACTIVITY HANDLERS ---
+            
+            function showTooltip(e, content) {
+                viz.tooltip.innerHTML = content;
+                viz.tooltip.style.opacity = '1';
+                viz.tooltip.style.left = `${e.clientX + 15}px`;
+                viz.tooltip.style.top = `${e.clientY + 15}px`;
+            }
+
+            function hideTooltip() {
+                viz.tooltip.style.opacity = '0';
+            }
+
+            function handleConnectionHover(e, layerIdx, fromIdx, toIdx) {
+                const weight = state.weights[layerIdx][toIdx][fromIdx];
+                showTooltip(e, `Weight: <strong>${weight.toFixed(3)}</strong>`);
+            }
+
+            function handleNeuronHover(e, layerIdx, neuronIdx) {
+                state.hoveredNeuron = { layer: layerIdx, neuron: neuronIdx };
+                const bias = state.biases[layerIdx - 1][neuronIdx];
+                const preActivation = state.preActivations[layerIdx][neuronIdx];
+                const activation = state.activations[layerIdx][neuronIdx];
+                
+                let calculationStr = '';
+                for(let i=0; i < state.weights[layerIdx-1][neuronIdx].length; i++) {
+                    const w = state.weights[layerIdx-1][neuronIdx][i];
+                    const a = state.activations[layerIdx-1][i];
+                    calculationStr += `(${w.toFixed(2)} * ${a.toFixed(2)}) + `;
+                }
+                calculationStr = calculationStr.slice(0, -3); // remove last ' + '
+
+                const content = `
+                    <strong>Bias: ${bias.toFixed(3)}</strong><br>
+                    Weighted Sum: ${calculationStr}<br>
+                    Pre-activation: ${preActivation.toFixed(3)}<br>
+                    Final Activation: ${activation.toFixed(3)}
+                `;
+                showTooltip(e, content);
+                drawActivationPlot(); // Redraw to show the point
+                
+                // Highlight connections
+                const lines = viz.networkSvg.querySelectorAll('.connection-line');
+                lines.forEach(line => line.style.opacity = 0.1);
+                // This is a bit inefficient, but fine for this scale
+                for (let i = 0; i < state.networkStructure[layerIdx-1]; i++) {
+                    const line = findLineElement(layerIdx-1, i, neuronIdx);
+                    if (line) {
+                      line.style.opacity = 1;
+                      line.style.strokeWidth = Math.min(10, Math.abs(state.weights[layerIdx-1][neuronIdx][i]) * 2 + 2);
+                    }
+                }
+            }
+            
+            function findLineElement(fromLayer, fromNeuron, toNeuron) {
+                // This is a helper for highlighting, it finds the specific line element
+                let lineIndex = 0;
+                for (let i = 0; i < fromLayer; i++) {
+                   lineIndex += state.networkStructure[i] * state.networkStructure[i+1];
+                }
+                lineIndex += toNeuron * state.networkStructure[fromLayer] + fromNeuron;
+                return viz.networkSvg.querySelectorAll('.connection-line')[lineIndex];
+            }
+            
+            function handleNeuronMouseLeave() {
+                state.hoveredNeuron = null;
+                hideTooltip();
+                drawActivationPlot(); // Redraw to remove the point
+                // Reset connection styles
+                const lines = viz.networkSvg.querySelectorAll('.connection-line');
+                lines.forEach(line => {
+                    line.style.opacity = 0.6;
+                    // We need to re-calculate the original thickness
+                    // For simplicity, we'll just redraw the whole network
+                    runFullUpdate();
+                });
+            }
+
+            function handleConnectionClick(layerIdx, fromIdx, toIdx) {
+                const currentWeight = state.weights[layerIdx][toIdx][fromIdx];
+                const newWeightStr = prompt(`Enter new weight (current: ${currentWeight.toFixed(3)}):`, currentWeight.toFixed(3));
+                const newWeight = parseFloat(newWeightStr);
+                if (!isNaN(newWeight)) {
+                    state.weights[layerIdx][toIdx][fromIdx] = newWeight;
+                    runFullUpdate();
+                }
+            }
+
+            function handleNeuronClick(layerIdx, neuronIdx) {
+                const currentBias = state.biases[layerIdx - 1][neuronIdx];
+                const newBiasStr = prompt(`Enter new bias (current: ${currentBias.toFixed(3)}):`, currentBias.toFixed(3));
+                const newBias = parseFloat(newBiasStr);
+                if (!isNaN(newBias)) {
+                    state.biases[layerIdx - 1][neuronIdx] = newBias;
+                    runFullUpdate();
+                }
+            }
+
+            // --- EVENT LISTENERS ---
+            function setupEventListeners() {
+                Object.keys(controls).forEach(key => {
+                    if (controls[key] && controls[key].type === 'range') {
+                        controls[key].addEventListener('input', (e) => {
+                            const valueEl = document.getElementById(`${e.target.id}-value`);
+                            if (valueEl) valueEl.textContent = e.target.value;
+                        });
+                        controls[key].addEventListener('change', () => { // Use change to avoid re-rendering on every pixel moved
+                           initializeNetwork();
+                        });
+                    }
+                });
+
+                controls.activationFunction.addEventListener('change', (e) => {
+                    state.activationFn = e.target.value;
+                    runFullUpdate();
+                });
+            }
+
+            // --- INITIALIZATION ---
+            setupEventListeners();
+            initializeNetwork();
+        });
+    </script>
+</body>
+</html>
