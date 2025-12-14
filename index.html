@@ -7,10 +7,11 @@
 
   <style>
     :root {
-      --bg: #faf9f6;
-      --text: #2e2e2e;
-      --muted: #666;
-      --link: #3b5bdb;
+      --bg: #f9fafb;
+      --text: #1f2933;
+      --muted: #6b7280;
+      --accent: #3b5bdb;
+      --border: #e5e7eb;
       --maxw: 680px;
     }
 
@@ -18,9 +19,9 @@
       margin: 0;
       background: var(--bg);
       color: var(--text);
-      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI",
-                   Roboto, Helvetica, Arial, sans-serif;
-      line-height: 1.6;
+      font-family: system-ui, -apple-system, BlinkMacSystemFont,
+                   "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      line-height: 1.65;
     }
 
     main {
@@ -31,7 +32,8 @@
 
     h1 {
       font-size: 2rem;
-      margin-bottom: 0.5rem;
+      font-weight: 600;
+      margin-bottom: 0.75rem;
     }
 
     p {
@@ -41,15 +43,20 @@
     ul {
       list-style: none;
       padding: 0;
-      margin: 2rem 0;
+      margin: 2.5rem 0;
     }
 
     li {
-      margin-bottom: 1.5rem;
+      padding: 1.25rem 0;
+      border-bottom: 1px solid var(--border);
+    }
+
+    li:last-child {
+      border-bottom: none;
     }
 
     a {
-      color: var(--link);
+      color: var(--accent);
       text-decoration: none;
     }
 
@@ -58,16 +65,24 @@
     }
 
     .title {
-      font-weight: 600;
+      font-size: 1.05rem;
+      font-weight: 500;
+    }
+
+    .title:hover {
+      text-decoration: none;
     }
 
     .desc {
+      margin-top: 0.25rem;
       color: var(--muted);
       font-size: 0.95rem;
     }
 
     footer {
-      margin-top: 4rem;
+      margin-top: 3.5rem;
+      padding-top: 1.5rem;
+      border-top: 1px solid var(--border);
       color: var(--muted);
       font-size: 0.85rem;
     }
@@ -108,6 +123,114 @@
         </a>
         <div class="desc">
           Why failure dominates, incentives matter, and hype beats utility.
+        </div>
+      </li>
+
+      <li>
+        <a class="title" href="explorables/the-trillion-sliders-demystifying-ai-parameters.html">
+          The Trillion Sliders
+        </a>
+        <div class="desc">
+          Demystifying AI parameters through interactive weight manipulation.
+        </div>
+      </li>
+
+      <li>
+        <a class="title" href="explorables/the-geometry-of-the-cascade.html">
+          The Geometry of the Cascade
+        </a>
+        <div class="desc">
+          Exploring domino physics, timing, and chain reactions.
+        </div>
+      </li>
+
+      <li>
+        <a class="title" href="explorables/security-by-imperfection-the-physics-of-lock-cracking.html">
+          Security by Imperfection
+        </a>
+        <div class="desc">
+          The physics of lock cracking and why flaws enable picking.
+        </div>
+      </li>
+
+      <li>
+        <a class="title" href="explorables/the-mechanics-of-security.html">
+          The Mechanics of Security
+        </a>
+        <div class="desc">
+          How locks work, from pins to shear lines.
+        </div>
+      </li>
+
+      <li>
+        <a class="title" href="explorables/stress-shear-and-survival.html">
+          Stress, Shear, and Survival
+        </a>
+        <div class="desc">
+          How tape holds under tension, peel, and shear forces.
+        </div>
+      </li>
+
+      <li>
+        <a class="title" href="explorables/the-mechanics-of-magic-the-slip-force.html">
+          The Mechanics of Magic
+        </a>
+        <div class="desc">
+          The slip force and how card magicians control your choice.
+        </div>
+      </li>
+
+      <li>
+        <a class="title" href="explorables/the-topology-of-the-fitted-sheet.html">
+          The Topology of the Fitted Sheet
+        </a>
+        <div class="desc">
+          Why folding fitted sheets is a battle against geometry.
+        </div>
+      </li>
+
+      <li>
+        <a class="title" href="explorables/the-anatomy-of-an-ai-agent.html">
+          The Anatomy of an AI Agent
+        </a>
+        <div class="desc">
+          Perception, reasoning, and action loops in agent systems.
+        </div>
+      </li>
+
+      <li>
+        <a class="title" href="explorables/agent-architecture-sandbox.html">
+          Agent Architecture Sandbox
+        </a>
+        <div class="desc">
+          Build and watch AI agents execute tool-driven workflows.
+        </div>
+      </li>
+
+      <li>
+        <a class="title" href="explorables/the-quantum-observer-effect-interactive-double-slit-experiment.html">
+          The Quantum Observer Effect
+        </a>
+        <div class="desc">
+          Interactive double-slit experiment: particles, waves, and observation.
+        </div>
+      </li>
+
+      <li>
+        <a class="title" href="explorables/neural-network-playground.html">
+          Neural Network Playground
+        </a>
+        <div class="desc">
+          Visualize neurons, weights, and activations in real time.
+        </div>
+      </li>
+
+      <li>
+        <a class="title" href="explorables/the-linear-race-a-linear-algebra-playground.html">
+          The Linear Race
+        </a>
+        <div class="desc">
+          A linear algebra playground: vectors, transformations, and racing.
         </div>
       </li>
     </ul>
