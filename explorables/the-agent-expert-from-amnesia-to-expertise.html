@@ -1,0 +1,568 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>The Agent Expert: From Amnesia to Expertise</title>
+    <style>
+        :root {
+            --bg-color: #121212;
+            --card-bg: #1e1e1e;
+            --text-main: #e0e0e0;
+            --text-dim: #a0a0a0;
+            --accent-primary: #00ffcc; /* Cyan */
+            --accent-secondary: #ff0055; /* Red */
+            --accent-tertiary: #ffff00; /* Yellow */
+            --code-bg: #2d2d2d;
+            --border-color: #333;
+            --font-mono: 'Fira Code', 'Courier New', monospace;
+            --font-sans: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            background-color: var(--bg-color);
+            color: var(--text-main);
+            font-family: var(--font-sans);
+            line-height: 1.6;
+            overflow-x: hidden;
+        }
+
+        /* Typography */
+        h1, h2, h3 {
+            font-weight: 700;
+            letter-spacing: -0.02em;
+            margin-bottom: 1rem;
+        }
+
+        h1 { font-size: 2.5rem; text-align: center; margin-top: 4rem; color: var(--accent-primary); }
+        h2 { font-size: 1.8rem; margin-top: 0; }
+        p { margin-bottom: 1.5rem; color: var(--text-dim); font-size: 1.1rem; }
+        
+        code, .mono {
+            font-family: var(--font-mono);
+            font-size: 0.9em;
+        }
+
+        /* Layout */
+        .container {
+            max-width: 1000px;
+            margin: 0 auto;
+            padding: 0 20px;
+        }
+
+        section {
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            padding: 4rem 0;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .split-view {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 2rem;
+            align-items: start;
+        }
+
+        @media (max-width: 768px) {
+            .split-view { grid-template-columns: 1fr; }
+            h1 { font-size: 1.8rem; }
+        }
+
+        /* Components */
+        .terminal-window {
+            background: var(--card-bg);
+            border: 1px solid var(--border-color);
+            border-radius: 6px;
+            overflow: hidden;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+            display: flex;
+            flex-direction: column;
+            height: 400px;
+        }
+
+        .terminal-header {
+            background: #252526;
+            padding: 8px 12px;
+            font-size: 0.8rem;
+            color: #888;
+            display: flex;
+            justify-content: space-between;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .terminal-body {
+            padding: 15px;
+            font-family: var(--font-mono);
+            overflow-y: auto;
+            flex-grow: 1;
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* Buttons & Inputs */
+        button {
+            background: var(--accent-primary);
+            color: #000;
+            border: none;
+            padding: 8px 16px;
+            font-family: var(--font-mono);
+            font-weight: bold;
+            cursor: pointer;
+            border-radius: 2px;
+            margin-top: 10px;
+            transition: transform 0.1s;
+        }
+        button:active { transform: scale(0.98); }
+        button.secondary { background: #444; color: white; }
+        button.danger { background: var(--accent-secondary); color: white; }
+
+        input[type="text"] {
+            background: var(--code-bg);
+            border: 1px solid var(--border-color);
+            color: white;
+            padding: 8px;
+            width: 100%;
+            font-family: var(--font-mono);
+            margin-bottom: 10px;
+        }
+
+        textarea {
+            background: var(--code-bg);
+            color: #d4d4d4;
+            border: none;
+            width: 100%;
+            height: 100%;
+            padding: 10px;
+            font-family: var(--font-mono);
+            resize: none;
+            outline: none;
+        }
+
+        /* Specific Visuals */
+        .chat-msg { margin-bottom: 8px; }
+        .chat-msg.user { color: var(--accent-primary); }
+        .chat-msg.agent { color: #fff; }
+        .chat-msg.system { color: #888; font-style: italic; }
+
+        .memory-block {
+            color: #ce9178; /* JSON string color */
+        }
+
+        .diff-added { color: var(--accent-primary); background: rgba(0, 255, 204, 0.1); }
+        .diff-removed { color: var(--accent-secondary); background: rgba(255, 0, 85, 0.1); text-decoration: line-through; }
+        
+        /* Section 3 Layout */
+        .tri-col {
+            display: grid;
+            grid-template-columns: 1fr 1fr 1fr;
+            gap: 10px;
+            height: 350px;
+        }
+        @media (max-width: 768px) { .tri-col { grid-template-columns: 1fr; height: auto; } }
+
+        .code-block { color: #9cdcfe; }
+        .keyword { color: #c586c0; }
+
+        /* Graph */
+        .chart-container {
+            width: 100%;
+            height: 300px;
+            background: var(--card-bg);
+            border: 1px solid var(--border-color);
+            position: relative;
+            padding: 20px;
+        }
+        svg { width: 100%; height: 100%; overflow: visible; }
+        
+        .nav-dots {
+            position: fixed;
+            right: 20px;
+            top: 50%;
+            transform: translateY(-50%);
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+        .dot { width: 10px; height: 10px; background: #333; border-radius: 50%; }
+        .dot.active { background: var(--accent-primary); }
+
+    </style>
+</head>
+<body>
+
+    <div class="nav-dots">
+        <div class="dot active"></div>
+        <div class="dot"></div>
+        <div class="dot"></div>
+        <div class="dot"></div>
+        <div class="dot"></div>
+    </div>
+
+    <div class="container">
+        <!-- Header -->
+        <header style="height: 60vh; display: flex; flex-direction: column; justify-content: center; align-items: center; text-align: center;">
+            <h1 class="mono">&lt;The Agent Expert /&gt;</h1>
+            <p style="max-width: 600px;">From Amnesia to Expertise.<br>A visual exploration of persistent mental models in AI agents.</p>
+            <p class="mono" style="font-size: 0.8rem; color: #666;">SCROLL TO BEGIN</p>
+        </header>
+
+        <!-- Section 1: The Problem -->
+        <section id="s1">
+            <div class="split-view">
+                <div>
+                    <h2>1. The Problem: Amnesia</h2>
+                    <p>Generic agents are brilliant but forgetful. They burn tokens re-learning context every session.</p>
+                    <p><strong>Try it:</strong> Tell the agent your project name is "Orion". Then restart the session and ask "What is my project?"</p>
+                </div>
+                <div class="terminal-window">
+                    <div class="terminal-header"><span>TERMINAL: GENERIC AGENT</span></div>
+                    <div class="terminal-body" id="s1-chat">
+                        <div class="chat-msg agent">Agent: Hello. I am ready.</div>
+                    </div>
+                    <div style="padding: 10px; background: #252526;">
+                        <input type="text" id="s1-input" placeholder="Type here... (e.g., 'Project is Orion')">
+                        <div style="display: flex; gap: 10px;">
+                            <button onclick="s1Send()">Send</button>
+                            <button class="danger" onclick="s1Restart()">End Session / Restart</button>
+                        </div>
+                    </div>
+                    <div style="padding: 10px; border-top: 1px solid #333; font-size: 0.8rem;">
+                        SESSION MEMORY: <span id="s1-memory" class="memory-block">{}</span>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Section 2: The Solution -->
+        <section id="s2">
+            <div class="split-view">
+                <div>
+                    <h2>2. The Solution: Mental Models</h2>
+                    <p>To create an expert, we externalize memory into a structured file (YAML/Markdown). The agent consults this file before answering.</p>
+                    <p><strong>Lab:</strong> Edit the YAML file directly. Change <code>users</code> to <code>clients</code>. Then ask the agent: "What table stores people?"</p>
+                </div>
+                <div class="terminal-window" style="flex-direction: row;">
+                    <!-- Left: Chat -->
+                    <div style="width: 50%; border-right: 1px solid #333; display: flex; flex-direction: column;">
+                        <div class="terminal-header">AGENT INTERFACE</div>
+                        <div class="terminal-body" id="s2-chat">
+                            <div class="chat-msg agent">I have read the mental model.</div>
+                        </div>
+                        <div style="padding: 10px;">
+                            <input type="text" id="s2-input" placeholder="Ask about the schema...">
+                            <button onclick="s2Send()">Ask Expert</button>
+                        </div>
+                    </div>
+                    <!-- Right: Editor -->
+                    <div style="width: 50%; display: flex; flex-direction: column;">
+                        <div class="terminal-header">expertise.yaml</div>
+                        <textarea id="s2-yaml">
+# Database Schema
+database_structure:
+  tables:
+    users: 
+      - id
+      - email
+    orders:
+      - id
+      - amount</textarea>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Section 3: The Learning Loop -->
+        <section id="s3">
+            <div>
+                <h2>3. The Learning Loop</h2>
+                <p>True experts validate their models. If the code (Source of Truth) changes, the expert detects the drift and updates its Mental Model automatically.</p>
+                <div class="tri-col" style="margin-top: 2rem;">
+                    <!-- Codebase -->
+                    <div class="terminal-window" style="height: 300px;">
+                        <div class="terminal-header">CODEBASE (SQL)</div>
+                        <div class="terminal-body" style="background: #1e1e1e; justify-content: center;">
+                            <code id="s3-code" class="code-block">CREATE TABLE <span class="keyword">users</span> (<br>&nbsp;id INT,<br>&nbsp;email TEXT<br>);</code>
+                        </div>
+                        <div style="padding: 10px;">
+                            <button class="secondary" onclick="s3Refactor()">Refactor Code</button>
+                        </div>
+                    </div>
+                    <!-- Agent Logic -->
+                    <div class="terminal-window" style="height: 300px;">
+                        <div class="terminal-header">AGENT LOGS</div>
+                        <div class="terminal-body" id="s3-logs" style="font-size: 0.8rem;">
+                            <div class="chat-msg system">Waiting for trigger...</div>
+                        </div>
+                        <div style="padding: 10px;">
+                            <button onclick="s3RunExpert()">Run Expert Query</button>
+                        </div>
+                    </div>
+                    <!-- Mental Model -->
+                    <div class="terminal-window" style="height: 300px;">
+                        <div class="terminal-header">expertise.yaml</div>
+                        <div class="terminal-body">
+                            <pre id="s3-yaml" style="white-space: pre-wrap;">table_name: users</pre>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Section 4: Meta-Agentics -->
+        <section id="s4">
+            <div class="split-view">
+                <div>
+                    <h2>4. Meta-Agentics</h2>
+                    <p>We don't write experts manually. We use a <strong>Meta-Agent</strong> to spawn specialized experts and generate their initial mental models.</p>
+                    <p><strong>Lab:</strong> Define a domain (e.g., "WebSocket", "Payment") to generate a new expert.</p>
+                </div>
+                <div class="terminal-window">
+                    <div class="terminal-header">META-AGENT FACTORY</div>
+                    <div class="terminal-body" id="s4-canvas" style="align-items: center; justify-content: center; position: relative;">
+                        <!-- Nodes will be injected here -->
+                        <div style="border: 1px solid #666; padding: 10px; border-radius: 4px; background: #333;">Meta-Agent</div>
+                        <div style="width: 2px; height: 30px; background: #666; margin: 5px 0;"></div>
+                        <div id="s4-output" style="color: #888; font-style: italic;">[Waiting for Input]</div>
+                    </div>
+                    <div style="padding: 10px; background: #252526;">
+                        <input type="text" id="s4-input" placeholder="Expert Domain (e.g. 'React Router')">
+                        <button onclick="s4Generate()">Generate Expert</button>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Section 5: Summary -->
+        <section id="s5">
+            <div style="width: 100%;">
+                <h2>5. Summary: Compounding Knowledge</h2>
+                <p>The Agent Expert accumulates wisdom. While generic agents stay flat, the Expert's utility grows over time.</p>
+                
+                <div class="chart-container">
+                    <svg viewBox="0 0 400 200">
+                        <!-- Grid -->
+                        <line x1="40" y1="180" x2="380" y2="180" stroke="#444" stroke-width="2" />
+                        <line x1="40" y1="20" x2="40" y2="180" stroke="#444" stroke-width="2" />
+                        
+                        <!-- Text -->
+                        <text x="10" y="100" fill="#888" font-size="10" transform="rotate(-90 10,100)">Knowledge / Context</text>
+                        <text x="200" y="195" fill="#888" font-size="10" text-anchor="middle">Execution Time (Sessions)</text>
+
+                        <!-- Generic Agent Line (Flat) -->
+                        <path d="M 40 150 L 380 150" stroke="#888" stroke-width="2" stroke-dasharray="5,5" fill="none" />
+                        <text x="300" y="140" fill="#888" font-size="10">Generic Agent (Flat)</text>
+
+                        <!-- Expert Agent Line (Staircase) -->
+                        <path id="expert-line" d="M 40 150 L 100 150 L 100 120 L 180 120 L 180 90 L 260 90 L 260 60 L 380 60" 
+                              stroke="var(--accent-primary)" stroke-width="3" fill="none" />
+                        <text x="300" y="50" fill="var(--accent-primary)" font-size="10">Agent Expert</text>
+                        
+                        <!-- Circles -->
+                        <circle cx="100" cy="150" r="3" fill="var(--accent-primary)" />
+                        <circle cx="180" cy="120" r="3" fill="var(--accent-primary)" />
+                        <circle cx="260" cy="90" r="3" fill="var(--accent-primary)" />
+                    </svg>
+                </div>
+                <div style="text-align: center; margin-top: 2rem;">
+                    <p class="mono" style="color: var(--accent-primary);">STATUS: EXPERTISE ARCHIVED.</p>
+                </div>
+            </div>
+        </section>
+
+        <footer style="text-align: center; padding: 2rem; color: #444; font-size: 0.8rem;">
+            Generated for "The Agent Expert" Concept
+        </footer>
+    </div>
+
+    <!-- Logic -->
+    <script>
+        /* --- Utilities --- */
+        const sleep = (ms) => new Promise(r => setTimeout(r, ms));
+        const appendChat = (containerId, text, type) => {
+            const div = document.createElement('div');
+            div.className = `chat-msg ${type}`;
+            div.innerText = type === 'user' ? `> ${text}` : text;
+            const container = document.getElementById(containerId);
+            container.appendChild(div);
+            container.scrollTop = container.scrollHeight;
+        };
+
+        /* --- Section 1 Logic --- */
+        let s1Memory = {};
+        
+        function s1Send() {
+            const input = document.getElementById('s1-input');
+            const val = input.value.trim();
+            if(!val) return;
+            
+            appendChat('s1-chat', val, 'user');
+            input.value = '';
+
+            // Simple parser logic
+            const projectMatch = val.match(/project.*(?:is|name)\s+([A-Za-z0-9]+)/i);
+            
+            setTimeout(() => {
+                if (projectMatch) {
+                    s1Memory.project = projectMatch[1];
+                    document.getElementById('s1-memory').innerText = JSON.stringify(s1Memory);
+                    appendChat('s1-chat', `I've noted that your project is "${s1Memory.project}".`, 'agent');
+                } else if (val.toLowerCase().includes('what') && val.toLowerCase().includes('project')) {
+                    if (s1Memory.project) {
+                        appendChat('s1-chat', `Your project is ${s1Memory.project}.`, 'agent');
+                    } else {
+                        appendChat('s1-chat', `I don't know. I have no context.`, 'agent');
+                    }
+                } else {
+                    appendChat('s1-chat', "I'm a generic agent. I process tasks, but I need context.", 'agent');
+                }
+            }, 500);
+        }
+
+        function s1Restart() {
+            s1Memory = {};
+            document.getElementById('s1-memory').innerText = "{}";
+            const chat = document.getElementById('s1-chat');
+            chat.innerHTML = '<div class="chat-msg system">--- Session Cleared ---</div><div class="chat-msg agent">Hello. I am ready.</div>';
+        }
+
+        /* --- Section 2 Logic --- */
+        function s2Send() {
+            const input = document.getElementById('s2-input');
+            const yaml = document.getElementById('s2-yaml').value;
+            const val = input.value.trim();
+            if(!val) return;
+
+            appendChat('s2-chat', val, 'user');
+            input.value = '';
+
+            setTimeout(() => {
+                // Heuristic parsing of the YAML Textarea
+                const tables = [];
+                const lines = yaml.split('\n');
+                let inTables = false;
+                
+                lines.forEach(line => {
+                    if(line.includes('tables:')) inTables = true;
+                    // Simple indentation check for table names
+                    if(inTables && line.match(/^\s{4}[a-z]/)) {
+                        tables.push(line.trim().replace(':', ''));
+                    }
+                });
+
+                if (val.toLowerCase().includes('table') || val.toLowerCase().includes('schema')) {
+                    appendChat('s2-chat', `Consulting Mental Model... Found tables: [${tables.join(', ')}].`, 'agent');
+                } else {
+                    appendChat('s2-chat', `I see the schema, but I didn't understand the question. Try asking about tables.`, 'agent');
+                }
+            }, 600);
+        }
+
+        /* --- Section 3 Logic --- */
+        const tableOptions = ['users', 'members', 'clients', 'customers'];
+        let currentTable = 'users';
+        let modelTable = 'users';
+
+        function s3Refactor() {
+            // Pick a random new table name
+            let newTable = currentTable;
+            while(newTable === currentTable) {
+                newTable = tableOptions[Math.floor(Math.random() * tableOptions.length)];
+            }
+            currentTable = newTable;
+            
+            // Update HTML
+            const codeEl = document.getElementById('s3-code');
+            codeEl.innerHTML = `CREATE TABLE <span class="keyword">${currentTable}</span> (<br>&nbsp;id INT,<br>&nbsp;email TEXT<br>);`;
+            
+            // Log
+            const log = document.getElementById('s3-logs');
+            log.innerHTML += `<div class="chat-msg system" style="color:#ff0055">> Codebase Refactored to '${currentTable}'</div>`;
+            log.scrollTop = log.scrollHeight;
+        }
+
+        async function s3RunExpert() {
+            const log = document.getElementById('s3-logs');
+            const yamlDisplay = document.getElementById('s3-yaml');
+
+            log.innerHTML += `<div class="chat-msg user">> Running Query...</div>`;
+            
+            // Step 1: Read Model
+            await sleep(500);
+            log.innerHTML += `<div class="chat-msg system">Reading Mental Model... (${modelTable})</div>`;
+            
+            // Step 2: Compare
+            await sleep(500);
+            if (modelTable !== currentTable) {
+                log.innerHTML += `<div class="chat-msg system" style="color:var(--accent-secondary)">⚠ DRIFT DETECTED</div>`;
+                log.innerHTML += `<div class="chat-msg system">Expected: ${modelTable}, Found: ${currentTable}</div>`;
+                
+                await sleep(800);
+                log.innerHTML += `<div class="chat-msg agent" style="color:var(--accent-primary)">INITIATING SELF-CORRECTION...</div>`;
+                
+                // Visual Diff
+                yamlDisplay.innerHTML = `<span class="diff-removed">table_name: ${modelTable}</span>\n<span class="diff-added">table_name: ${currentTable}</span>`;
+                
+                await sleep(1000);
+                modelTable = currentTable;
+                yamlDisplay.innerHTML = `table_name: ${modelTable}`;
+                log.innerHTML += `<div class="chat-msg system" style="color:var(--accent-primary)">✔ Expertise Updated.</div>`;
+
+            } else {
+                log.innerHTML += `<div class="chat-msg system" style="color:var(--accent-primary)">✔ Model Matches Codebase. Using Cache.</div>`;
+            }
+            log.scrollTop = log.scrollHeight;
+        }
+
+        /* --- Section 4 Logic --- */
+        function s4Generate() {
+            const input = document.getElementById('s4-input');
+            const domain = input.value || "Unknown";
+            const container = document.getElementById('s4-output');
+            
+            container.innerHTML = `
+                <div style="border: 1px solid var(--accent-primary); padding: 10px; border-radius: 4px; background: #1e1e1e; width: 100%; text-align:center;">
+                    <div style="font-weight:bold; color: var(--accent-primary)">${domain} Expert</div>
+                    <div style="font-size:0.7rem; text-align:left; margin-top:5px; border-top:1px solid #333; padding-top:5px;" class="mono">
+                        # ${domain}_expertise.yaml<br>
+                        status: initialized<br>
+                        knowledge_base: []
+                    </div>
+                </div>
+            `;
+        }
+
+        /* --- Scroll Tracking for Dots --- */
+        const sections = document.querySelectorAll('section');
+        const dots = document.querySelectorAll('.dot');
+        
+        window.addEventListener('scroll', () => {
+            let current = '';
+            sections.forEach(section => {
+                const sectionTop = section.offsetTop;
+                if (pageYOffset >= sectionTop - 300) {
+                    current = section.getAttribute('id');
+                }
+            });
+            
+            dots.forEach((dot, index) => {
+                dot.classList.remove('active');
+                if (current && index === Array.from(sections).findIndex(s => s.id === current) + 1) { // +1 because header isn't tracked
+                     dot.classList.add('active');
+                } else if (!current && index === 0) {
+                    dot.classList.add('active');
+                }
+            });
+        });
+
+    </script>
+</body>
+</html>
