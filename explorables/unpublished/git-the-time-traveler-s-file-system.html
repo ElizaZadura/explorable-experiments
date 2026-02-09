@@ -1,0 +1,708 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Git: The Time-Traveler’s File System</title>
+    <style>
+        :root {
+            --bg: #1a1a2e;
+            --card-bg: #16213e;
+            --text-main: #e6e6e6;
+            --text-muted: #a0a0a0;
+            --cyan: #00f3ff;
+            --pink: #ff00ff;
+            --yellow: #ffff00;
+            --green: #00ff9d;
+            --red: #ff0055;
+            --font-mono: 'Courier New', Courier, monospace;
+            --font-sans: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+        }
+
+        * { box-sizing: border-box; }
+
+        body {
+            margin: 0;
+            padding: 0;
+            background-color: var(--bg);
+            color: var(--text-main);
+            font-family: var(--font-sans);
+            line-height: 1.6;
+        }
+
+        /* --- Header & Progress --- */
+        header {
+            position: sticky;
+            top: 0;
+            background: rgba(26, 26, 46, 0.95);
+            border-bottom: 1px solid #333;
+            z-index: 1000;
+            padding: 10px 20px;
+            backdrop-filter: blur(5px);
+        }
+
+        .progress-container {
+            max-width: 800px;
+            margin: 0 auto;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .level-title {
+            font-weight: bold;
+            color: var(--cyan);
+            font-size: 0.9rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .xp-bar-bg {
+            width: 200px;
+            height: 10px;
+            background: #0f1525;
+            border-radius: 5px;
+            overflow: hidden;
+            border: 1px solid #333;
+        }
+
+        .xp-bar-fill {
+            height: 100%;
+            width: 0%;
+            background: linear-gradient(90deg, var(--cyan), var(--pink));
+            transition: width 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+
+        /* --- Main Layout --- */
+        main {
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 40px 20px 100px 20px;
+        }
+
+        h1 {
+            font-size: 2.5rem;
+            text-align: center;
+            margin-bottom: 10px;
+            background: linear-gradient(to right, var(--cyan), var(--pink));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .subtitle {
+            text-align: center;
+            color: var(--text-muted);
+            margin-bottom: 50px;
+        }
+
+        /* --- Cards & Interactive Areas --- */
+        section {
+            margin-bottom: 80px;
+            opacity: 0.9;
+            transition: opacity 0.3s;
+        }
+
+        section:hover { opacity: 1; }
+
+        .card {
+            background-color: var(--card-bg);
+            border-radius: 12px;
+            padding: 25px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+            border: 1px solid rgba(255,255,255,0.05);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .card-header {
+            display: flex;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+
+        .badge {
+            background: #333;
+            color: #fff;
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 0.8rem;
+            margin-right: 10px;
+            font-family: var(--font-mono);
+        }
+
+        .badge.pink { color: var(--pink); border: 1px solid var(--pink); }
+        .badge.cyan { color: var(--cyan); border: 1px solid var(--cyan); }
+        .badge.yellow { color: var(--yellow); border: 1px solid var(--yellow); }
+
+        h2 { margin: 0; font-size: 1.5rem; }
+
+        p { color: var(--text-muted); margin-bottom: 20px; }
+        
+        strong { color: #fff; }
+
+        /* --- UI Controls --- */
+        input[type="text"], textarea {
+            width: 100%;
+            background: #0f1525;
+            border: 1px solid #333;
+            color: var(--cyan);
+            padding: 15px;
+            font-family: var(--font-mono);
+            border-radius: 8px;
+            font-size: 1rem;
+            margin-bottom: 15px;
+            transition: border-color 0.3s;
+        }
+
+        input[type="text"]:focus, textarea:focus {
+            outline: none;
+            border-color: var(--pink);
+        }
+
+        button {
+            background: transparent;
+            border: 2px solid var(--cyan);
+            color: var(--cyan);
+            padding: 10px 20px;
+            font-family: var(--font-mono);
+            font-weight: bold;
+            cursor: pointer;
+            border-radius: 6px;
+            transition: all 0.2s;
+            text-transform: uppercase;
+        }
+
+        button:hover {
+            background: var(--cyan);
+            color: #000;
+            box-shadow: 0 0 15px var(--cyan);
+        }
+
+        .btn-pink { border-color: var(--pink); color: var(--pink); }
+        .btn-pink:hover { background: var(--pink); color: #fff; box-shadow: 0 0 15px var(--pink); }
+
+        .btn-yellow { border-color: var(--yellow); color: var(--yellow); }
+        .btn-yellow:hover { background: var(--yellow); color: #000; box-shadow: 0 0 15px var(--yellow); }
+
+        /* --- Visualizations --- */
+        .hash-display {
+            font-family: var(--font-mono);
+            word-break: break-all;
+            color: var(--pink);
+            font-size: 1.2rem;
+            margin-top: 10px;
+            min-height: 1.6em;
+        }
+
+        .split-view {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+        }
+
+        @media (max-width: 600px) {
+            .split-view { grid-template-columns: 1fr; }
+        }
+
+        .git-folder {
+            background: #0a0e17;
+            border-radius: 8px;
+            padding: 15px;
+            font-family: var(--font-mono);
+            font-size: 0.85rem;
+            min-height: 150px;
+            border: 1px dashed #444;
+        }
+
+        .folder-item {
+            margin-bottom: 5px;
+            display: flex;
+            align-items: center;
+        }
+        .folder-icon { color: var(--yellow); margin-right: 8px; }
+        .file-icon { color: var(--pink); margin-right: 8px; }
+
+        .tree-viz {
+            border: 1px solid var(--yellow);
+            padding: 15px;
+            border-radius: 8px;
+            margin-top: 20px;
+            color: var(--yellow);
+            font-family: var(--font-mono);
+        }
+
+        .timeline {
+            display: flex;
+            flex-direction: column-reverse; /* Newest at top visually, but we insert at top */
+            gap: 15px;
+            margin-top: 20px;
+            position: relative;
+        }
+
+        .commit-node {
+            background: #1f2a40;
+            border: 1px solid var(--cyan);
+            padding: 15px;
+            border-radius: 8px;
+            position: relative;
+            animation: slideIn 0.3s ease-out;
+        }
+
+        @keyframes slideIn {
+            from { transform: translateY(-10px); opacity: 0; }
+            to { transform: translateY(0); opacity: 1; }
+        }
+
+        .commit-arrow {
+            text-align: center;
+            color: #555;
+            font-size: 1.5rem;
+            line-height: 1;
+        }
+
+        .ref-tag {
+            position: absolute;
+            right: -10px;
+            top: -10px;
+            background: var(--yellow);
+            color: #000;
+            padding: 2px 8px;
+            font-size: 0.7rem;
+            font-weight: bold;
+            transform: rotate(5deg);
+            box-shadow: 2px 2px 5px rgba(0,0,0,0.5);
+            transition: top 0.3s;
+            z-index: 10;
+        }
+
+        .merge-arena {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+            margin-bottom: 10px;
+        }
+        .merge-base { grid-column: span 2; }
+        
+        .conflict-box {
+            background: #2a1a1a;
+            border: 1px solid var(--red);
+            color: var(--red);
+            padding: 10px;
+            font-family: var(--font-mono);
+            white-space: pre;
+            margin-top: 10px;
+            display: none;
+        }
+
+        /* --- Utilities --- */
+        .hidden { display: none; }
+        .success-msg {
+            color: var(--green);
+            font-weight: bold;
+            margin-top: 10px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            animation: popIn 0.3s;
+        }
+        @keyframes popIn { from { transform: scale(0.8); opacity: 0;} to { transform: scale(1); opacity: 1;}}
+
+        .toggle-link {
+            display: inline-block;
+            margin-top: 10px;
+            color: var(--text-muted);
+            font-size: 0.8rem;
+            cursor: pointer;
+            text-decoration: underline;
+        }
+        
+        footer {
+            text-align: center;
+            color: #555;
+            font-size: 0.8rem;
+            margin-top: 50px;
+        }
+    </style>
+</head>
+<body>
+
+    <header>
+        <div class="progress-container">
+            <div class="level-title" id="currentLevel">Level 1: The Magic Hash</div>
+            <div class="xp-bar-bg">
+                <div class="xp-bar-fill" id="xpBar"></div>
+            </div>
+        </div>
+    </header>
+
+    <main>
+        <h1>Git: Time-Traveler's FS</h1>
+        <p class="subtitle">Unlock the secrets of the .git folder. Scroll down to play.</p>
+
+        <!-- LEVEL 1: HASHING -->
+        <section id="level1">
+            <div class="card">
+                <div class="card-header">
+                    <span class="badge cyan">SHA-1</span>
+                    <h2>Content Addressability</h2>
+                </div>
+                <p>Git doesn't care about filenames. It cares about <strong>Content</strong>. It uses a SHA-1 hash (40 characters) as the unique ID for every piece of data.</p>
+                
+                <div style="margin-bottom: 20px;">
+                    <label style="font-size: 0.8rem; color: var(--cyan);">FILE CONTENT</label>
+                    <textarea id="hashInput" rows="3" placeholder="Type something here..."></textarea>
+                </div>
+                
+                <div style="background: #000; padding: 15px; border-radius: 6px; border: 1px solid #333;">
+                    <label style="font-size: 0.7rem; color: #555;">SHA-1 KEY</label>
+                    <div id="hashOutput" class="hash-display">da39a3ee5e6b4b0d3255bfef95601890afd80709</div>
+                </div>
+
+                <div id="l1-challenge" style="margin-top: 20px; padding: 10px; background: rgba(0, 243, 255, 0.1); border-radius: 6px;">
+                    <strong style="color:var(--cyan)">CHALLENGE:</strong> Type "git" into the box. Memorize the first 2 chars (e.g., '46'). Delete it, then type "git" again.
+                </div>
+                <div id="l1-success" class="success-msg hidden">✓ Correct! Deterministic: Same Content = Same Hash. (+20 XP)</div>
+
+                <div class="toggle-link" onclick="document.getElementById('math-reveal').classList.toggle('hidden')">Show the Math</div>
+                <div id="math-reveal" class="hidden" style="font-family: var(--font-mono); font-size: 0.8rem; color: #777; margin-top: 5px;">
+                    Git actually hashes: <br>SHA1("blob " + filesize + "\0" + content)
+                </div>
+            </div>
+        </section>
+
+        <!-- LEVEL 2: BLOBS -->
+        <section id="level2">
+            <div class="card">
+                <div class="card-header">
+                    <span class="badge pink">BLOB</span>
+                    <h2>The Object Database</h2>
+                </div>
+                <p>Git stores data as <strong>Blobs</strong>. It takes the hash, uses the first 2 chars as a folder name, and the rest as the filename.</p>
+                
+                <div class="split-view">
+                    <div>
+                        <input type="text" id="blobFilename" placeholder="filename.txt (doesn't matter yet)">
+                        <textarea id="blobContent" rows="4" placeholder="Code goes here..."></textarea>
+                        <button class="btn-pink" id="btnAddBlob">Git Add</button>
+                    </div>
+                    <div>
+                        <label style="font-size: 0.8rem; color: var(--pink);">.GIT/OBJECTS/</label>
+                        <div class="git-folder" id="objectsFolder">
+                            <!-- Items will appear here -->
+                            <div style="color: #444; font-style: italic; text-align: center; padding-top: 40px;">Empty Database</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div id="l2-challenge" style="margin-top: 20px; padding: 10px; background: rgba(255, 0, 255, 0.1); border-radius: 6px;">
+                    <strong style="color:var(--pink)">CHALLENGE:</strong> Add a file with content "Hello". Then change the filename but keep content "Hello" and Add again.
+                </div>
+                <div id="l2-success" class="success-msg hidden">✓ Efficiency Unlocked! Git only stored one blob because the content was identical. (+20 XP)</div>
+            </div>
+        </section>
+
+        <!-- LEVEL 3: TREES -->
+        <section id="level3">
+            <div class="card">
+                <div class="card-header">
+                    <span class="badge yellow">TREE</span>
+                    <h2>The Tree (Directory)</h2>
+                </div>
+                <p>If Blobs don't have names, how does Git know `a1b2` is `main.cpp`? It creates a <strong>Tree</strong> object. Think of it as a directory listing.</p>
+
+                <div class="split-view">
+                    <div>
+                        <label>Construct a Tree</label>
+                        <input type="text" id="treeFilename" value="main.cpp">
+                        <div style="font-family: var(--font-mono); font-size: 0.8rem; color: var(--pink); margin-bottom: 5px;">Target Blob: <span id="treeTargetBlob">...</span></div>
+                        <button class="btn-yellow" id="btnCreateTree">Create Tree Object</button>
+                    </div>
+                    <div>
+                        <div id="treeViz" class="tree-viz">
+                            tree &lt;size&gt;\0<br>
+                            100644 blob <span id="treeHashDisplay">...</span> <span id="treeNameDisplay">...</span>
+                        </div>
+                        <div style="margin-top: 10px; font-size: 0.8rem; color: #777;">Tree SHA-1: <span id="finalTreeHash" style="color: var(--yellow)">Waiting...</span></div>
+                    </div>
+                </div>
+
+                 <div id="l3-challenge" style="margin-top: 20px; padding: 10px; background: rgba(255, 255, 0, 0.1); border-radius: 6px;">
+                    <strong style="color:var(--yellow)">CHALLENGE:</strong> Rename `main.cpp` to `test.cpp` and create the tree. The Tree Hash will change, but the Blob hash inside stays the same!
+                </div>
+                <div id="l3-success" class="success-msg hidden">✓ Correct! Trees map Names to Blobs. (+20 XP)</div>
+            </div>
+        </section>
+
+        <!-- LEVEL 4: COMMITS -->
+        <section id="level4">
+            <div class="card">
+                <div class="card-header">
+                    <span class="badge cyan">COMMIT</span>
+                    <h2>The History Chain</h2>
+                </div>
+                <p>A <strong>Commit</strong> is a wrapper. It holds a pointer to a Tree, an Author, and a <strong>Parent Commit</strong>.</p>
+                
+                <textarea id="commitMessage" rows="2" placeholder="Commit message...">Initial commit</textarea>
+                <button id="btnCommit">Make Commit</button>
+
+                <div id="historyChain" class="timeline">
+                    <!-- Commits go here -->
+                </div>
+                
+                <div id="l4-success" class="success-msg hidden">✓ Time Travel Enabled! Each commit points back to the previous one. (+20 XP)</div>
+            </div>
+        </section>
+
+        <!-- LEVEL 5: MERGE -->
+        <section id="level5">
+            <div class="card">
+                <div class="card-header">
+                    <span class="badge red">MERGE</span>
+                    <h2>Boss Battle: 3-Way Merge</h2>
+                </div>
+                <p>Git merges by comparing <strong>Base</strong> (ancestor), <strong>Yours</strong>, and <strong>Theirs</strong>.</p>
+                
+                <div class="merge-arena">
+                    <div class="merge-base">
+                        <label style="font-size: 0.7rem;">BASE (Ancestor)</label>
+                        <input type="text" value="Color: Blue" disabled style="opacity: 0.6;">
+                    </div>
+                    <div>
+                        <label style="font-size: 0.7rem; color: var(--cyan);">YOURS (Head)</label>
+                        <input type="text" value="Color: Red" disabled>
+                    </div>
+                    <div>
+                        <label style="font-size: 0.7rem; color: var(--pink);">THEIRS (Feature)</label>
+                        <input type="text" value="Color: Green" disabled>
+                    </div>
+                </div>
+
+                <p style="font-size: 0.9rem;">Both sides changed "Blue". You changed it to Red. They changed it to Green. What happens?</p>
+                
+                <div style="display: flex; gap: 10px;">
+                    <button class="btn-pink" onclick="solveMerge('yours')">Keep Yours</button>
+                    <button class="btn-yellow" onclick="solveMerge('theirs')">Keep Theirs</button>
+                    <button class="btn-pink" style="border-color: var(--red); color: var(--red);" onclick="solveMerge('conflict')">Git Conflict</button>
+                </div>
+
+                <div id="conflictResult" class="conflict-box">
+&lt;&lt;&lt;&lt;&lt;&lt;&lt; HEAD
+Color: Red
+=======
+Color: Green
+&gt;&gt;&gt;&gt;&gt;&gt;&gt; feature</div>
+
+                <div id="l5-success" class="success-msg hidden">✓ Correct! Git cannot decide, so it marks a Conflict for the human to solve. (+20 XP)</div>
+            </div>
+        </section>
+
+    </main>
+
+    <footer>
+        <p>Built with Vanilla JS & CSS. No frameworks were harmed in the making of this repo.</p>
+    </footer>
+
+    <script>
+        // --- Game State ---
+        const state = {
+            xp: 0,
+            levelsCompleted: [false, false, false, false, false],
+            blobs: new Set(),
+            commits: [],
+            lastTreeHash: null
+        };
+
+        // --- Crypto Utility (SHA-1) ---
+        async function sha1(str) {
+            const enc = new TextEncoder();
+            const hash = await crypto.subtle.digest('SHA-1', enc.encode(str));
+            return Array.from(new Uint8Array(hash))
+                .map(v => v.toString(16).padStart(2, '0'))
+                .join('');
+        }
+
+        function updateXP(amount, levelIndex) {
+            if (state.levelsCompleted[levelIndex]) return;
+            state.levelsCompleted[levelIndex] = true;
+            state.xp += amount;
+            document.getElementById('xpBar').style.width = state.xp + '%';
+            
+            // Check for completion
+            if(state.xp >= 100) {
+                document.getElementById('currentLevel').innerText = "ACHIEVEMENT UNLOCKED: GIT ARCHIVIST";
+                document.getElementById('currentLevel').style.color = "var(--yellow)";
+            }
+        }
+
+        // --- LEVEL 1: Hashing ---
+        const hashInput = document.getElementById('hashInput');
+        const hashOutput = document.getElementById('hashOutput');
+        let l1Step = 0; // 0: init, 1: typed git, 2: cleared, 3: typed git again
+
+        hashInput.addEventListener('input', async (e) => {
+            const val = e.target.value;
+            const hash = await sha1(val);
+            hashOutput.innerText = hash;
+
+            // Logic for the challenge
+            if (val === 'git') {
+                if (l1Step === 0) l1Step = 1;
+                if (l1Step === 2) {
+                    document.getElementById('l1-success').classList.remove('hidden');
+                    updateXP(20, 0);
+                    document.getElementById('currentLevel').innerText = "Level 2: The Blob";
+                }
+            } else if (val === '' && l1Step === 1) {
+                l1Step = 2;
+            }
+        });
+
+        // --- LEVEL 2: Blobs ---
+        const btnAddBlob = document.getElementById('btnAddBlob');
+        const objectsFolder = document.getElementById('objectsFolder');
+        let l2HasHello = false;
+
+        btnAddBlob.addEventListener('click', async () => {
+            const content = document.getElementById('blobContent').value;
+            const filename = document.getElementById('blobFilename').value; // Just for user context, Git ignores this for blob storage
+            
+            if(!content) return;
+
+            // Simulate Git's blob header for hash: "blob <size>\0<content>"
+            const gitContent = `blob ${content.length}\0${content}`;
+            const hash = await sha1(gitContent);
+            const folder = hash.substring(0, 2);
+            const file = hash.substring(2);
+
+            // Visuals
+            const isNew = !state.blobs.has(hash);
+            state.blobs.add(hash);
+
+            // Clear empty message
+            if(objectsFolder.innerHTML.includes('Empty')) objectsFolder.innerHTML = '';
+
+            if (isNew) {
+                const div = document.createElement('div');
+                div.className = 'folder-item';
+                div.innerHTML = `<span class="folder-icon">📂 ${folder}</span> / <span class="file-icon">📄 ${file.substring(0, 8)}...</span>`;
+                objectsFolder.appendChild(div);
+            } else {
+                // Flash existing
+                const existing = Array.from(objectsFolder.children).find(el => el.innerHTML.includes(folder));
+                if(existing) {
+                    existing.style.background = "var(--pink)";
+                    setTimeout(() => existing.style.background = "transparent", 300);
+                }
+            }
+
+            // Challenge Logic
+            if (content === "Hello") {
+                if (!l2HasHello) {
+                    l2HasHello = true; // First time adding Hello
+                } else if (l2HasHello && !isNew) {
+                    // Added Hello again (different filename presumably), but blob existed
+                    document.getElementById('l2-success').classList.remove('hidden');
+                    updateXP(20, 1);
+                    document.getElementById('currentLevel').innerText = "Level 3: The Tree";
+                    // Set up level 3
+                    document.getElementById('treeTargetBlob').innerText = hash.substring(0, 7);
+                    document.getElementById('treeHashDisplay').innerText = hash.substring(0, 7);
+                }
+            }
+        });
+
+        // --- LEVEL 3: Trees ---
+        const btnCreateTree = document.getElementById('btnCreateTree');
+        let l3LastHash = null;
+
+        btnCreateTree.addEventListener('click', async () => {
+            const fname = document.getElementById('treeFilename').value;
+            const blobHash = document.getElementById('treeTargetBlob').innerText;
+            
+            // Update visual
+            document.getElementById('treeNameDisplay').innerText = fname;
+            
+            // Calculate Tree Hash (Simulated: hash of list)
+            const treeContent = `100644 blob ${blobHash} ${fname}`;
+            const hash = await sha1(treeContent);
+            
+            const hashDisplay = document.getElementById('finalTreeHash');
+            hashDisplay.innerText = hash.substring(0, 7);
+            
+            // Challenge Logic
+            if (fname === 'main.cpp') {
+                l3LastHash = hash;
+            } else if (fname === 'test.cpp' && l3LastHash && l3LastHash !== hash) {
+                document.getElementById('l3-success').classList.remove('hidden');
+                updateXP(20, 2);
+                document.getElementById('currentLevel').innerText = "Level 4: The Commit";
+                state.lastTreeHash = hash; // Save for level 4
+            }
+        });
+
+        // --- LEVEL 4: Commits ---
+        const btnCommit = document.getElementById('btnCommit');
+        const historyChain = document.getElementById('historyChain');
+
+        btnCommit.addEventListener('click', async () => {
+            const msg = document.getElementById('commitMessage').value;
+            const parent = state.commits.length > 0 ? state.commits[state.commits.length - 1].hash : null;
+            const tree = state.lastTreeHash || "a1b2c3d"; // Fallback if they skipped levels
+            const timestamp = Date.now();
+
+            const commitContent = `tree ${tree}\nparent ${parent}\nauthor Me ${timestamp}\n\n${msg}`;
+            const hash = await sha1(commitContent);
+            const shortHash = hash.substring(0, 7);
+
+            state.commits.push({ hash, msg });
+
+            // Render
+            const node = document.createElement('div');
+            node.className = 'commit-node';
+            
+            // Move Ref Tag
+            const existingRef = document.querySelector('.ref-tag');
+            if(existingRef) existingRef.remove();
+
+            node.innerHTML = `
+                <div class="ref-tag">HEAD -> main</div>
+                <div style="display:flex; justify-content:space-between; align-items:center;">
+                    <strong style="color:var(--cyan)">Commit ${shortHash}</strong>
+                    <span style="font-size:0.7rem; color:#777;">${new Date(timestamp).toLocaleTimeString()}</span>
+                </div>
+                <div style="font-size:0.8rem; margin-top:5px; color:#aaa;">Tree: ${tree.substring(0,7)}</div>
+                <div style="font-size:0.8rem; color:#aaa;">Parent: ${parent ? parent.substring(0,7) : 'None'}</div>
+                <div style="margin-top:10px; border-top:1px solid #333; padding-top:5px;">${msg}</div>
+            `;
+
+            // Add arrow if not first
+            if (parent) {
+                const arrow = document.createElement('div');
+                arrow.className = 'commit-arrow';
+                arrow.innerHTML = '↓';
+                historyChain.prepend(arrow);
+            }
+
+            historyChain.prepend(node);
+
+            if (state.commits.length === 2) {
+                document.getElementById('l4-success').classList.remove('hidden');
+                updateXP(20, 3);
+                document.getElementById('currentLevel').innerText = "Level 5: The Merge";
+            }
+        });
+
+        // --- LEVEL 5: Merge ---
+        function solveMerge(choice) {
+            if (choice === 'conflict') {
+                document.getElementById('conflictResult').style.display = 'block';
+                document.getElementById('l5-success').classList.remove('hidden');
+                updateXP(20, 4);
+            } else {
+                alert("Incorrect. Git is conservative. Since both sides modified the same data from the Base state, Git cannot safely choose 'Yours' or 'Theirs' automatically.");
+            }
+        }
+
+    </script>
+</body>
+</html>

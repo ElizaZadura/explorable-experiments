@@ -1,0 +1,760 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Case Study: The Fitted Sheet Manifold</title>
+    <style>
+        :root {
+            --bg: #1a1a1a;
+            --text: #e0e0e0;
+            --accent: #ff4757; /* Adversarial Red */
+            --secondary: #2ed573; /* Theoretical Green */
+            --panel: #2f3640;
+            --font-main: 'Courier New', Courier, monospace;
+        }
+
+        * { box-sizing: border-box; }
+
+        body {
+            background-color: var(--bg);
+            color: var(--text);
+            font-family: var(--font-main);
+            margin: 0;
+            padding: 0;
+            line-height: 1.6;
+            overflow-x: hidden;
+        }
+
+        h1, h2, h3 { 
+            text-transform: uppercase; 
+            letter-spacing: 2px; 
+            border-bottom: 1px solid var(--accent); 
+            padding-bottom: 10px; 
+            font-weight: normal;
+        }
+
+        h1 { font-size: 1.5rem; }
+        
+        strong { color: var(--accent); }
+        em { color: #888; font-style: normal; border-bottom: 1px dotted #888; }
+
+        /* Layout */
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        section {
+            min-height: 90vh;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            padding: 40px 0;
+            border-left: 1px dashed #444;
+            padding-left: 20px;
+            margin-left: 10px;
+            position: relative;
+        }
+
+        /* Interactive Canvas wrappers */
+        .interactive-stage {
+            background: #0d0d0d;
+            border: 1px solid #444;
+            margin: 20px 0;
+            position: relative;
+            overflow: hidden;
+            border-radius: 4px;
+            box-shadow: inset 0 0 20px #000;
+        }
+
+        canvas { display: block; width: 100%; touch-action: none; }
+
+        /* Controls */
+        .controls {
+            background: var(--panel);
+            padding: 15px;
+            border-left: 4px solid var(--accent);
+            font-size: 0.9em;
+            margin-top: 10px;
+        }
+
+        .control-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+
+        button {
+            background: transparent;
+            border: 1px solid var(--accent);
+            color: var(--accent);
+            padding: 8px 16px;
+            font-family: inherit;
+            cursor: pointer;
+            transition: all 0.2s;
+            text-transform: uppercase;
+            font-size: 0.8rem;
+        }
+
+        button:hover { background: var(--accent); color: var(--bg); }
+        button:active { transform: translateY(2px); }
+
+        input[type="range"] {
+            flex-grow: 1;
+            margin-left: 15px;
+            accent-color: var(--accent);
+            cursor: pointer;
+        }
+
+        /* Math Display */
+        .equation {
+            font-family: 'Consolas', monospace;
+            background: #111;
+            padding: 10px;
+            border: 1px solid #333;
+            color: var(--secondary);
+            margin: 10px 0;
+            font-size: 0.9em;
+        }
+
+        .annotation {
+            font-size: 0.8em;
+            color: #888;
+            margin-top: 5px;
+        }
+
+        /* Status Indicators */
+        .status-box {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            font-size: 0.7em;
+            background: rgba(0,0,0,0.8);
+            padding: 5px;
+            border: 1px solid #555;
+            z-index: 10;
+            pointer-events: none;
+        }
+
+        .fail { color: var(--accent); }
+        .success { color: var(--secondary); }
+
+        /* Intro Header */
+        .report-header {
+            height: 80vh; 
+            display: flex; 
+            flex-direction: column; 
+            justify-content: center;
+        }
+        
+        .report-box {
+            border: 4px solid var(--text); 
+            padding: 20px;
+            position: relative;
+        }
+
+        .report-box::after {
+            content: "CLASSIFIED";
+            position: absolute;
+            top: -15px;
+            right: 20px;
+            background: var(--bg);
+            padding: 0 10px;
+            color: var(--accent);
+            font-weight: bold;
+            border: 1px solid var(--accent);
+        }
+
+        @media (max-width: 600px) {
+            h1 { font-size: 1.2rem; }
+            section { padding-left: 10px; border-left: none; }
+            .container { padding: 10px; }
+        }
+
+    </style>
+</head>
+<body>
+
+<div class="container">
+    
+    <header class="report-header">
+        <div class="report-box">
+            <h1>Field Report: The Fitted Sheet</h1>
+            <p><strong>SUBJECT:</strong> Domestic Topology</p>
+            <p><strong>STATUS:</strong> Unresolved</p>
+            <p>The instructional video presents a "solution." Physics disagrees. We are here to analyze the cost.</p>
+            <p style="margin-top: 40px; font-size: 0.8em; text-align: center; opacity: 0.7;">SCROLL TO BEGIN ANALYSIS &darr;</p>
+        </div>
+    </header>
+
+    <!-- SECTION 1: CHAOS -->
+    <section id="sec-chaos">
+        <h2>1. The Entropy of Elasticity</h2>
+        <p>
+            The fitted sheet is not a rectangle. It is a hyperbolic surface under constant tension. The elastic boundary creates a system that seeks to minimize potential energy by collapsing into a sphere.
+        </p>
+        <p>
+            The video begins with the sheet in a "relaxed" state. This is a fabrication. In reality, the sheet fights you.
+        </p>
+        
+        <div class="interactive-stage">
+            <div class="status-box">SYSTEM STATE: <span id="chaos-meter" class="fail">HIGH ENTROPY</span></div>
+            <canvas id="canvas-chaos" height="300"></canvas>
+        </div>
+
+        <div class="controls">
+            <div class="control-row">
+                <span>Elastic Tension (k):</span>
+                <input type="range" id="tension-slider" min="0.01" max="0.2" step="0.01" value="0.05">
+            </div>
+            <p class="annotation">
+                <strong>Action:</strong> Mouse over (or touch) the grid to perturb the system. Note how the "corners" (red nodes) aggressively pull towards the center. Order is unstable.
+            </p>
+        </div>
+    </section>
+
+    <!-- SECTION 2: INVERSION -->
+    <section id="sec-inversion">
+        <h2>2. The Inversion Protocol</h2>
+        <p>
+            The presenter performs a specific maneuver: "Flip the corner inside out."
+        </p>
+        <p>
+            Why? This isn't just aesthetic. It is vector mathematics. Two corners cannot occupy the same space if their curvature vectors ($\vec{n}$) are aligned. They must be opposed to nest.
+        </p>
+
+        <div class="equation" id="vector-eq">
+            Target State: &uarr; A + &uarr; B &ne; 0 (CONFLICT)
+        </div>
+
+        <div class="interactive-stage">
+            <canvas id="canvas-invert" height="250"></canvas>
+        </div>
+
+        <div class="controls">
+            <div class="control-row">
+                <span>Corner B Orientation:</span>
+                <button id="btn-invert" onclick="toggleInversion()">Flip Normal</button>
+            </div>
+            <div class="control-row">
+                <span>Action:</span>
+                <button id="btn-merge" onclick="attemptMerge()">Attempt Merge</button>
+            </div>
+            <p class="annotation" id="merge-result">
+                Status: WAITING FOR INPUT.
+            </p>
+        </div>
+        <p>
+            Without inversion, you are merely mashing fabric together. With inversion, you create a manifold that accepts its own geometry.
+        </p>
+    </section>
+
+    <!-- SECTION 3: RECURSION -->
+    <section id="sec-recursion">
+        <h2>3. Recursive Dimensional Reduction</h2>
+        <p>
+            The algorithm is recursive. 
+            <br>1. Merge 4 corners into 2 "Mega-Corners".
+            <br>2. Merge 2 "Mega-Corners" into 1 cluster.
+        </p>
+        <p>
+            The video claims this makes the sheet "flat." Skepticism is warranted. You are preserving the surface area ($A$) while drastically reducing the bounding box ($V$). 
+        </p>
+        <p>
+            <strong>Density ($\rho$) must increase.</strong>
+        </p>
+
+        <div class="interactive-stage">
+            <div class="status-box">THICKNESS: <span id="density-val">1.0x</span></div>
+            <canvas id="canvas-tree" height="300"></canvas>
+        </div>
+
+        <div class="controls">
+            <div class="control-row">
+                <span>Folding Step:</span>
+                <input type="range" id="fold-step" min="0" max="2" step="1" value="0">
+            </div>
+            <div class="equation" id="density-eq">
+                Nodes: 4 | Layers: 1
+            </div>
+        </div>
+        <p>
+            By step 3, you are holding 16 layers of fabric in one hand. The "neatness" is an illusion created by compression.
+        </p>
+    </section>
+
+    <!-- SECTION 4: THE LIE -->
+    <section id="sec-lie">
+        <h2>4. The Illusion of Flatness</h2>
+        <p>
+            The final step involves folding the resulting rectangle. The presenter smooths it out.
+        </p>
+        <p>
+            Let us look at the cross-section. The elastic band does not disappear; it is buried. It forms a high-pressure spine inside the fold.
+        </p>
+
+        <div class="interactive-stage">
+            <canvas id="canvas-heat" height="200"></canvas>
+        </div>
+
+        <div class="controls">
+            <div class="control-row">
+                <span>External Pressure:</span>
+                <input type="range" id="pressure-slider" min="0" max="100" value="0">
+            </div>
+            <p class="annotation">
+                Applying pressure does not remove the chaos. It merely stores it as potential energy, waiting to spring open in your linen closet.
+            </p>
+        </div>
+        
+        <div style="border: 1px solid var(--accent); padding: 15px; margin-top: 30px;">
+            <h3>Final Conclusion</h3>
+            <p>The method is valid only if one accepts that a "folded" sheet is actually a <strong>compressed spring</strong> held in place by friction.</p>
+            <p>We have not created order.</p>
+            <p>We have weaponized geometry.</p>
+        </div>
+    </section>
+
+</div>
+
+<script>
+/**
+ * UTILITY: Canvas Resize Logic
+ */
+function resizeCanvas(canvas) {
+    const parent = canvas.parentElement;
+    if (canvas.width !== parent.clientWidth) {
+        canvas.width = parent.clientWidth;
+    }
+}
+
+/**
+ * SIMULATION 1: CHAOS (Spring Mass System)
+ */
+const chaosCanvas = document.getElementById('canvas-chaos');
+const chaosCtx = chaosCanvas.getContext('2d');
+let tension = 0.05;
+let mouseX = -1000, mouseY = -1000;
+
+// Create a grid of points
+const points = [];
+const cols = 8;
+const rows = 8;
+const spacing = 30;
+
+// Initialize points
+function initChaos() {
+    points.length = 0;
+    const offsetX = (chaosCanvas.parentElement.clientWidth - (cols*spacing))/2;
+    const offsetY = 50;
+
+    for(let i=0; i<cols; i++) {
+        for(let j=0; j<rows; j++) {
+            points.push({
+                x: offsetX + i*spacing,
+                y: offsetY + j*spacing,
+                ox: offsetX + i*spacing, // original pos
+                oy: offsetY + j*spacing,
+                vx: 0, vy: 0,
+                isCorner: (i===0 || i===cols-1) && (j===0 || j===rows-1),
+                fixed: false
+            });
+        }
+    }
+}
+
+// Mouse Interaction
+chaosCanvas.addEventListener('mousemove', e => {
+    const rect = chaosCanvas.getBoundingClientRect();
+    mouseX = e.clientX - rect.left;
+    mouseY = e.clientY - rect.top;
+});
+chaosCanvas.addEventListener('touchmove', e => {
+    e.preventDefault(); // prevent scrolling
+    const rect = chaosCanvas.getBoundingClientRect();
+    mouseX = e.touches[0].clientX - rect.left;
+    mouseY = e.touches[0].clientY - rect.top;
+}, {passive: false});
+
+
+// Simple Verlet-ish integration
+function updateChaos() {
+    resizeCanvas(chaosCanvas);
+    if(points.length === 0) initChaos();
+    
+    // Update physics
+    points.forEach(p => {
+        // Hooke's Law towards original position (The "Sheet" wanting to be flat)
+        // But the "Elastic" pulls corners to center
+        let targetX = p.ox;
+        let targetY = p.oy;
+
+        // Recalculate original positions relative to current center (responsive)
+        const currentCenterX = chaosCanvas.width / 2;
+        const diffX = currentCenterX - ((cols*spacing)/2 + (chaosCanvas.width - (cols*spacing))/2);
+        
+        if (p.isCorner) {
+            // Corners want to go to center (Elasticity)
+            targetX = chaosCanvas.width / 2;
+            targetY = 150;
+        }
+
+        const fx = (targetX - p.x) * tension;
+        const fy = (targetY - p.y) * tension;
+
+        // Damping
+        p.vx = (p.vx + fx) * 0.9;
+        p.vy = (p.vy + fy) * 0.9;
+
+        // Mouse repulsion
+        const dx = p.x - mouseX;
+        const dy = p.y - mouseY;
+        const dist = Math.sqrt(dx*dx + dy*dy);
+        if(dist < 50) {
+            const force = (50 - dist) * 0.5;
+            p.vx += (dx/dist) * force;
+            p.vy += (dy/dist) * force;
+        }
+
+        p.x += p.vx;
+        p.y += p.vy;
+    });
+
+    // Draw
+    chaosCtx.clearRect(0, 0, chaosCanvas.width, chaosCanvas.height);
+    
+    // Draw connections
+    chaosCtx.strokeStyle = '#444';
+    chaosCtx.lineWidth = 1;
+    chaosCtx.beginPath();
+    points.forEach((p, i) => {
+        // Connect right
+        if((i+1) % rows !== 0 && points[i+1]) {
+            chaosCtx.moveTo(p.x, p.y);
+            chaosCtx.lineTo(points[i+1].x, points[i+1].y);
+        }
+        // Connect down
+        if(points[i+rows]) {
+            chaosCtx.moveTo(p.x, p.y);
+            chaosCtx.lineTo(points[i+rows].x, points[i+rows].y);
+        }
+    });
+    chaosCtx.stroke();
+
+    // Draw points
+    points.forEach(p => {
+        chaosCtx.fillStyle = p.isCorner ? '#ff4757' : '#2ed573';
+        chaosCtx.beginPath();
+        chaosCtx.arc(p.x, p.y, p.isCorner ? 4 : 2, 0, Math.PI*2);
+        chaosCtx.fill();
+    });
+
+    requestAnimationFrame(updateChaos);
+}
+
+document.getElementById('tension-slider').addEventListener('input', (e) => {
+    tension = parseFloat(e.target.value);
+    const meter = document.getElementById('chaos-meter');
+    if(tension > 0.15) {
+        meter.innerText = "CRITICAL FAILURE";
+        meter.style.color = "red";
+    } else {
+        meter.innerText = "HIGH ENTROPY";
+        meter.style.color = "#ff4757";
+    }
+});
+
+updateChaos();
+
+
+/**
+ * SIMULATION 2: INVERSION (Vector Logic)
+ */
+const invCanvas = document.getElementById('canvas-invert');
+const invCtx = invCanvas.getContext('2d');
+let isInverted = false;
+let mergeState = 0; // 0: Separate, 1: Merged, 2: Failed
+
+function drawCup(ctx, x, y, inverted, color) {
+    ctx.strokeStyle = color;
+    ctx.lineWidth = 4;
+    ctx.beginPath();
+    if (!inverted) {
+        // U shape
+        ctx.arc(x, y, 30, 0, Math.PI, false); 
+        ctx.moveTo(x-30, y); ctx.lineTo(x-30, y-30);
+        ctx.moveTo(x+30, y); ctx.lineTo(x+30, y-30);
+    } else {
+        // n shape
+        ctx.arc(x, y-30, 30, Math.PI, 0, false);
+        ctx.moveTo(x-30, y-30); ctx.lineTo(x-30, y);
+        ctx.moveTo(x+30, y-30); ctx.lineTo(x+30, y);
+    }
+    ctx.stroke();
+    
+    // Draw Normal Vector Arrow
+    ctx.strokeStyle = "#fff";
+    ctx.lineWidth = 1;
+    ctx.setLineDash([2, 2]);
+    ctx.beginPath();
+    // Base of arrow
+    ctx.moveTo(x, y-15);
+    // Tip of arrow
+    let tipY = inverted ? y+40 : y-70;
+    ctx.lineTo(x, tipY);
+    ctx.stroke();
+    ctx.setLineDash([]);
+    
+    // Arrowhead dot
+    ctx.fillStyle = "#fff";
+    ctx.beginPath();
+    ctx.arc(x, tipY, 3, 0, Math.PI*2);
+    ctx.fill();
+}
+
+function updateInversion() {
+    resizeCanvas(invCanvas);
+    invCtx.clearRect(0, 0, invCanvas.width, invCanvas.height);
+
+    const centerX = invCanvas.width / 2;
+    const centerY = invCanvas.height / 2;
+
+    if (mergeState === 0) {
+        // Separate
+        drawCup(invCtx, centerX - 60, centerY + 20, false, '#2ed573'); // Corner A (Fixed)
+        drawCup(invCtx, centerX + 60, centerY + 20, isInverted, '#ff4757'); // Corner B (Variable)
+    } else if (mergeState === 1) {
+        // Merged Success
+        drawCup(invCtx, centerX, centerY + 20, false, '#2ed573');
+        drawCup(invCtx, centerX, centerY + 20, true, '#ff4757'); // Nested
+        invCtx.fillStyle = "#2ed573";
+        invCtx.font = "14px Courier New";
+        invCtx.textAlign = "center";
+        invCtx.fillText("TOPOLOGY MATCH", centerX, centerY + 80);
+    } else if (mergeState === 2) {
+        // Merged Fail (Collision)
+        drawCup(invCtx, centerX - 20, centerY + 20, false, '#2ed573');
+        drawCup(invCtx, centerX + 20, centerY + 20, false, '#ff4757');
+        
+        // Draw Explosion/Error
+        invCtx.strokeStyle = "red";
+        invCtx.lineWidth = 2;
+        invCtx.beginPath();
+        invCtx.moveTo(centerX-30, centerY-30); invCtx.lineTo(centerX+30, centerY+30);
+        invCtx.moveTo(centerX+30, centerY-30); invCtx.lineTo(centerX-30, centerY+30);
+        invCtx.stroke();
+        
+        invCtx.fillStyle = "#ff4757";
+        invCtx.font = "14px Courier New";
+        invCtx.textAlign = "center";
+        invCtx.fillText("VECTOR COLLISION", centerX, centerY + 80);
+    }
+    
+    requestAnimationFrame(updateInversion);
+}
+
+function toggleInversion() {
+    isInverted = !isInverted;
+    mergeState = 0;
+    document.getElementById('merge-result').innerText = "Status: CHANGED ORIENTATION.";
+    document.getElementById('merge-result').style.color = "#888";
+    
+    const eq = document.getElementById('vector-eq');
+    eq.innerHTML = isInverted ? 
+        `Target State: &uarr; A + &darr; B &approx; 0 (COMPATIBLE)` : 
+        `Target State: &uarr; A + &uarr; B &ne; 0 (CONFLICT)`;
+    eq.style.color = isInverted ? "var(--secondary)" : "var(--accent)";
+}
+
+function attemptMerge() {
+    if(isInverted) {
+        mergeState = 1;
+        document.getElementById('merge-result').innerText = "Status: MERGE SUCCESSFUL. MANIFOLD STABLE.";
+        document.getElementById('merge-result').style.color = "var(--secondary)";
+    } else {
+        mergeState = 2;
+        document.getElementById('merge-result').innerText = "Status: REJECTED. NORMALS ALIGNED.";
+        document.getElementById('merge-result').style.color = "var(--accent)";
+    }
+}
+updateInversion();
+
+
+/**
+ * SIMULATION 3: RECURSION (Tree Graph)
+ */
+const treeCanvas = document.getElementById('canvas-tree');
+const treeCtx = treeCanvas.getContext('2d');
+let foldStep = 0;
+
+function drawNode(x, y, label, scale, color) {
+    treeCtx.fillStyle = color || "#2ed573";
+    treeCtx.beginPath();
+    treeCtx.arc(x, y, 10 * scale, 0, Math.PI*2);
+    treeCtx.fill();
+    treeCtx.fillStyle = "#fff";
+    treeCtx.font = "12px monospace";
+    treeCtx.textAlign = "center";
+    treeCtx.fillText(label, x, y - 15*scale - 5);
+}
+
+function updateTree() {
+    resizeCanvas(treeCanvas);
+    const w = treeCanvas.width;
+    const h = treeCanvas.height;
+    treeCtx.clearRect(0,0,w,h);
+
+    const centerY = h/2;
+    
+    if (foldStep == 0) {
+        // 4 separate nodes
+        const gap = w/5;
+        for(let i=0; i<4; i++) {
+            drawNode(gap * (i+1), centerY, `C${i+1}`, 1);
+        }
+    } else if (foldStep == 1) {
+        // 2 groups
+        const gap = w/5;
+        treeCtx.strokeStyle = "#666";
+        treeCtx.lineWidth = 2;
+        treeCtx.beginPath();
+        // Left Group
+        treeCtx.moveTo(gap, centerY - 40); treeCtx.lineTo(w/3, centerY + 40);
+        treeCtx.moveTo(gap * 2, centerY - 40); treeCtx.lineTo(w/3, centerY + 40);
+        // Right Group
+        treeCtx.moveTo(gap * 3, centerY - 40); treeCtx.lineTo(w/3 * 2, centerY + 40);
+        treeCtx.moveTo(gap * 4, centerY - 40); treeCtx.lineTo(w/3 * 2, centerY + 40);
+        treeCtx.stroke();
+
+        // Ghosts
+        drawNode(gap, centerY - 40, "", 0.5, "#555");
+        drawNode(gap*2, centerY - 40, "", 0.5, "#555");
+        drawNode(gap*3, centerY - 40, "", 0.5, "#555");
+        drawNode(gap*4, centerY - 40, "", 0.5, "#555");
+
+        drawNode(w/3, centerY + 40, "MEGA-1", 1.5, "#2ed573");
+        drawNode(w/3*2, centerY + 40, "MEGA-2", 1.5, "#2ed573");
+    } else {
+        // 1 Cluster
+        treeCtx.fillStyle = "#ff4757";
+        treeCtx.font = "14px monospace";
+        treeCtx.textAlign = "center";
+        
+        drawNode(w/2, centerY + 20, "SINGULARITY", 3.0, "#ff4757");
+        treeCtx.fillText("DENSITY CRITICAL", w/2, centerY + 80);
+    }
+
+    requestAnimationFrame(updateTree);
+}
+
+document.getElementById('fold-step').addEventListener('input', (e) => {
+    foldStep = parseInt(e.target.value);
+    const densityVal = document.getElementById('density-val');
+    const densityEq = document.getElementById('density-eq');
+    
+    if(foldStep === 0) {
+        densityVal.innerText = "1.0x";
+        densityVal.className = "success";
+        densityEq.innerText = "Nodes: 4 | Layers: 1";
+    } else if (foldStep === 1) {
+        densityVal.innerText = "2.0x";
+        densityVal.className = "success";
+        densityEq.innerText = "Nodes: 2 | Layers: 4 (Folded)";
+    } else {
+        densityVal.innerText = "8.0x";
+        densityVal.className = "fail";
+        densityEq.innerText = "Nodes: 1 | Layers: 16 (Recursive)";
+    }
+});
+updateTree();
+
+/**
+ * SIMULATION 4: HEATMAP (Canvas Pixels)
+ */
+const heatCanvas = document.getElementById('canvas-heat');
+const heatCtx = heatCanvas.getContext('2d');
+let pressure = 0;
+
+function updateHeat() {
+    resizeCanvas(heatCanvas);
+    const w = heatCanvas.width;
+    const h = heatCanvas.height;
+    
+    heatCtx.clearRect(0,0,w,h);
+    
+    // Draw "Folded Sheet" outline
+    const pad = 40;
+    const foldW = w - pad*2;
+    const foldH = 60;
+    const yPos = h/2 - foldH/2;
+
+    // Draw internal chaos (Simulated heatmap)
+    // The higher the pressure, the more contained the red is
+    const chaosWidth = foldW * (1 - (pressure/150)); 
+    
+    // Create gradient
+    const grd = heatCtx.createRadialGradient(w/2, h/2, 5, w/2, h/2, chaosWidth/1.5);
+    
+    // As pressure increases, the core gets redder/brighter
+    const rVal = Math.min(255, 150 + pressure);
+    
+    grd.addColorStop(0, `rgba(${rVal}, 71, 87, 1)`); // Core Red
+    grd.addColorStop(0.4, "rgba(255, 150, 50, 0.8)");
+    grd.addColorStop(1, "rgba(46, 213, 115, 0.1)"); // Edge Green
+
+    heatCtx.fillStyle = grd;
+    // Clip to the box
+    heatCtx.save();
+    
+    // Calculate Squeeze
+    const squeeze = pressure * 0.4; // Pixels to shrink by
+    const currentW = foldW - squeeze*2;
+    const currentH = foldH - squeeze*0.5;
+    const currentX = pad + squeeze;
+    const currentY = yPos + squeeze*0.25;
+
+    heatCtx.beginPath();
+    heatCtx.rect(currentX, currentY, currentW, currentH);
+    heatCtx.clip();
+    heatCtx.fillRect(0, 0, w, h);
+    heatCtx.restore();
+
+    // Draw Container Border
+    heatCtx.strokeStyle = "#fff";
+    heatCtx.lineWidth = 2;
+    heatCtx.strokeRect(currentX, currentY, currentW, currentH);
+    
+    // Pressure arrows
+    if(pressure > 10) {
+        heatCtx.fillStyle = "#ff4757";
+        heatCtx.beginPath();
+        // Top arrow
+        heatCtx.moveTo(w/2, currentY - 20);
+        heatCtx.lineTo(w/2 - 5, currentY - 30);
+        heatCtx.lineTo(w/2 + 5, currentY - 30);
+        heatCtx.fill();
+        // Bottom arrow
+        heatCtx.beginPath();
+        heatCtx.moveTo(w/2, currentY + currentH + 20);
+        heatCtx.lineTo(w/2 - 5, currentY + currentH + 30);
+        heatCtx.lineTo(w/2 + 5, currentY + currentH + 30);
+        heatCtx.fill();
+    }
+
+    requestAnimationFrame(updateHeat);
+}
+
+document.getElementById('pressure-slider').addEventListener('input', (e) => {
+    pressure = parseInt(e.target.value);
+});
+updateHeat();
+
+</script>
+
+</body>
+</html>

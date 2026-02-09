@@ -1,0 +1,687 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>The Ralph Loop | Interactive Guide</title>
+    <style>
+        :root {
+            --bg: #0f172a;
+            --card-bg: #1e293b;
+            --text: #e2e8f0;
+            --muted: #94a3b8;
+            --accent: #38bdf8;
+            --accent-glow: rgba(56, 189, 248, 0.3);
+            --danger: #ef4444;
+            --success: #22c55e;
+            --warning: #f59e0b;
+            --font-main: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            --font-mono: "Fira Code", "Roboto Mono", monospace;
+        }
+
+        * { box-sizing: border-box; }
+
+        body {
+            background-color: var(--bg);
+            color: var(--text);
+            font-family: var(--font-main);
+            margin: 0;
+            padding: 0;
+            line-height: 1.6;
+            overflow-x: hidden;
+            padding-bottom: 100px;
+        }
+
+        /* Layout */
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 2rem 1rem;
+        }
+
+        section {
+            margin-bottom: 4rem;
+            opacity: 0.2;
+            filter: blur(2px);
+            transition: all 0.6s ease;
+            pointer-events: none;
+            transform: translateY(20px);
+        }
+
+        section.active {
+            opacity: 1;
+            filter: blur(0);
+            pointer-events: all;
+            transform: translateY(0);
+        }
+
+        /* Typography */
+        h1, h2, h3 {
+            font-weight: 800;
+            letter-spacing: -0.03em;
+        }
+
+        h1 { 
+            font-size: clamp(2rem, 5vw, 3.5rem); 
+            text-align: center; 
+            margin-bottom: 0.5rem; 
+            color: var(--accent); 
+            text-shadow: 0 0 20px var(--accent-glow); 
+        }
+        
+        h2 { 
+            font-size: 1.8rem; 
+            margin-top: 0; 
+            border-left: 4px solid var(--accent); 
+            padding-left: 1rem; 
+            color: #fff;
+        }
+        
+        .subtitle {
+            text-align: center;
+            color: var(--muted);
+            margin-bottom: 4rem;
+            font-size: 1.1rem;
+            font-family: var(--font-mono);
+        }
+
+        p { font-size: 1.05rem; color: #cbd5e1; margin-bottom: 1.5rem; }
+
+        code {
+            background: #0f172a;
+            padding: 0.2rem 0.4rem;
+            border-radius: 4px;
+            font-family: var(--font-mono);
+            color: var(--accent);
+            font-size: 0.9em;
+        }
+
+        /* UI Components */
+        .card {
+            background: var(--card-bg);
+            border-radius: 16px;
+            padding: 2rem;
+            border: 1px solid #334155;
+            box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.3);
+            margin: 2rem 0;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .inner-card {
+            background: #0b1120;
+            border-radius: 8px;
+            padding: 1.5rem;
+            margin-top: 1.5rem;
+            border: 1px solid #334155;
+        }
+
+        .btn {
+            background: var(--accent);
+            color: var(--bg);
+            border: none;
+            padding: 0.8rem 1.5rem;
+            border-radius: 8px;
+            font-weight: 700;
+            font-size: 1rem;
+            cursor: pointer;
+            transition: transform 0.1s, box-shadow 0.2s, background-color 0.2s;
+            display: inline-block;
+            margin-top: 0.5rem;
+            font-family: var(--font-mono);
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            width: 100%;
+            text-align: center;
+        }
+
+        @media (min-width: 600px) {
+            .btn { width: auto; }
+        }
+
+        .btn:hover { transform: translateY(-2px); box-shadow: 0 0 15px var(--accent-glow); background-color: #7dd3fc; }
+        .btn:active { transform: translateY(0); }
+        .btn:disabled { background: #475569; cursor: not-allowed; transform: none; box-shadow: none; color: #94a3b8; }
+        
+        .btn.secondary { background: transparent; border: 1px solid var(--accent); color: var(--accent); }
+        .btn.secondary:hover { background: rgba(56, 189, 248, 0.1); }
+
+        /* Progress Bars */
+        .progress-bar-container {
+            width: 100%;
+            height: 14px;
+            background: #334155;
+            border-radius: 7px;
+            overflow: hidden;
+            margin-top: 0.5rem;
+            margin-bottom: 0.5rem;
+        }
+
+        .progress-bar {
+            height: 100%;
+            background: var(--success);
+            width: 0%;
+            transition: width 0.4s cubic-bezier(0.4, 0, 0.2, 1), background-color 0.3s;
+        }
+
+        /* Level 1 Specifics */
+        .brain-visual {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 20px;
+            font-size: 4rem;
+            margin: 2rem 0;
+            height: 80px;
+        }
+
+        .agent-face { transition: filter 0.3s, transform 0.3s; }
+        .shake { animation: shake 0.5s; }
+
+        @keyframes shake {
+            0% { transform: translate(1px, 1px) rotate(0deg); }
+            10% { transform: translate(-1px, -2px) rotate(-1deg); }
+            20% { transform: translate(-3px, 0px) rotate(1deg); }
+            30% { transform: translate(3px, 2px) rotate(0deg); }
+            40% { transform: translate(1px, -1px) rotate(1deg); }
+            50% { transform: translate(-1px, 2px) rotate(-1deg); }
+            60% { transform: translate(-3px, 1px) rotate(0deg); }
+            70% { transform: translate(3px, 1px) rotate(-1deg); }
+            80% { transform: translate(-1px, -1px) rotate(1deg); }
+            90% { transform: translate(1px, 2px) rotate(0deg); }
+            100% { transform: translate(1px, -2px) rotate(-1deg); }
+        }
+
+        /* Level 2 & 4 Terminal */
+        .terminal {
+            background: #000;
+            border-radius: 6px;
+            padding: 1rem;
+            font-family: "Fira Code", monospace;
+            font-size: 0.85rem;
+            color: #33ff00;
+            min-height: 180px;
+            max-height: 300px;
+            overflow-y: auto;
+            border: 1px solid #333;
+            white-space: pre-wrap;
+            line-height: 1.4;
+        }
+
+        /* Level 3 File System */
+        .file-system {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 1rem;
+        }
+        @media (min-width: 600px) {
+            .file-system { grid-template-columns: 1fr 1fr; }
+        }
+
+        .file {
+            background: #0f172a;
+            border: 1px solid #334155;
+            padding: 1rem;
+            border-radius: 8px;
+            transition: border-color 0.3s;
+        }
+
+        .file h4 { margin: 0 0 0.5rem 0; color: var(--warning); font-family: var(--font-mono); font-size: 0.9rem; }
+        .file-content { font-size: 0.8rem; color: #94a3b8; font-family: var(--font-mono); white-space: pre-wrap; }
+
+        /* Animations */
+        @keyframes pulse {
+            0% { transform: scale(1); box-shadow: 0 0 0 0 rgba(245, 158, 11, 0.7); }
+            70% { transform: scale(1.02); box-shadow: 0 0 0 10px rgba(245, 158, 11, 0); }
+            100% { transform: scale(1); box-shadow: 0 0 0 0 rgba(245, 158, 11, 0); }
+        }
+
+        .highlight-pulse {
+            animation: pulse 0.8s ease-in-out;
+            border-color: var(--warning);
+        }
+
+        .hidden { display: none; }
+
+        /* Badges */
+        .level-badge {
+            position: absolute;
+            top: 1rem;
+            right: 1rem;
+            background: rgba(15, 23, 42, 0.8);
+            padding: 0.25rem 0.75rem;
+            border-radius: 20px;
+            font-size: 0.7rem;
+            font-weight: bold;
+            color: var(--accent);
+            border: 1px solid var(--accent);
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+        }
+
+        /* Simulation Grid */
+        .sim-grid {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 1.5rem;
+        }
+        @media (min-width: 768px) {
+            .sim-grid { grid-template-columns: 1fr 1.5fr; }
+        }
+        
+        ul.task-list {
+            list-style: none;
+            padding: 0;
+            font-family: var(--font-mono);
+            font-size: 0.9rem;
+        }
+        ul.task-list li {
+            padding: 0.5rem 0;
+            border-bottom: 1px solid #334155;
+        }
+
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <h1>Ralph's Infinite Loop</h1>
+        <div class="subtitle">Mission: Code the Uncodable without losing your mind.</div>
+
+        <!-- LEVEL 1: The Problem -->
+        <section id="level-1" class="active">
+            <div class="card">
+                <div class="level-badge">Level 1: The Problem</div>
+                <h2>The Context Trap</h2>
+                <p>Meet <strong>Agent Ralph</strong>. Ralph is a brilliant AI coder. But Ralph has a weakness: his "Context Window" (short-term memory) is limited.</p>
+                
+                <p>Normally, when you chat with an AI, you keep adding history. This causes <strong>Context Rot</strong>. As the history gets full, the AI gets confused, lazy, or starts hallucinating.</p>
+
+                <div class="inner-card">
+                    <div style="display: flex; justify-content: space-between; margin-bottom: 0.5rem; font-size: 0.9rem;">
+                        <span>Ralph's Brain Capacity</span>
+                        <span id="brain-percent">0%</span>
+                    </div>
+                    <div class="progress-bar-container">
+                        <div id="brain-bar" class="progress-bar"></div>
+                    </div>
+                    <div class="brain-visual">
+                        <div id="ralph-face" class="agent-face">🤖</div>
+                    </div>
+                    <div id="ralph-output" style="text-align: center; font-style: italic; color: #94a3b8; min-height: 1.5em; font-family: var(--font-mono);">
+                        "Ready to code! Send instructions."
+                    </div>
+                </div>
+
+                <p style="margin-top: 1.5rem;"><strong>Objective:</strong> Overload Ralph. Keep asking him to code until he breaks.</p>
+                
+                <button class="btn" id="btn-add-context" onclick="addContext()">Send "Write Function"</button>
+                
+                <div id="l1-feedback" class="hidden" style="margin-top: 1.5rem; text-align: center;">
+                    <p style="color: var(--danger); font-weight: bold;">CRITICAL FAILURE: Context Window Exceeded.</p>
+                    <button class="btn secondary" onclick="activateLevel(2)">Unlock Solution</button>
+                </div>
+            </div>
+        </section>
+
+        <!-- LEVEL 2: The Mechanic -->
+        <section id="level-2">
+            <div class="card">
+                <div class="level-badge">Level 2: The Mechanic</div>
+                <h2>The Reset Loop</h2>
+                <p>Most tools try to "summarize" old messages to save space. But summarizing code loses critical details (variable names, imports). This causes bugs.</p>
+                <p>The <strong>Ralph Loop</strong> takes a radical approach: <strong>Don't summarize. Die and Reincarnate.</strong></p>
+                <p>Instead of one long conversation, we run a bash script that creates a <em>fresh</em> agent for every single step.</p>
+
+                <div class="inner-card" style="border-color: var(--accent);">
+                    <h3 style="margin-top:0; color:var(--accent); font-size: 1rem;">The Sacred Scroll (Bash Script)</h3>
+                    <div class="terminal" id="bash-display">
+<span style="color: #f59e0b">while</span> true; <span style="color: #f59e0b">do</span>
+  <span style="color: #7dd3fc"># 1. Feed the prompt to a FRESH agent</span>
+  cat <span id="code-prompt" style="color: #fff; font-weight:bold;">PROMPT.md</span> | <span style="color: var(--success)">claude-code</span>
+  
+  <span style="color: #7dd3fc"># 2. Agent works until it exits</span>
+  
+  <span style="color: #7dd3fc"># 3. Check if done</span>
+  <span style="color: #f59e0b">if</span> grep -q "DONE" status.txt; <span style="color: #f59e0b">then</span>
+    break
+  <span style="color: #f59e0b">fi</span>
+  
+  <span style="color: #7dd3fc"># 4. RESTART (Loop)</span>
+  echo "Reincarnating Ralph..."
+<span style="color: #f59e0b">done</span>
+                    </div>
+                </div>
+
+                <p><strong>Interact:</strong> Change the input variable. Notice how the script stays outside the AI? The AI doesn't control the loop. The <strong>Loop controls the AI</strong>.</p>
+                
+                <div style="display: flex; gap: 10px; align-items: center; flex-wrap: wrap;">
+                    <button class="btn" style="background: #334155;" onclick="changePrompt('PROMPT.md')">Load Standard Prompt</button>
+                    <button class="btn" style="background: #334155;" onclick="changePrompt('SUPER_PROMPT.md')">Load Super Prompt</button>
+                </div>
+                
+                <div style="margin-top: 2rem; text-align: right;">
+                    <button class="btn secondary" onclick="activateLevel(3)">I get it. Next &rarr;</button>
+                </div>
+            </div>
+        </section>
+
+        <!-- LEVEL 3: External Memory -->
+        <section id="level-3">
+            <div class="card">
+                <div class="level-badge">Level 3: External Memory</div>
+                <h2>If Ralph dies, how does he remember?</h2>
+                <p>If we reset Ralph every time, he forgets what he just coded. We need <strong>External Memory</strong>.</p>
+                <p>We don't use chat history. We use <strong>Files</strong>.</p>
+                
+                <div class="file-system">
+                    <div class="file" id="file-prd">
+                        <h4>📄 prd.json (The Plan)</h4>
+                        <div class="file-content" id="prd-content">
+{
+  "task": "Build Login",
+  "status": "TODO",
+  "next_step": "Create form"
+}
+                        </div>
+                    </div>
+                    <div class="file" id="file-prog">
+                        <h4>📝 progress.txt (The Diary)</h4>
+                        <div class="file-content" id="progress-content">
+[LOG] Starting project...
+                        </div>
+                    </div>
+                </div>
+
+                <p style="margin-top: 1.5rem;"><strong>Training Simulation:</strong> You are the Agent. Complete a task step, save it to disk, then die.</p>
+
+                <div class="inner-card">
+                    <div style="margin-bottom: 1rem;">
+                        <strong>Current State: </strong> <span id="agent-state" style="color: var(--accent);">Fresh Instance</span>
+                    </div>
+                    <div style="display: flex; gap: 10px; flex-wrap: wrap;">
+                        <button class="btn" id="btn-do-work" onclick="doWorkLevel3()">1. Generate Code (RAM)</button>
+                        <button class="btn" id="btn-save-work" disabled onclick="saveWorkLevel3()">2. Save to File (Disk)</button>
+                        <button class="btn" id="btn-reset-agent" disabled onclick="resetAgentLevel3()">3. Die & Reset</button>
+                    </div>
+                    <p id="l3-msg" style="margin-top: 1rem; color: var(--warning); min-height: 1.5em; font-size: 0.9rem;"></p>
+                </div>
+
+                <div id="l3-next" class="hidden" style="margin-top: 2rem; text-align: right;">
+                    <button class="btn secondary" onclick="activateLevel(4)">Unlock Final Simulation &rarr;</button>
+                </div>
+            </div>
+        </section>
+
+        <!-- LEVEL 4: The Simulation -->
+        <section id="level-4">
+            <div class="card">
+                <div class="level-badge">Level 4: The Simulation</div>
+                <h2>The Infinite Loop in Action</h2>
+                <p>Let's put it all together. You are the Orchestrator (The Bash Loop).</p>
+                <p>We have a project with 4 tasks. Watch how Ralph wakes up, reads the files to understand context, does <strong>one</strong> task, saves, and dies. Then repeats.</p>
+
+                <div class="inner-card" style="background: #000; border: 1px solid #333;">
+                    <div class="sim-grid">
+                        <!-- Left Col: Status -->
+                        <div>
+                            <h4 style="color: var(--accent); margin-top: 0;">Task List (prd.json)</h4>
+                            <ul class="task-list">
+                                <li id="t1">⬜ 1. Setup Repo</li>
+                                <li id="t2">⬜ 2. Create Database</li>
+                                <li id="t3">⬜ 3. Build API</li>
+                                <li id="t4">⬜ 4. Write Tests</li>
+                            </ul>
+                            <div style="margin-top: 2rem;">
+                                <h4 style="color: var(--muted); margin-top: 0; font-size: 0.8rem; text-transform: uppercase;">Current Context Load</h4>
+                                <div class="progress-bar-container" style="height: 8px;">
+                                    <div id="sim-context-bar" class="progress-bar" style="background-color: var(--accent);"></div>
+                                </div>
+                                <small id="sim-context-text" style="color: var(--muted); font-family: var(--font-mono);">0 / 100 Tokens</small>
+                            </div>
+                        </div>
+
+                        <!-- Right Col: Terminal -->
+                        <div>
+                            <h4 style="color: #33ff00; margin-top: 0;">Terminal Output</h4>
+                            <div class="terminal" id="sim-terminal">Waiting to start loop...</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div style="margin-top: 2rem;">
+                    <button class="btn" id="btn-start-sim" onclick="startSimulation()">Start Ralph Loop</button>
+                    <button class="btn" id="btn-reset-sim" onclick="resetSimulation()" style="background: #475569; display: none;">Reset Simulation</button>
+                </div>
+
+                <div id="sim-conclusion" class="hidden" style="margin-top: 2rem; border-top: 1px solid #334155; padding-top: 1rem;">
+                    <h3 style="color: var(--success)">🎉 Mission Accomplished!</h3>
+                    <p>You've successfully built a feature using the Ralph Loop.</p>
+                    <p><strong>Key Takeaways:</strong></p>
+                    <ul style="color: #cbd5e1;">
+                        <li>The agent lived and died 4 times.</li>
+                        <li>It never suffered context rot because it reset every time.</li>
+                        <li>It knew what to do next because of `prd.json`.</li>
+                        <li>This is slower than one long chat, but <strong>far more reliable</strong> for complex engineering.</li>
+                    </ul>
+                </div>
+            </div>
+        </section>
+
+    </div>
+
+    <script>
+        // --- UTILS ---
+        const wait = (ms) => new Promise(resolve => setTimeout(resolve, ms));
+        
+        function activateLevel(levelNum) {
+            const current = document.querySelector('section.active');
+            const next = document.getElementById('level-' + levelNum);
+            
+            if(current) current.classList.remove('active');
+            next.classList.add('active');
+            
+            setTimeout(() => {
+                next.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            }, 300);
+        }
+
+        // --- LEVEL 1 LOGIC ---
+        let contextLoad = 0;
+        const brainBar = document.getElementById('brain-bar');
+        const brainPercent = document.getElementById('brain-percent');
+        const ralphFace = document.getElementById('ralph-face');
+        const ralphOutput = document.getElementById('ralph-output');
+        const l1Feedback = document.getElementById('l1-feedback');
+        const btnAddContext = document.getElementById('btn-add-context');
+
+        const responses = [
+            "Sure! Writing function...",
+            "Here is the class you asked for.",
+            "Refactoring the database layer...",
+            "Wait, what file was I in?", 
+            "I think... create void null function?", 
+            "ERROR: CONTEXT_LIMIT_EXCEEDED."
+        ];
+
+        function addContext() {
+            contextLoad += 20;
+            if (contextLoad > 100) contextLoad = 100;
+
+            brainBar.style.width = contextLoad + '%';
+            brainPercent.innerText = contextLoad + '%';
+
+            // Visual feedback based on load
+            if (contextLoad <= 40) {
+                brainBar.style.backgroundColor = 'var(--success)';
+                ralphFace.innerText = '🤖';
+                ralphOutput.innerText = responses[0];
+            } else if (contextLoad <= 80) {
+                brainBar.style.backgroundColor = 'var(--warning)';
+                ralphFace.innerText = '🤔';
+                ralphOutput.innerText = responses[2];
+            } else {
+                brainBar.style.backgroundColor = 'var(--danger)';
+                ralphFace.innerText = '🥴';
+                ralphFace.classList.add('shake');
+                ralphFace.style.filter = 'blur(2px)';
+                ralphOutput.innerText = responses[5];
+                
+                // End State
+                l1Feedback.classList.remove('hidden');
+                btnAddContext.innerText = "He's Broken!";
+                btnAddContext.disabled = true;
+            }
+        }
+
+        // --- LEVEL 2 LOGIC ---
+        function changePrompt(val) {
+            const el = document.getElementById('code-prompt');
+            el.innerText = val;
+            el.style.color = 'var(--warning)';
+            el.style.transform = 'scale(1.2)';
+            setTimeout(() => {
+                el.style.color = '#fff';
+                el.style.transform = 'scale(1)';
+            }, 300);
+        }
+
+        // --- LEVEL 3 LOGIC ---
+        const filePrd = document.getElementById('prd-content');
+        const fileProg = document.getElementById('progress-content');
+        const l3Msg = document.getElementById('l3-msg');
+        const filePrdContainer = document.getElementById('file-prd');
+        const fileProgContainer = document.getElementById('file-prog');
+
+        function doWorkLevel3() {
+            document.getElementById('agent-state').innerText = "Has Code in Memory (Volatile)";
+            document.getElementById('agent-state').style.color = "var(--warning)";
+            l3Msg.innerText = "⚠️ Agent has written code in RAM. If it resets now, work is lost! You must SAVE.";
+            document.getElementById('btn-do-work').disabled = true;
+            document.getElementById('btn-save-work').disabled = false;
+        }
+
+        function saveWorkLevel3() {
+            filePrd.innerHTML = '{\n  "task": "Build Login",\n  "status": "<span style="color:var(--success)">DONE</span>",\n  "next_step": "Create form"\n}';
+            fileProg.innerHTML += '\n[LOG] Login Logic Implemented.';
+            
+            filePrdContainer.classList.add('highlight-pulse');
+            fileProgContainer.classList.add('highlight-pulse');
+            
+            l3Msg.innerText = "✅ Success! State persisted to disk. Safe to die now.";
+            l3Msg.style.color = "var(--success)";
+            
+            document.getElementById('btn-save-work').disabled = true;
+            document.getElementById('btn-reset-agent').disabled = false;
+
+            setTimeout(() => {
+                filePrdContainer.classList.remove('highlight-pulse');
+                fileProgContainer.classList.remove('highlight-pulse');
+            }, 1000);
+        }
+
+        function resetAgentLevel3() {
+            document.getElementById('agent-state').innerText = "Fresh Instance";
+            document.getElementById('agent-state').style.color = "var(--text)";
+            l3Msg.innerText = "Agent killed. New agent spawned. It reads the files and knows the task is DONE.";
+            l3Msg.style.color = "var(--text)";
+            document.getElementById('btn-reset-agent').disabled = true;
+            document.getElementById('l3-next').classList.remove('hidden');
+        }
+
+        // --- LEVEL 4 SIMULATION ---
+        const tasks = [
+            { id: 't1', name: 'Setup Repo' },
+            { id: 't2', name: 'Create Database' },
+            { id: 't3', name: 'Build API' },
+            { id: 't4', name: 'Write Tests' }
+        ];
+        const simTerminal = document.getElementById('sim-terminal');
+        const simBar = document.getElementById('sim-context-bar');
+        const simText = document.getElementById('sim-context-text');
+
+        function logSim(text) {
+            const div = document.createElement('div');
+            div.innerHTML = `> ${text}`;
+            simTerminal.appendChild(div);
+            simTerminal.scrollTop = simTerminal.scrollHeight;
+        }
+
+        async function startSimulation() {
+            document.getElementById('btn-start-sim').style.display = 'none';
+            document.getElementById('btn-reset-sim').style.display = 'inline-block';
+            
+            simTerminal.innerHTML = "";
+            
+            for (let i = 0; i < tasks.length; i++) {
+                const task = tasks[i];
+                
+                // 1. Init
+                logSim(`<span style="color:var(--accent)">--- LOOP ITERATION ${i+1} START ---</span>`);
+                logSim("Bash: Spawning new Agent...");
+                await wait(800);
+                
+                // 2. Read Context
+                logSim("Agent: Reading prd.json...");
+                simBar.style.width = '10%';
+                simText.innerText = '10 / 100 Tokens';
+                await wait(400);
+
+                logSim("Agent: Reading progress.txt...");
+                simBar.style.width = '25%';
+                simText.innerText = '25 / 100 Tokens';
+                await wait(600);
+
+                // 3. Pick Task
+                logSim(`Agent: Selected task "${task.name}"`);
+                const taskEl = document.getElementById(task.id);
+                taskEl.innerText = `🔄 ${i+1}. ${task.name} (Working...)`;
+                taskEl.style.color = 'var(--warning)';
+                
+                // 4. Do Work (Fill context)
+                logSim("Agent: Writing code...");
+                simBar.style.width = '50%';
+                simText.innerText = '50 / 100 Tokens';
+                await wait(600);
+                
+                simBar.style.width = '85%';
+                simText.innerText = '85 / 100 Tokens';
+                logSim("Agent: Running verification...");
+                await wait(600);
+
+                // 5. Save & Commit
+                logSim("Agent: Verification Passed.");
+                logSim("Agent: Updating prd.json -> DONE");
+                taskEl.innerText = `✅ ${i+1}. ${task.name}`;
+                taskEl.style.color = 'var(--success)';
+                
+                // 6. Die
+                logSim(`<span style="color:var(--danger)">Bash: Terminating Agent. Context Wiped.</span>`);
+                simBar.style.width = '0%';
+                simText.innerText = '0 / 100 Tokens';
+                await wait(1200);
+            }
+
+            logSim(`<span style="color:var(--success)">ALL TASKS COMPLETE. LOOP EXIT.</span>`);
+            document.getElementById('sim-conclusion').classList.remove('hidden');
+        }
+
+        function resetSimulation() {
+            simTerminal.innerHTML = 'Waiting to start loop...';
+            simBar.style.width = '0%';
+            simText.innerText = '0 / 100 Tokens';
+            
+            tasks.forEach((t, i) => {
+                const el = document.getElementById(t.id);
+                el.innerText = `⬜ ${i+1}. ${t.name}`;
+                el.style.color = 'var(--text)';
+            });
+            
+            document.getElementById('sim-conclusion').classList.add('hidden');
+            document.getElementById('btn-start-sim').style.display = 'inline-block';
+            document.getElementById('btn-reset-sim').style.display = 'none';
+        }
+
+    </script>
+</body>
+</html>

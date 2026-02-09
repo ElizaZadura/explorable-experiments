@@ -1,0 +1,604 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>How to Train Your AI</title>
+    <style>
+        :root {
+            /* Cyberpunk Palette */
+            --bg: #0f0e17;
+            --card-bg: #232230;
+            --text-main: #fffffe;
+            --text-muted: #a7a9be;
+            --accent: #ff8906;       /* Orange */
+            --highlight: #f25f4c;    /* Red/Orange */
+            --neon-pink: #e53170;
+            --success: #2cb67d;      /* Green */
+            --border: #2e2f3e;
+            
+            --font-body: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            --font-mono: 'Courier New', Courier, monospace;
+        }
+
+        * { box-sizing: border-box; }
+
+        body {
+            background-color: var(--bg);
+            color: var(--text-main);
+            font-family: var(--font-body);
+            margin: 0;
+            padding: 0;
+            line-height: 1.6;
+            overflow-x: hidden;
+        }
+
+        /* Typography */
+        h1, h2, h3 {
+            font-weight: 800;
+            letter-spacing: -0.05em;
+            margin-top: 0;
+        }
+
+        h1 {
+            font-size: clamp(2.5rem, 5vw, 4rem);
+            color: var(--accent);
+            text-align: center;
+            text-shadow: 0 0 20px rgba(255, 137, 6, 0.3);
+        }
+
+        h2 {
+            font-size: 1.8rem;
+            color: var(--neon-pink);
+            margin-bottom: 1rem;
+            border-bottom: 2px solid var(--border);
+            padding-bottom: 0.5rem;
+        }
+
+        p { color: var(--text-muted); font-size: 1.1rem; margin-bottom: 1.5rem; }
+        
+        strong { color: var(--text-main); }
+        em { color: var(--accent); font-style: normal; }
+
+        /* Layout */
+        main {
+            max-width: 700px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        section {
+            min-height: 80vh;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            margin-bottom: 4rem;
+            padding-top: 2rem;
+        }
+
+        /* UI Components */
+        .card {
+            background: var(--card-bg);
+            border: 2px solid var(--border);
+            border-radius: 12px;
+            padding: 1.5rem;
+            margin: 1rem 0;
+            box-shadow: 0 10px 30px -10px rgba(0,0,0,0.5);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .tag {
+            position: absolute;
+            top: 0;
+            right: 0;
+            background: var(--bg);
+            color: var(--accent);
+            font-family: var(--font-mono);
+            font-size: 0.75rem;
+            padding: 0.25rem 0.75rem;
+            border-bottom-left-radius: 8px;
+            border-left: 1px solid var(--border);
+            border-bottom: 1px solid var(--border);
+        }
+
+        button {
+            background: var(--accent);
+            color: var(--bg);
+            border: none;
+            padding: 1rem;
+            width: 100%;
+            font-family: var(--font-mono);
+            font-weight: bold;
+            font-size: 1.1rem;
+            text-transform: uppercase;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: all 0.2s;
+            margin-top: 1rem;
+        }
+
+        button:hover { filter: brightness(1.1); transform: translateY(-2px); }
+        button:active { transform: translateY(0); }
+        button:disabled { background: #555; cursor: not-allowed; transform: none; }
+
+        .btn-outline {
+            background: transparent;
+            border: 1px solid var(--border);
+            color: var(--text-muted);
+            font-size: 0.9rem;
+            margin-top: 1rem;
+            padding: 0.5rem;
+        }
+
+        input[type=range] {
+            width: 100%;
+            margin: 1.5rem 0;
+            accent-color: var(--neon-pink);
+            cursor: pointer;
+        }
+
+        .output-console {
+            background: #000;
+            color: var(--success);
+            font-family: var(--font-mono);
+            padding: 1rem;
+            border-radius: 4px;
+            border-left: 4px solid var(--border);
+            margin-top: 1rem;
+            min-height: 3.5rem;
+            display: flex;
+            align-items: center;
+        }
+
+        .deep-dive {
+            display: none;
+            background: rgba(229, 49, 112, 0.1); /* Low opacity pink */
+            padding: 1rem;
+            border-radius: 8px;
+            margin-top: 1rem;
+            font-size: 0.95rem;
+            border-left: 3px solid var(--neon-pink);
+        }
+
+        /* Custom Visualizations */
+        .viz-container {
+            height: 200px;
+            position: relative;
+            width: 100%;
+            margin-bottom: 1rem;
+        }
+
+        svg { width: 100%; height: 100%; overflow: visible; }
+        
+        .node {
+            fill: var(--bg);
+            stroke: var(--text-main);
+            stroke-width: 2;
+        }
+
+        .connection {
+            stroke: #444;
+            stroke-width: 2;
+            transition: stroke 0.3s;
+        }
+
+        .bar-container {
+            height: 30px;
+            background: #000;
+            border-radius: 15px;
+            overflow: hidden;
+            margin-top: 0.5rem;
+            position: relative;
+        }
+
+        .bar-fill {
+            height: 100%;
+            width: 0%;
+            background: var(--highlight);
+            transition: width 0.3s, background-color 0.3s;
+            display: flex;
+            align-items: center;
+            justify-content: flex-end;
+            padding-right: 10px;
+            font-size: 0.8rem;
+            font-weight: bold;
+            color: #000;
+        }
+
+        /* Animations */
+        @keyframes pulse {
+            0% { stroke: var(--accent); stroke-width: 4; opacity: 1; }
+            100% { stroke: #444; stroke-width: 2; opacity: 0.5; }
+        }
+
+        .pulse-anim { animation: pulse 0.6s ease-out forwards; }
+        
+        .blink { animation: blinker 1s linear infinite; }
+        @keyframes blinker { 50% { opacity: 0; } }
+
+        /* Mobile Adjustments */
+        @media (max-width: 600px) {
+            h1 { font-size: 2.5rem; }
+            section { min-height: auto; margin-bottom: 6rem; }
+        }
+    </style>
+</head>
+<body>
+
+<main>
+    <!-- Header -->
+    <div style="height: 60vh; display: flex; flex-direction: column; justify-content: center; align-items: center;">
+        <h1>How to Train<br>Your AI 🧠</h1>
+        <p style="font-family: var(--font-mono); color: var(--accent);">THE 4 STEPS TO INTELLIGENCE</p>
+        <div style="margin-top: 2rem; animation: blinker 2s infinite;">SCROLL TO START ▼</div>
+    </div>
+
+    <!-- Section 1: Forward Pass -->
+    <section id="step1">
+        <h2>1. The Guess (Forward Pass)</h2>
+        <p>Meet <strong>Mini-Brain</strong>. It has never read a book. Its internal "knobs" (parameters) are set to random numbers.</p>
+        <p>We feed it input: <em>"The capital of France is..."</em></p>
+
+        <div class="card">
+            <div class="tag">SIMULATION</div>
+            <div class="viz-container" id="viz1">
+                <!-- SVG injected via JS -->
+            </div>
+            
+            <button onclick="runForwardPass()">RUN FORWARD PASS</button>
+            
+            <div class="output-console" id="output1">
+                Waiting for input...
+            </div>
+        </div>
+
+        <p><strong>Lesson:</strong> Without training, the data flows through random connections, resulting in garbage output.</p>
+    </section>
+
+    <!-- Section 2: Loss -->
+    <section id="step2">
+        <h2>2. The Scoreboard (Loss)</h2>
+        <p>That was embarrassing. We wanted <strong>"Paris"</strong>. We need to measure exactly <em>how bad</em> that guess was using a <strong>Loss Function</strong>.</p>
+        
+        <div class="card">
+            <div class="tag">INTERACTIVE MATH</div>
+            <div style="text-align: center; font-family: var(--font-mono); font-size: 1.2rem; margin-bottom: 1rem;">
+                Loss = -log(<span id="probDisplay" style="color:var(--accent)">10%</span>)
+            </div>
+
+            <p style="font-size: 0.9rem;">Drag the slider. Low confidence in the correct answer = HUGE Penalty.</p>
+            
+            <label style="font-family: var(--font-mono); font-size: 0.9rem;">AI Confidence in "Paris":</label>
+            <input type="range" min="1" max="99" value="10" id="lossSlider" oninput="updateLoss()">
+            
+            <div class="bar-container">
+                <div class="bar-fill" id="lossBar" style="width: 90%;">ERROR: 2.30</div>
+            </div>
+            <div id="lossFeedback" style="margin-top: 10px; font-style: italic; font-size: 0.9rem; min-height: 1.5em; text-align: center;"></div>
+        </div>
+
+        <button class="btn-outline" onclick="toggleDive('dive2')">Why Logarithm? 🤓</button>
+        <div id="dive2" class="deep-dive">
+            We use <code>-log(probability)</code>. If the AI is 99% sure (0.99), the score is near 0. But if it's only 1% sure (0.01), the score skyrockets to 4.6. This forces the AI to be <strong>confidently</strong> right.
+        </div>
+    </section>
+
+    <!-- Section 3: Backward Pass -->
+    <section id="step3">
+        <h2>3. The Blame Game (Backward)</h2>
+        <p>The Loss is high. Who is to blame? We need to find which internal parameters caused the error.</p>
+        <p>This is the <strong>Gradient</strong>. It tells us: <em>"If I wiggle this parameter, does the Loss go up or down?"</em></p>
+
+        <div class="card">
+            <div class="tag">MINI-GAME</div>
+            <p>Find the sweet spot (lowest error) for this single parameter.</p>
+            
+            <div class="viz-container" id="gradGraph" style="background: #111; border-radius: 8px;">
+                <!-- Graph injected via JS -->
+            </div>
+            
+            <input type="range" min="-10" max="10" value="-8" id="paramSlider" oninput="updateGradient()">
+            
+            <div class="output-console" id="gradOutput" style="border-left-color: var(--highlight);">
+                Slope (Gradient): -16
+            </div>
+        </div>
+
+        <button class="btn-outline" onclick="toggleDive('dive3')">What is the Chain Rule? 🔗</button>
+        <div id="dive3" class="deep-dive">
+            In a deep network, the error at the end depends on the layer before it, which depends on the layer before that. We calculate gradients backward from Output to Input using Calculus (The Chain Rule).
+        </div>
+    </section>
+
+    <!-- Section 4: Optimization -->
+    <section id="step4">
+        <h2>4. Level Up (Optimization)</h2>
+        <p>We know the error (Loss). We know the direction to fix it (Gradient). Now, we take a step to update the brain.</p>
+
+        <div class="card">
+            <div class="tag">TRAINING LOOP</div>
+            <div class="viz-container" id="viz4"></div>
+
+            <div style="display: flex; justify-content: space-between; font-family: var(--font-mono); font-size: 0.8rem; margin-bottom: 5px;">
+                <span>Intelligence Lvl: <span id="epochCount">0</span></span>
+                <span>Target: "Paris"</span>
+            </div>
+            
+            <div class="bar-container" style="height: 10px; margin-top: 0; margin-bottom: 1rem; background: #333;">
+                <div class="bar-fill" id="trainBar" style="background: var(--success); width: 0%;"></div>
+            </div>
+
+            <div class="output-console" id="trainOutput" style="margin-bottom: 1rem; border-left-color: var(--highlight);">
+                AI says: "Toaster" (Conf: 1%)
+            </div>
+
+            <button id="trainBtn" onclick="trainStep()">TRAIN 1 STEP 🚀</button>
+        </div>
+
+        <p>By repeating this loop millions of times, the random numbers tune themselves into a structure that "understands" capitals.</p>
+    </section>
+
+    <div style="padding: 4rem 0; text-align: center; color: #555;">
+        <p>End of Simulation.</p>
+    </div>
+
+</main>
+
+<script>
+    // --- UTILS ---
+    function toggleDive(id) {
+        const el = document.getElementById(id);
+        el.style.display = el.style.display === 'block' ? 'none' : 'block';
+    }
+
+    // --- VISUALIZATION ENGINE ---
+    function createNetworkSVG(containerId, structure) {
+        const container = document.getElementById(containerId);
+        const width = container.clientWidth;
+        const height = container.clientHeight;
+        
+        // Simple scale
+        const layerGap = width / (structure.length);
+        
+        let nodes = [];
+        let connections = [];
+
+        // Generate coordinates
+        structure.forEach((count, layerIdx) => {
+            const x = (layerIdx * layerGap) + (layerGap / 2);
+            const nodeGap = height / (count + 1);
+            for (let i = 0; i < count; i++) {
+                nodes.push({
+                    x: x, 
+                    y: (i + 1) * nodeGap, 
+                    layer: layerIdx,
+                    id: `l${layerIdx}n${i}`
+                });
+            }
+        });
+
+        // Generate SVG string
+        let svgHTML = `<svg viewBox="0 0 ${width} ${height}">`;
+        
+        // Draw Lines
+        for(let i=0; i<nodes.length; i++) {
+            let n1 = nodes[i];
+            // Connect to next layer
+            let nextLayerNodes = nodes.filter(n => n.layer === n1.layer + 1);
+            nextLayerNodes.forEach(n2 => {
+                svgHTML += `<line x1="${n1.x}" y1="${n1.y}" x2="${n2.x}" y2="${n2.y}" 
+                            class="connection" id="line-${n1.id}-${n2.id}" opacity="0.3" />`;
+            });
+        }
+
+        // Draw Nodes
+        nodes.forEach(n => {
+            svgHTML += `<circle cx="${n.x}" cy="${n.y}" r="8" class="node" />`;
+            // Add label for input/output
+            if(n.layer === 0 && containerId === 'viz1') {
+                 svgHTML += `<text x="${n.x-20}" y="${n.y+5}" fill="#fff" font-family="monospace" font-size="12">In</text>`;
+            }
+        });
+
+        svgHTML += `</svg>`;
+        container.innerHTML = svgHTML;
+    }
+
+    // --- SECTION 1: FORWARD PASS ---
+    const randomWords = ["Rhubarb", "Toaster", "42", "Jellyfish", "Blue", "Banana"];
+    
+    // Init Network 1
+    setTimeout(() => createNetworkSVG('viz1', [3, 4, 1]), 100);
+
+    function runForwardPass() {
+        const btn = document.querySelector('#step1 button');
+        const out = document.getElementById('output1');
+        const svg = document.querySelector('#viz1 svg');
+        
+        btn.disabled = true;
+        out.innerHTML = "Calculating <span class='blink'>...</span>";
+        out.style.borderColor = "var(--border)";
+        out.style.color = "#fff";
+
+        // Animate Lines
+        const lines = svg.querySelectorAll('line');
+        lines.forEach((line, index) => {
+            // Stagger animation
+            setTimeout(() => {
+                line.style.stroke = "var(--accent)";
+                line.style.opacity = "1";
+                line.style.strokeWidth = "3";
+            }, index * 20); // sequential flow
+
+            setTimeout(() => {
+                line.style.stroke = "#444";
+                line.style.opacity = "0.3";
+                line.style.strokeWidth = "2";
+            }, 600 + (index * 20));
+        });
+
+        setTimeout(() => {
+            const word = randomWords[Math.floor(Math.random() * randomWords.length)];
+            const conf = Math.floor(Math.random() * 15); // Low confidence
+            
+            out.innerHTML = `Output: <strong>"${word}"</strong> (Confidence: ${conf}%)`;
+            out.style.borderLeftColor = "var(--highlight)";
+            out.style.color = "var(--highlight)";
+            btn.disabled = false;
+        }, 1200);
+    }
+
+    // --- SECTION 2: LOSS ---
+    function updateLoss() {
+        const slider = document.getElementById('lossSlider');
+        const prob = parseInt(slider.value);
+        const probDecimal = prob / 100;
+        const loss = -Math.log(Math.max(probDecimal, 0.001)); // Avoid log(0)
+
+        document.getElementById('probDisplay').innerText = prob + "%";
+        
+        const bar = document.getElementById('lossBar');
+        const feedback = document.getElementById('lossFeedback');
+
+        // Visual mapping: Max reasonable loss ~4.6 (at 1%). 
+        let widthPerc = Math.min((loss / 4.6) * 100, 100);
+        
+        bar.style.width = widthPerc + "%";
+        bar.innerText = "LOSS: " + loss.toFixed(2);
+
+        if (loss < 0.2) {
+            bar.style.backgroundColor = "var(--success)";
+            feedback.innerText = "Excellent! High confidence = Near Zero Loss.";
+            feedback.style.color = "var(--success)";
+        } else if (loss > 2) {
+            bar.style.backgroundColor = "var(--highlight)";
+            feedback.innerText = "Ouch! The AI is punished heavily for uncertainty.";
+            feedback.style.color = "var(--highlight)";
+        } else {
+            bar.style.backgroundColor = "var(--accent)";
+            feedback.innerText = "Getting better...";
+            feedback.style.color = "var(--accent)";
+        }
+    }
+    updateLoss(); // Init
+
+    // --- SECTION 3: GRADIENT ---
+    function drawGradientGraph() {
+        const container = document.getElementById('gradGraph');
+        // SVG Coordinate system: x from -12 to 12, y from -5 to 110
+        const svg = `
+        <svg viewBox="-12 -5 24 115" preserveAspectRatio="none">
+            <!-- Curve y = x^2 -->
+            <path d="M -10 100 Q 0 0 10 100" stroke="#555" stroke-width="0.5" fill="none" />
+            <!-- Center Line -->
+            <line x1="0" y1="0" x2="0" y2="100" stroke="#333" stroke-width="0.2" stroke-dasharray="1"/>
+            <!-- Ball -->
+            <circle id="gradBall" cx="-8" cy="64" r="1.5" fill="var(--accent)" />
+        </svg>`;
+        container.innerHTML = svg;
+    }
+    setTimeout(drawGradientGraph, 100);
+
+    function updateGradient() {
+        const val = parseInt(document.getElementById('paramSlider').value);
+        const ball = document.getElementById('gradBall');
+        const out = document.getElementById('gradOutput');
+        
+        const y = val * val; // y = x^2
+        if(ball) {
+            ball.setAttribute("cx", val);
+            ball.setAttribute("cy", y);
+        }
+
+        const slope = 2 * val; // derivative of x^2 is 2x
+        let text = `Slope: ${slope}`;
+        let color = "var(--highlight)";
+
+        if (slope === 0) {
+            text += " ✅ (Minimum Found!)";
+            color = "var(--success)";
+        } else if (slope < 0) {
+            text += " (Slope is negative, go RIGHT)";
+        } else {
+            text += " (Slope is positive, go LEFT)";
+        }
+
+        out.innerText = text;
+        out.style.borderLeftColor = color;
+        out.style.color = color === "var(--success)" ? "var(--success)" : "var(--text-muted)";
+    }
+
+    // --- SECTION 4: TRAINING ---
+    let trainLevel = 0; // 0 to 100
+    let currentProb = 0.01;
+
+    setTimeout(() => createNetworkSVG('viz4', [3, 5, 5, 1]), 100);
+
+    function trainStep() {
+        const btn = document.getElementById('trainBtn');
+        const bar = document.getElementById('trainBar');
+        const out = document.getElementById('trainOutput');
+        const count = document.getElementById('epochCount');
+        const svg = document.querySelector('#viz4 svg');
+
+        btn.disabled = true;
+
+        // 1. Forward (Visual)
+        const lines = svg.querySelectorAll('line');
+        lines.forEach(l => { l.style.stroke = "var(--text-main)"; l.style.opacity = 0.8; });
+
+        setTimeout(() => {
+            // 2. Backward (Update Visual)
+            lines.forEach(l => { 
+                l.style.stroke = "var(--success)"; 
+                // Random opacity to simulate weight updates
+                l.style.opacity = Math.random();
+            });
+
+            // Logic Update
+            trainLevel++;
+            count.innerText = trainLevel;
+
+            // Sigmoid-ish learning curve simulation
+            currentProb = currentProb + (0.08 * (1 - currentProb));
+            let percentage = Math.floor(currentProb * 100);
+            
+            bar.style.width = percentage + "%";
+
+            let word = "Rhubarb";
+            let color = "var(--highlight)";
+
+            if(percentage > 25) word = "Pa...ris?";
+            if(percentage > 50) { word = "Paris"; color = "var(--accent)"; }
+            if(percentage > 85) { word = "PARIS!"; color = "var(--success)"; }
+
+            out.innerHTML = `AI says: "<strong>${word}</strong>" (Conf: ${percentage}%)`;
+            out.style.borderLeftColor = color;
+            out.style.color = color;
+
+            if(percentage >= 99) {
+                btn.innerText = "MODEL TRAINED 🎉";
+                btn.style.background = "var(--success)";
+                lines.forEach(l => { l.style.stroke = "var(--success)"; l.style.opacity = 0.2; });
+            } else {
+                btn.disabled = false;
+                // Reset lines
+                setTimeout(() => {
+                    lines.forEach(l => { l.style.stroke = "#444"; l.style.opacity = 0.3; });
+                }, 300);
+            }
+
+        }, 500);
+    }
+
+    // Handle Window Resize to redraw SVGs
+    window.addEventListener('resize', () => {
+        createNetworkSVG('viz1', [3, 4, 1]);
+        drawGradientGraph();
+        createNetworkSVG('viz4', [3, 5, 5, 1]);
+    });
+
+</script>
+</body>
+</html>

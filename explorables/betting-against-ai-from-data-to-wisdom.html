@@ -1,0 +1,599 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Betting Against AI: From Data to Wisdom</title>
+    <style>
+        :root {
+            --bg-color: #111;
+            --text-color: #eee;
+            --accent-primary: #3b82f6; /* Blue */
+            --accent-secondary: #10b981; /* Green */
+            --accent-danger: #ef4444; /* Red */
+            --accent-warn: #f59e0b; /* Orange */
+            --panel-bg: #1f2937;
+            --font-main: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+
+        body {
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            font-family: var(--font-main);
+            line-height: 1.6;
+        }
+
+        /* --- Layout & Typography --- */
+        header {
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            text-align: center;
+            padding: 2rem;
+            background: radial-gradient(circle at center, #2d3748 0%, #111 70%);
+        }
+
+        h1 { font-size: 3rem; margin-bottom: 1rem; background: linear-gradient(to right, #fff, #999); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+        h2 { font-size: 1.8rem; margin-bottom: 1rem; color: var(--accent-primary); }
+        p { margin-bottom: 1.5rem; font-size: 1.1rem; color: #ccc; }
+        
+        .scroll-indicator { margin-top: 2rem; animation: bounce 2s infinite; opacity: 0.7; }
+
+        /* --- Scrollytelling Grid --- */
+        section {
+            min-height: 100vh;
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 2rem;
+            padding: 4rem 2rem;
+            border-bottom: 1px solid #333;
+        }
+
+        .narrative {
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            max-width: 600px;
+            margin-left: auto;
+            padding-right: 2rem;
+        }
+
+        .visual-container {
+            position: relative;
+            height: 100%;
+        }
+
+        .sticky-canvas {
+            position: sticky;
+            top: 2rem;
+            background: var(--panel-bg);
+            border-radius: 12px;
+            padding: 2rem;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.5);
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            min-height: 500px; /* Ensure height for sticky behavior */
+        }
+
+        /* --- Controls & UI Elements --- */
+        input[type="range"] {
+            width: 100%;
+            margin: 1rem 0;
+            accent-color: var(--accent-primary);
+            cursor: pointer;
+        }
+
+        label { font-weight: bold; display: block; margin-bottom: 0.5rem; text-transform: uppercase; font-size: 0.8rem; letter-spacing: 1px; color: #888; }
+        
+        button {
+            background: var(--accent-primary);
+            color: white;
+            border: none;
+            padding: 0.5rem 1rem;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 1rem;
+            transition: transform 0.1s;
+        }
+        button:active { transform: scale(0.98); }
+
+        .dashboard-val { font-family: monospace; font-size: 1.2rem; color: var(--accent-secondary); }
+
+        /* --- Section 1: DIKW Styles --- */
+        .dikw-stage { text-align: center; margin-bottom: 1rem; font-size: 1.5rem; font-weight: bold; }
+        .chart-container { display: flex; align-items: flex-end; justify-content: space-around; height: 200px; margin: 2rem 0; border-bottom: 2px solid #555; }
+        .bar { width: 40px; background: #555; transition: all 0.5s ease; position: relative; border-radius: 4px 4px 0 0; display: flex; justify-content: center; }
+        .bar span { position: absolute; bottom: -25px; font-size: 0.8rem; width: 100px; text-align: center; }
+        .bar-label { position: absolute; top: -25px; color: white; font-weight: bold; opacity: 0; transition: opacity 0.3s; }
+        .wisdom-icon { font-size: 5rem; display: none; animation: popIn 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275); }
+        
+        .code-block { background: #000; padding: 1rem; font-family: monospace; color: #0f0; border-radius: 6px; margin-top: 1rem; font-size: 0.9rem; min-height: 60px; }
+
+        /* --- Section 2: Reasoning Styles --- */
+        .split-view { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; height: 100%; }
+        .bot-panel { background: #111; padding: 1rem; border-radius: 8px; display: flex; flex-direction: column; }
+        .retro-terminal { font-family: monospace; color: #0f0; }
+        .modern-chat { font-family: sans-serif; }
+        .chat-log { flex-grow: 1; border: 1px solid #333; padding: 0.5rem; margin-bottom: 0.5rem; height: 150px; overflow-y: auto; font-size: 0.9rem; }
+        .token-bars { margin-top: 1rem; }
+        .token-bar-row { display: flex; align-items: center; margin-bottom: 4px; font-size: 0.8rem; }
+        .token-label { width: 50px; }
+        .token-fill { height: 10px; background: var(--accent-primary); border-radius: 2px; transition: width 0.3s; }
+
+        /* --- Section 3: Sustainability Styles --- */
+        .gauge-container { display: flex; justify-content: space-around; margin: 2rem 0; }
+        .gauge { width: 100px; height: 100px; border-radius: 50%; border: 10px solid #333; position: relative; display: flex; align-items: center; justify-content: center; flex-direction: column; }
+        .gauge-val { font-size: 1.2rem; font-weight: bold; }
+        .gauge-label { font-size: 0.7rem; color: #888; margin-top: 5px; }
+        .rag-toggle { display: flex; align-items: center; gap: 1rem; margin: 1rem 0; background: #2d3748; padding: 0.5rem; border-radius: 8px; }
+        .result-box { background: #000; padding: 1rem; border-left: 4px solid #555; margin-top: 1rem; min-height: 80px; }
+        
+        /* --- Section 4: Human Role Styles --- */
+        .sorting-game { display: flex; flex-direction: column; height: 100%; }
+        .buckets { display: flex; gap: 1rem; margin-bottom: 1rem; }
+        .bucket { flex: 1; border: 2px dashed #555; padding: 1rem; text-align: center; border-radius: 8px; transition: background 0.3s; cursor: pointer; }
+        .bucket:hover { background: #2d3748; border-color: #888; }
+        .bucket.ai { border-color: var(--accent-primary); }
+        .bucket.human { border-color: var(--accent-secondary); }
+        
+        .card-stack { flex-grow: 1; display: flex; align-items: center; justify-content: center; perspective: 1000px; }
+        .game-card { 
+            background: white; color: #111; padding: 1.5rem; border-radius: 8px; width: 200px; text-align: center; 
+            box-shadow: 0 4px 15px rgba(0,0,0,0.3); cursor: pointer; user-select: none;
+            border: 2px solid transparent;
+        }
+        .game-card.selected { border-color: var(--accent-warn); transform: translateY(-10px); }
+        .final-quote { text-align: center; font-style: italic; font-size: 1.5rem; color: var(--accent-secondary); display: none; animation: fadeIn 2s; }
+
+        /* --- Animations --- */
+        @keyframes bounce { 0%, 20%, 50%, 80%, 100% {transform: translateY(0);} 40% {transform: translateY(-10px);} 60% {transform: translateY(-5px);} }
+        @keyframes popIn { 0% { transform: scale(0); opacity: 0; } 100% { transform: scale(1); opacity: 1; } }
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+
+        /* --- Responsive --- */
+        @media (max-width: 768px) {
+            section { grid-template-columns: 1fr; padding: 2rem 1rem; height: auto; display: block; }
+            .narrative { margin: 0; padding: 0; margin-bottom: 2rem; }
+            .sticky-canvas { position: relative; top: 0; min-height: auto; }
+            header h1 { font-size: 2rem; }
+            .split-view { grid-template-columns: 1fr; }
+        }
+    </style>
+</head>
+<body>
+
+    <header>
+        <h1>Betting Against AI</h1>
+        <p>From Data to Wisdom: An Interactive Essay based on Jeff Crume's Lecture</p>
+        <p style="font-size: 0.9rem; color: #666;">Scroll to Begin</p>
+        <div class="scroll-indicator">↓</div>
+    </header>
+
+    <!-- SECTION 1: DIKW -->
+    <section id="dikw">
+        <div class="narrative">
+            <h2>1. The Hierarchy of Understanding</h2>
+            <p>We start with raw material. In the video, we see the numbers <code>10, 6, 42, 8</code>. To a computer, this is initially just noise.</p>
+            <p><strong>Data</strong> is raw facts. <strong>Information</strong> adds context. <strong>Knowledge</strong> finds patterns. <strong>Wisdom</strong> makes decisions.</p>
+            <p>Use the slider on the right to climb the pyramid. Notice how the representation changes from raw numbers to actionable wisdom.</p>
+        </div>
+        <div class="visual-container">
+            <div class="sticky-canvas">
+                <label for="dikwSlider">Processing Level</label>
+                <input type="range" id="dikwSlider" min="0" max="3" step="1" value="0">
+                
+                <div class="dikw-stage" id="dikwStage">DATA</div>
+                
+                <div class="chart-container" id="chartContainer">
+                    <!-- Bars generated by JS -->
+                </div>
+                
+                <div style="text-align: center;">
+                    <div class="wisdom-icon" id="wisdomIcon">🎲</div>
+                </div>
+
+                <div class="code-block" id="dikwCode">const data = [10, 6, 42, 8]; // Raw Array</div>
+            </div>
+        </div>
+    </section>
+
+    <!-- SECTION 2: REASONING -->
+    <section id="reasoning">
+        <div class="narrative">
+            <h2>2. Breaking the "Reasoning" Barrier</h2>
+            <p>For decades, AI was ruled by logic (ELIZA). If you didn't say exactly what it expected, it failed. It couldn't "create"; it could only follow a script.</p>
+            <p>Modern AI (Generative) works on <strong>Probability</strong>. It doesn't "know" the answer; it predicts the next most likely word.</p>
+            <p><strong>Try it:</strong><br>
+            1. On the left, try to trick the Rule-Based bot.<br>
+            2. On the right, adjust the "Temperature" to see how AI balances logic (predictable) vs. creativity (hallucination).</p>
+        </div>
+        <div class="visual-container">
+            <div class="sticky-canvas">
+                <div class="split-view">
+                    <!-- Retro Bot -->
+                    <div class="bot-panel">
+                        <label class="retro-terminal">1965: Rule-Based</label>
+                        <div class="chat-log retro-terminal" id="elizaLog">SYS: Hello.</div>
+                        <div style="display:flex; gap:5px; margin-top:5px;">
+                            <input type="text" id="elizaInput" placeholder='Type "My mother..."' style="width: 100%; background:#000; color:#0f0; border:1px solid #0f0;">
+                            <button id="elizaBtn" style="background:#004400; border:1px solid #0f0;">&crarr;</button>
+                        </div>
+                        <div style="font-size:0.7rem; color:#0f0; margin-top:5px;">Rule: /mother/i -> Ask about family</div>
+                    </div>
+
+                    <!-- Modern Bot -->
+                    <div class="bot-panel modern-chat">
+                        <label>2024: Probabilistic</label>
+                        <div style="margin-bottom: 10px; font-size: 0.9rem;">Input: "The cat sat on the..."</div>
+                        
+                        <label>Temperature (Creativity)</label>
+                        <input type="range" id="tempSlider" min="0" max="100" value="10">
+                        <div id="tempVal" style="text-align:right; font-size:0.8rem; color:#aaa;">Low (Logic)</div>
+
+                        <div class="token-bars" id="tokenBars">
+                            <!-- Bars via JS -->
+                        </div>
+                        
+                        <div class="result-box" id="genResult" style="min-height: 40px; margin-top:10px; text-align:center; color: var(--accent-primary);">
+                            Next Token: Mat
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- SECTION 3: SUSTAINABILITY -->
+    <section id="limits">
+        <div class="narrative">
+            <h2>3. The Sustainability Limit</h2>
+            <p>We've broken the reasoning barrier, but at a cost. Massive models consume immense energy. Small models are efficient but tend to "hallucinate" (lie) when they don't know the answer.</p>
+            <p><strong>The Scenario:</strong> You ask, <em>"Who won the World Series in 2030?"</em> (A future event).</p>
+            <p>Experiment with the dashboard:
+                <ul>
+                    <li><strong>Small Model:</strong> Fast, Green, but lies.</li>
+                    <li><strong>Massive Model:</strong> Smart, Honest ("I don't know"), but burns energy.</li>
+                    <li><strong>RAG (Retrieval Augmented Generation):</strong> The sweet spot. Give the AI a reference book.</li>
+                </ul>
+            </p>
+        </div>
+        <div class="visual-container">
+            <div class="sticky-canvas">
+                <div class="gauge-container">
+                    <div class="gauge" id="energyGauge" style="border-color: #10b981;">
+                        <span class="gauge-val" id="energyText">Low</span>
+                        <span class="gauge-label">Energy Cost</span>
+                    </div>
+                    <div class="gauge" id="accuracyGauge" style="border-color: #ef4444;">
+                        <span class="gauge-val" id="accuracyText">0%</span>
+                        <span class="gauge-label">Factuality</span>
+                    </div>
+                </div>
+
+                <label>Model Size (Parameters)</label>
+                <input type="range" id="modelSize" min="0" max="100" value="0">
+                <div style="display:flex; justify-content:space-between; font-size:0.8rem; color:#888;">
+                    <span>Tiny (7B)</span>
+                    <span>Massive (1T)</span>
+                </div>
+
+                <div class="rag-toggle">
+                    <input type="checkbox" id="ragCheck" style="width:20px; height:20px;">
+                    <div>
+                        <strong>Enable RAG</strong><br>
+                        <span style="font-size:0.8rem; color:#aaa;">(Give AI access to database)</span>
+                    </div>
+                </div>
+
+                <div class="result-box" id="simOutput">
+                    AI: "The New York Yankees won the 2030 World Series." (Hallucination)
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- SECTION 4: HUMAN ROLE -->
+    <section id="human">
+        <div class="narrative">
+            <h2>4. The Human Role</h2>
+            <p>If AI gets smarter and more efficient, what is left for us?</p>
+            <p>Jeff Crume argues: <strong>AI handles the 'How'. Humans handle the 'Why'.</strong></p>
+            <p><strong>Instructions:</strong> Click the card to select it, then click the correct bucket (AI or Human) to sort the task.</p>
+        </div>
+        <div class="visual-container">
+            <div class="sticky-canvas">
+                <div class="sorting-game">
+                    <div class="buckets">
+                        <div class="bucket ai" onclick="sortCard('ai')">
+                            <h3>🤖 AI Job</h3>
+                            <small>Optimization / Execution</small>
+                        </div>
+                        <div class="bucket human" onclick="sortCard('human')">
+                            <h3>🧠 Human Job</h3>
+                            <small>Purpose / Ethics</small>
+                        </div>
+                    </div>
+
+                    <div class="card-stack" id="cardStack">
+                        <div class="game-card" id="currentCard" onclick="selectCard()">
+                            Click to Start
+                        </div>
+                    </div>
+                    
+                    <div class="final-quote" id="finalQuote">
+                        "Don't bet against AI... unless you want to be wrong."<br>
+                        <small>- Jeff Crume</small>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <script>
+        /* --- SECTION 1: DIKW LOGIC --- */
+        const dataSet = [10, 6, 42, 8];
+        const dikwSlider = document.getElementById('dikwSlider');
+        const chartContainer = document.getElementById('chartContainer');
+        const dikwCode = document.getElementById('dikwCode');
+        const dikwStage = document.getElementById('dikwStage');
+        const wisdomIcon = document.getElementById('wisdomIcon');
+
+        const stages = ["DATA", "INFORMATION", "KNOWLEDGE", "WISDOM"];
+        const codeSnippets = [
+            "const data = [10, 6, 42, 8]; // Raw Numbers",
+            "const context = { type: 'Ages', unit: 'Years' }; // Added Meaning",
+            "const pattern = data.filter(x => x < 21); // Insight: 75% are minors",
+            "function decide() { return 'Select Junior Monopoly'; } // Action"
+        ];
+
+        function renderDIKW() {
+            const level = parseInt(dikwSlider.value);
+            dikwStage.innerText = stages[level];
+            dikwCode.innerText = codeSnippets[level];
+            
+            // Clear previous
+            chartContainer.innerHTML = '';
+            chartContainer.style.display = level === 3 ? 'none' : 'flex';
+            wisdomIcon.style.display = level === 3 ? 'block' : 'none';
+
+            if (level < 3) {
+                dataSet.forEach((val, index) => {
+                    const bar = document.createElement('div');
+                    bar.className = 'bar';
+                    
+                    // Height Logic
+                    if (level === 0) {
+                        bar.style.height = '5px'; // Just a blip
+                        bar.style.background = '#555';
+                    } else {
+                        bar.style.height = (val * 3) + 'px';
+                    }
+
+                    // Color Logic (Knowledge Highlight)
+                    if (level === 2 && val < 21) {
+                        bar.style.background = 'var(--accent-warn)';
+                        bar.style.boxShadow = '0 0 10px var(--accent-warn)';
+                    }
+
+                    // Label Logic
+                    const label = document.createElement('span');
+                    label.innerText = level === 0 ? val : `Person ${String.fromCharCode(65+index)} (${val})`;
+                    bar.appendChild(label);
+                    
+                    chartContainer.appendChild(bar);
+                });
+            }
+        }
+
+        dikwSlider.addEventListener('input', renderDIKW);
+        renderDIKW(); // Init
+
+        /* --- SECTION 2: REASONING LOGIC --- */
+        // ELIZA
+        const elizaInput = document.getElementById('elizaInput');
+        const elizaBtn = document.getElementById('elizaBtn');
+        const elizaLog = document.getElementById('elizaLog');
+
+        function elizaRespond() {
+            const txt = elizaInput.value.toLowerCase();
+            const userLine = document.createElement('div');
+            userLine.innerText = `> ${elizaInput.value}`;
+            elizaLog.appendChild(userLine);
+            elizaInput.value = '';
+
+            const botLine = document.createElement('div');
+            botLine.style.color = '#0f0';
+            
+            if (txt.includes('mother') || txt.includes('mom')) {
+                if(txt.includes('mother')) {
+                    botLine.innerText = "SYS: Tell me more about your family.";
+                } else {
+                    // Simulating strict rule failure
+                    botLine.innerText = "SYS: I do not understand 'mom'. Please rephrase.";
+                }
+            } else {
+                botLine.innerText = "SYS: Please go on.";
+            }
+            elizaLog.appendChild(botLine);
+            elizaLog.scrollTop = elizaLog.scrollHeight;
+        }
+
+        elizaBtn.addEventListener('click', elizaRespond);
+        elizaInput.addEventListener('keypress', (e) => { if(e.key === 'Enter') elizaRespond(); });
+
+        // LLM
+        const tempSlider = document.getElementById('tempSlider');
+        const tokenBars = document.getElementById('tokenBars');
+        const genResult = document.getElementById('genResult');
+        const tempVal = document.getElementById('tempVal');
+
+        const tokens = [
+            { word: "Mat", prob: 80 },
+            { word: "Floor", prob: 15 },
+            { word: "Hat", prob: 5 }
+        ];
+
+        function renderLLM() {
+            const temp = parseInt(tempSlider.value);
+            tokenBars.innerHTML = '';
+            
+            // Visualizing Temperature effect: High temp flattens probability distribution (simulated visually)
+            // Low temp (0): Mat is 95%, others tiny.
+            // High temp (100): Mat drops, others rise (randomness).
+            
+            let displayProbs = tokens.map(t => ({ ...t })); // Clone
+            
+            if (temp > 50) {
+                // Chaos mode
+                displayProbs[0].prob -= (temp * 0.4);
+                displayProbs[1].prob += (temp * 0.2);
+                displayProbs[2].prob += (temp * 0.2);
+                tempVal.innerText = "High (Creative/Hallucination)";
+            } else {
+                tempVal.innerText = "Low (Logic/Reasoning)";
+            }
+
+            // Render bars
+            displayProbs.forEach(t => {
+                const row = document.createElement('div');
+                row.className = 'token-bar-row';
+                row.innerHTML = `
+                    <div class="token-label">${t.word}</div>
+                    <div class="token-fill" style="width: ${Math.max(t.prob, 5)}%; opacity: ${t.prob/100 + 0.3}"></div>
+                    <div style="margin-left:5px">${Math.round(t.prob)}%</div>
+                `;
+                tokenBars.appendChild(row);
+            });
+
+            // Determine winner
+            let winner = "Mat";
+            if (temp > 80) winner = "Hat"; // Hallucination
+            else if (temp > 50) winner = "Floor";
+            
+            genResult.innerText = `Next Token: ${winner}`;
+            genResult.style.color = winner === "Mat" ? "var(--accent-primary)" : "var(--accent-warn)";
+        }
+
+        tempSlider.addEventListener('input', renderLLM);
+        renderLLM();
+
+        /* --- SECTION 3: SUSTAINABILITY LOGIC --- */
+        const modelSize = document.getElementById('modelSize');
+        const ragCheck = document.getElementById('ragCheck');
+        const energyGauge = document.getElementById('energyGauge');
+        const accuracyGauge = document.getElementById('accuracyGauge');
+        const energyText = document.getElementById('energyText');
+        const accuracyText = document.getElementById('accuracyText');
+        const simOutput = document.getElementById('simOutput');
+
+        function updateSim() {
+            const size = parseInt(modelSize.value);
+            const isRag = ragCheck.checked;
+
+            // Logic Simulation
+            let energy = 0;
+            let accuracy = 0;
+            let text = "";
+
+            // Energy Calculation (Linear with size, RAG adds small overhead)
+            energy = size + (isRag ? 15 : 0);
+            if (energy > 100) energy = 100;
+
+            // Accuracy/Hallucination Logic
+            // Small model (size < 50) without RAG = Hallucination
+            // Large model (size > 80) without RAG = Honest Ignorance
+            // Any model with RAG = Accurate
+
+            if (isRag) {
+                accuracy = 100;
+                text = 'AI (Reading Database): "The 2030 World Series has not happened yet."';
+                simOutput.style.borderLeftColor = 'var(--accent-secondary)';
+            } else {
+                if (size < 60) {
+                    accuracy = 10; // Hallucinating
+                    text = 'AI: "The Yankees won the 2030 World Series." (Hallucination)';
+                    simOutput.style.borderLeftColor = 'var(--accent-danger)';
+                } else {
+                    accuracy = 100; // Honest
+                    text = 'AI: "I cannot predict future events." (Honest)';
+                    simOutput.style.borderLeftColor = 'var(--accent-primary)';
+                }
+            }
+
+            // Update UI
+            energyText.innerText = energy < 40 ? "Low" : (energy < 80 ? "Med" : "High");
+            energyGauge.style.borderColor = energy < 40 ? "var(--accent-secondary)" : (energy < 80 ? "var(--accent-warn)" : "var(--accent-danger)");
+            
+            accuracyText.innerText = accuracy + "%";
+            accuracyGauge.style.borderColor = accuracy > 90 ? "var(--accent-secondary)" : "var(--accent-danger)";
+            
+            simOutput.innerText = text;
+        }
+
+        modelSize.addEventListener('input', updateSim);
+        ragCheck.addEventListener('change', updateSim);
+        updateSim();
+
+        /* --- SECTION 4: HUMAN ROLE LOGIC --- */
+        const cards = [
+            { text: "Calculate optimal route", type: "ai" },
+            { text: "Decide where to go on vacation", type: "human" },
+            { text: "Generate code for an app", type: "ai" },
+            { text: "Decide if the app is ethical", type: "human" }
+        ];
+        let currentCardIndex = -1;
+        let isSelected = false;
+
+        const currentCard = document.getElementById('currentCard');
+        const cardStack = document.getElementById('cardStack');
+        const finalQuote = document.getElementById('finalQuote');
+
+        function nextCard() {
+            currentCardIndex++;
+            if (currentCardIndex < cards.length) {
+                currentCard.innerText = cards[currentCardIndex].text;
+                currentCard.classList.remove('selected');
+                isSelected = false;
+                currentCard.style.display = 'block';
+            } else {
+                currentCard.style.display = 'none';
+                finalQuote.style.display = 'block';
+            }
+        }
+
+        function selectCard() {
+            if(currentCardIndex === -1) { nextCard(); return; } // Start game
+            isSelected = !isSelected;
+            if (isSelected) currentCard.classList.add('selected');
+            else currentCard.classList.remove('selected');
+        }
+
+        function sortCard(bucketType) {
+            if (!isSelected || currentCardIndex === -1) return;
+
+            const correctType = cards[currentCardIndex].type;
+            
+            if (bucketType === correctType) {
+                // Correct
+                currentCard.style.transform = "scale(0)";
+                setTimeout(() => {
+                    currentCard.style.transform = "scale(1)";
+                    nextCard();
+                }, 300);
+            } else {
+                // Wrong
+                currentCard.style.backgroundColor = "var(--accent-danger)";
+                setTimeout(() => {
+                    currentCard.style.backgroundColor = "white";
+                }, 500);
+            }
+        }
+
+    </script>
+</body>
+</html>

@@ -1,0 +1,943 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>The Evolving Limits of AI: From Data to Wisdom</title>
+    <style>
+        :root {
+            --bg-color: #0a0a0a;
+            --text-color: #e0e0e0;
+            --accent-cyan: #00f3ff;
+            --accent-magenta: #ff00ff;
+            --accent-yellow: #ffee00;
+            --panel-bg: #1a1a1a;
+            --border-color: #333;
+            --font-main: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            font-family: var(--font-main);
+            line-height: 1.6;
+            overflow-x: hidden;
+        }
+
+        h1, h2, h3 {
+            font-weight: 700;
+            margin-bottom: 1rem;
+        }
+
+        h1 { font-size: 2.5rem; text-align: center; margin-bottom: 0.5rem; }
+        h2 { color: var(--accent-cyan); font-size: 2rem; }
+        .subtitle { text-align: center; color: #888; margin-bottom: 4rem; }
+
+        section {
+            min-height: 100vh;
+            padding: 4rem 2rem;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .container {
+            max-width: 800px;
+            width: 100%;
+        }
+
+        .narrative {
+            margin-bottom: 2rem;
+            font-size: 1.1rem;
+            color: #ccc;
+        }
+
+        .interactive-panel {
+            background: var(--panel-bg);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            padding: 2rem;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.5);
+            position: relative;
+            overflow: hidden;
+        }
+
+        /* Controls */
+        input[type="range"] {
+            width: 100%;
+            margin: 1rem 0;
+            accent-color: var(--accent-cyan);
+            cursor: pointer;
+        }
+        
+        button {
+            background: transparent;
+            border: 1px solid var(--accent-cyan);
+            color: var(--accent-cyan);
+            padding: 0.5rem 1rem;
+            cursor: pointer;
+            border-radius: 4px;
+            font-weight: bold;
+            transition: all 0.3s;
+        }
+
+        button:hover {
+            background: var(--accent-cyan);
+            color: #000;
+        }
+
+        /* --- SECTION 1: DIKW --- */
+        #dikw-canvas {
+            height: 300px;
+            position: relative;
+            background: #000;
+            border-radius: 8px;
+            margin-bottom: 1rem;
+        }
+
+        .data-point {
+            position: absolute;
+            width: 60px;
+            height: 60px;
+            background: var(--accent-magenta);
+            color: white;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            border-radius: 50%;
+            transition: all 0.8s cubic-bezier(0.25, 1, 0.5, 1);
+            font-weight: bold;
+            font-size: 1.2rem;
+            z-index: 2;
+        }
+
+        .data-label {
+            font-size: 0.7rem;
+            opacity: 0;
+            transition: opacity 0.5s;
+            margin-top: 2px;
+            text-align: center;
+        }
+
+        .wisdom-overlay {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%) scale(0);
+            background: rgba(0, 243, 255, 0.9);
+            color: #000;
+            padding: 1rem;
+            border-radius: 8px;
+            text-align: center;
+            transition: transform 0.5s;
+            z-index: 10;
+            width: 80%;
+        }
+
+        /* --- SECTION 2: NLP --- */
+        .nlp-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1rem;
+        }
+        
+        @media (max-width: 600px) {
+            .nlp-grid { grid-template-columns: 1fr; }
+        }
+
+        .chat-window {
+            background: #000;
+            padding: 1rem;
+            border-radius: 8px;
+            height: 300px;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .chat-code {
+            font-family: monospace;
+            font-size: 0.8rem;
+            color: var(--accent-yellow);
+            margin-bottom: auto;
+            white-space: pre-wrap;
+        }
+
+        .vector-canvas-container {
+            flex-grow: 1;
+            position: relative;
+            background: #111;
+            border: 1px solid #333;
+        }
+        
+        canvas#vectorCanvas {
+            width: 100%;
+            height: 100%;
+        }
+
+        .chat-output {
+            margin-top: 1rem;
+            padding: 0.5rem;
+            background: #222;
+            border-left: 3px solid var(--accent-magenta);
+            min-height: 40px;
+        }
+
+        /* --- SECTION 3: RAG --- */
+        .rag-controls {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            margin-bottom: 1rem;
+        }
+
+        .switch {
+            position: relative;
+            display: inline-block;
+            width: 60px;
+            height: 34px;
+        }
+
+        .switch input { opacity: 0; width: 0; height: 0; }
+
+        .slider {
+            position: absolute;
+            cursor: pointer;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background-color: #ccc;
+            transition: .4s;
+            border-radius: 34px;
+        }
+
+        .slider:before {
+            position: absolute;
+            content: "";
+            height: 26px;
+            width: 26px;
+            left: 4px;
+            bottom: 4px;
+            background-color: white;
+            transition: .4s;
+            border-radius: 50%;
+        }
+
+        input:checked + .slider { background-color: var(--accent-cyan); }
+        input:checked + .slider:before { transform: translateX(26px); }
+
+        .rag-viz {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            height: 100px;
+            margin-bottom: 1rem;
+            padding: 0 2rem;
+            position: relative;
+        }
+
+        .rag-node {
+            width: 60px;
+            height: 60px;
+            border-radius: 8px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-weight: bold;
+            font-size: 0.8rem;
+            z-index: 2;
+        }
+
+        .node-user { background: var(--accent-magenta); color: white; }
+        .node-db { background: var(--accent-yellow); color: black; opacity: 0.3; transition: opacity 0.3s; }
+        .node-ai { background: var(--accent-cyan); color: black; }
+
+        .rag-particle {
+            position: absolute;
+            width: 10px;
+            height: 10px;
+            background: white;
+            border-radius: 50%;
+            opacity: 0;
+        }
+
+        .rag-active .node-db { opacity: 1; box-shadow: 0 0 15px var(--accent-yellow); }
+
+        /* --- SECTION 4: SUSTAINABILITY --- */
+        .equation {
+            font-family: 'Courier New', monospace;
+            font-size: 1.2rem;
+            text-align: center;
+            margin-bottom: 2rem;
+            color: var(--accent-yellow);
+        }
+
+        .sus-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 2rem;
+        }
+
+        .viz-bar-container {
+            display: flex;
+            flex-direction: column;
+            justify-content: flex-end;
+            height: 200px;
+            background: #000;
+            border: 1px solid #333;
+            padding: 10px;
+            position: relative;
+        }
+
+        .viz-bar {
+            background: var(--accent-cyan);
+            width: 100%;
+            height: 10%;
+            transition: height 0.5s;
+        }
+        
+        .co2-cloud {
+            width: 50px;
+            height: 50px;
+            background: #555;
+            border-radius: 50%;
+            align-self: center;
+            transition: transform 0.5s, background-color 0.5s;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            color: white;
+            font-weight: bold;
+        }
+
+        /* --- SECTION 5: HUMAN ROLE --- */
+        .puzzle-board {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1rem;
+            margin-top: 1rem;
+        }
+
+        .drop-zone {
+            min-height: 150px;
+            border: 2px dashed #444;
+            border-radius: 8px;
+            padding: 1rem;
+            background: #111;
+        }
+
+        .drop-zone h4 {
+            text-align: center;
+            margin-bottom: 1rem;
+            color: #888;
+        }
+
+        .drop-zone.human-zone { border-color: var(--accent-magenta); }
+        .drop-zone.ai-zone { border-color: var(--accent-cyan); }
+
+        .draggable-item {
+            background: #333;
+            padding: 0.5rem;
+            margin-bottom: 0.5rem;
+            cursor: grab;
+            border-radius: 4px;
+            border: 1px solid #555;
+            user-select: none;
+            touch-action: none; /* Important for custom touch logic */
+        }
+        
+        .draggable-item.type-why { border-left: 4px solid var(--accent-magenta); }
+        .draggable-item.type-how { border-left: 4px solid var(--accent-cyan); }
+
+        .source-zone {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.5rem;
+            margin-bottom: 1rem;
+            min-height: 60px;
+            padding: 10px;
+            background: #000;
+            border-radius: 8px;
+        }
+
+        .feedback-msg {
+            min-height: 1.5rem;
+            text-align: center;
+            color: var(--accent-yellow);
+            font-weight: bold;
+            margin-top: 0.5rem;
+        }
+
+        footer {
+            padding: 2rem;
+            text-align: center;
+            font-size: 0.8rem;
+            color: #555;
+            border-top: 1px solid #222;
+        }
+    </style>
+</head>
+<body>
+
+    <header>
+        <br><br>
+        <h1>The Evolving Limits of AI</h1>
+        <div class="subtitle">From Data to Wisdom</div>
+    </header>
+
+    <main>
+
+        <!-- SECTION 1: DIKW -->
+        <section id="foundation">
+            <div class="container">
+                <h2>1. The Foundation</h2>
+                <p class="narrative">
+                    Jeff Crume explains that AI isn't just about processing numbers; it's about moving up the value chain. 
+                    Intelligence starts with Data and ends with Wisdom.
+                </p>
+                <div class="interactive-panel">
+                    <div id="dikw-canvas">
+                        <!-- Data points inserted by JS -->
+                        <div class="wisdom-overlay" id="wisdom-card">
+                            <h3>Decision</h3>
+                            <p>Select Age-Appropriate Game</p>
+                        </div>
+                    </div>
+                    
+                    <label for="dikw-slider">Level of Understanding: <span id="dikw-label" style="color:var(--accent-cyan)">Data</span></label>
+                    <input type="range" id="dikw-slider" min="0" max="3" step="1" value="0">
+                </div>
+            </div>
+        </section>
+
+        <!-- SECTION 2: NLP -->
+        <section id="nlp">
+            <div class="container">
+                <h2>2. The Language Barrier</h2>
+                <p class="narrative">
+                    Early AI saw words as rigid symbols. Modern AI sees meaning (vectors). 
+                    See how they handle the idiom: <em>"It's raining cats and dogs."</em>
+                </p>
+                <div class="interactive-panel">
+                    <div class="nlp-grid">
+                        <!-- 1965 Logic -->
+                        <div class="chat-window">
+                            <div style="color:#888; font-size:0.8rem; margin-bottom:5px;">1965 Logic (Keyword Match)</div>
+                            <div class="chat-code">IF input CONTAINS "cats" OR "dogs"<br>THEN PRINT "Tell me about your pets"</div>
+                            <div class="chat-output" id="out-old">...</div>
+                        </div>
+
+                        <!-- Modern Logic -->
+                        <div class="chat-window">
+                            <div style="color:#888; font-size:0.8rem; margin-bottom:5px;">Modern Logic (Vector Space)</div>
+                            <div class="vector-canvas-container">
+                                <canvas id="vectorCanvas"></canvas>
+                            </div>
+                            <div class="chat-output" id="out-new">...</div>
+                        </div>
+                    </div>
+                    <div style="text-align: center; margin-top: 1rem;">
+                        <button onclick="runNLPSim()">Input: "It's raining cats and dogs"</button>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- SECTION 3: RAG -->
+        <section id="rag">
+            <div class="container">
+                <h2>3. Breaking Hallucinations</h2>
+                <p class="narrative">
+                    Generative AI has a vivid imagination, which leads to hallucinations. 
+                    <strong>RAG (Retrieval-Augmented Generation)</strong> forces it to do research before speaking.
+                </p>
+                <div class="interactive-panel">
+                    <div class="rag-controls">
+                        <label class="switch">
+                            <input type="checkbox" id="rag-toggle">
+                            <span class="slider"></span>
+                        </label>
+                        <span id="rag-status">Mode: Pure Generation (Prone to Hallucination)</span>
+                    </div>
+
+                    <div class="rag-viz" id="rag-viz-container">
+                        <div class="rag-node node-user">User</div>
+                        <div class="rag-particle" id="rag-particle"></div>
+                        <div class="rag-node node-db">Facts<br>DB</div>
+                        <div class="rag-node node-ai">AI</div>
+                    </div>
+
+                    <div style="background: #000; padding: 1rem; border-radius: 4px; font-family: monospace;">
+                        <div style="color: #666; margin-bottom: 0.5rem;">User Query: "What is the capital of Mars?"</div>
+                        <div style="color: var(--accent-cyan);" id="rag-output">Waiting for input...</div>
+                    </div>
+                    
+                    <div style="margin-top: 1rem; text-align: right;">
+                        <button onclick="runRAGSim()">Ask Question</button>
+                    </div>
+                    
+                    <div style="margin-top: 1rem; font-size: 0.8rem; color: #666;">
+                        Under the hood: <code id="rag-code">Prompt = Question</code>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- SECTION 4: SUSTAINABILITY -->
+        <section id="sustainability">
+            <div class="container">
+                <h2>4. The Sustainability Limit</h2>
+                <p class="narrative">
+                    We can build smarter models, but intelligence requires energy. 
+                    Try to achieve High Intelligence with Low Energy.
+                    <br><small><em>Hint: Specialized models (Small Size + Curated Data) are efficient.</em></small>
+                </p>
+                <div class="equation">
+                    Energy ≈ Size × Data × (Inefficiency)
+                </div>
+                <div class="interactive-panel">
+                    <div class="sus-grid">
+                        <!-- Controls -->
+                        <div>
+                            <label>Model Size</label>
+                            <input type="range" id="sus-size" min="1" max="100" value="50">
+                            
+                            <label>Data Volume (Curated vs All)</label>
+                            <input type="range" id="sus-data" min="1" max="100" value="50">
+                            
+                            <label>Hardware Efficiency</label>
+                            <input type="range" id="sus-eff" min="1" max="100" value="50">
+                        </div>
+
+                        <!-- Visuals -->
+                        <div style="display: flex; gap: 1rem; align-items: flex-end;">
+                            <div style="flex:1; text-align: center;">
+                                <div class="viz-bar-container">
+                                    <div class="viz-bar" id="bar-intel" style="height: 20%;"></div>
+                                </div>
+                                <small>Intelligence</small>
+                            </div>
+                            <div style="flex:1; text-align: center;">
+                                <div style="height: 200px; display: flex; align-items: center; justify-content: center;">
+                                    <div class="co2-cloud" id="cloud-co2">CO2</div>
+                                </div>
+                                <small>Energy/Cost</small>
+                            </div>
+                        </div>
+                    </div>
+                    <div id="sus-feedback" style="margin-top: 1rem; text-align: center; color: var(--accent-yellow)">Adjust sliders...</div>
+                </div>
+            </div>
+        </section>
+
+        <!-- SECTION 5: HUMAN ROLE -->
+        <section id="human">
+            <div class="container">
+                <h2>5. The Human Role</h2>
+                <p class="narrative">
+                    AI executes the <strong>How</strong>. Humans define the <strong>Why</strong>.
+                    You are the architect. Assign the tasks correctly to solve: "Make the city better."
+                </p>
+                <div class="interactive-panel">
+                    <div class="source-zone" id="source-zone">
+                        <div class="draggable-item type-why" draggable="true" data-type="why" id="d1">Reduce Traffic</div>
+                        <div class="draggable-item type-how" draggable="true" data-type="how" id="d2">Optimize Lights</div>
+                        <div class="draggable-item type-why" draggable="true" data-type="why" id="d3">Lower Pollution</div>
+                        <div class="draggable-item type-how" draggable="true" data-type="how" id="d4">Route Trucks</div>
+                    </div>
+
+                    <div class="puzzle-board">
+                        <div class="drop-zone human-zone" id="zone-human">
+                            <h4>Human (Why/Outcome)</h4>
+                        </div>
+                        <div class="drop-zone ai-zone" id="zone-ai">
+                            <h4>AI (How/Execution)</h4>
+                        </div>
+                    </div>
+                    
+                    <div class="feedback-msg" id="puzzle-feedback"></div>
+                </div>
+            </div>
+        </section>
+
+    </main>
+
+    <footer>
+        <p>Designed based on "The Evolving Limits of AI" | Interactive Concept</p>
+    </footer>
+
+    <script>
+        /* --- SECTION 1: DIKW LOGIC --- */
+        const dikwData = [
+            { id: 1, val: 10, label: "Age: 10", group: "Child" },
+            { id: 2, val: 6,  label: "Age: 6",  group: "Child" },
+            { id: 3, val: 42, label: "Age: 42", group: "Adult" },
+            { id: 4, val: 8,  label: "Age: 8",  group: "Child" }
+        ];
+
+        const canvasEl = document.getElementById('dikw-canvas');
+        const sliderEl = document.getElementById('dikw-slider');
+        const labelEl = document.getElementById('dikw-label');
+        const wisdomCard = document.getElementById('wisdom-card');
+
+        // Create DOM elements for points
+        const points = dikwData.map((d, i) => {
+            const el = document.createElement('div');
+            el.className = 'data-point';
+            el.innerHTML = `<span>${d.val}</span><span class="data-label">${d.label}</span>`;
+            canvasEl.appendChild(el);
+            return { el, ...d };
+        });
+
+        function updateDIKW() {
+            const level = parseInt(sliderEl.value);
+            const w = canvasEl.clientWidth;
+            const h = canvasEl.clientHeight;
+
+            // Labels
+            const labels = ["Data (Raw)", "Information (Context)", "Knowledge (Pattern)", "Wisdom (Action)"];
+            labelEl.innerText = labels[level];
+
+            // Wisdom Card
+            wisdomCard.style.transform = level === 3 ? "translate(-50%, -50%) scale(1)" : "translate(-50%, -50%) scale(0)";
+
+            points.forEach((p, i) => {
+                const labelSpan = p.el.querySelector('.data-label');
+                
+                // Level 0: Random Chaos
+                if (level === 0) {
+                    p.el.style.left = `${10 + (i * 20) + Math.sin(i)*10}%`;
+                    p.el.style.top = `${20 + (i * 15) + Math.cos(i)*10}%`;
+                    p.el.style.backgroundColor = 'var(--accent-magenta)';
+                    labelSpan.style.opacity = 0;
+                }
+                // Level 1: Context (Labels appear, still scattered)
+                else if (level === 1) {
+                    p.el.style.left = `${10 + (i * 20)}%`;
+                    p.el.style.top = `${20 + (i * 15)}%`;
+                    p.el.style.backgroundColor = 'var(--accent-magenta)';
+                    labelSpan.style.opacity = 1;
+                }
+                // Level 2 & 3: Sorted Histogram
+                else {
+                    // Sort visually: Children left, Adult right
+                    const isChild = p.val < 18;
+                    p.el.style.top = '50%';
+                    p.el.style.left = isChild ? `${20 + (i*10)}%` : '80%';
+                    p.el.style.backgroundColor = isChild ? 'var(--accent-cyan)' : '#555';
+                    labelSpan.style.opacity = 1;
+                }
+            });
+        }
+
+        sliderEl.addEventListener('input', updateDIKW);
+        // Initial render
+        setTimeout(updateDIKW, 100);
+
+
+        /* --- SECTION 2: NLP LOGIC --- */
+        const cvs = document.getElementById('vectorCanvas');
+        const ctx = cvs.getContext('2d');
+        let nlpSimRunning = false;
+
+        function drawVectorGraph(state = 'static') {
+            // Resize canvas
+            const rect = cvs.parentElement.getBoundingClientRect();
+            cvs.width = rect.width;
+            cvs.height = rect.height;
+            const w = cvs.width;
+            const h = cvs.height;
+
+            // Clear
+            ctx.fillStyle = "#111";
+            ctx.fillRect(0, 0, w, h);
+
+            // Draw Axes
+            ctx.strokeStyle = "#333";
+            ctx.beginPath();
+            ctx.moveTo(w/2, 0); ctx.lineTo(w/2, h);
+            ctx.moveTo(0, h/2); ctx.lineTo(w, h/2);
+            ctx.stroke();
+
+            // Concepts
+            const animalCluster = { x: w * 0.2, y: h * 0.8, color: '#ff00ff' };
+            const weatherCluster = { x: w * 0.8, y: h * 0.2, color: '#00f3ff' };
+
+            // Draw Points
+            drawPoint(animalCluster.x, animalCluster.y, "Cats/Dogs", animalCluster.color);
+            drawPoint(weatherCluster.x, weatherCluster.y, "Rain/Storm", weatherCluster.color);
+
+            // Input Sentence Point
+            let inputX, inputY, inputLabel;
+            
+            if (state === 'static') {
+                inputX = w/2; 
+                inputY = h/2;
+                inputLabel = "?";
+                ctx.fillStyle = "#fff";
+            } else {
+                // Animate towards weather
+                inputX = w * 0.7;
+                inputY = h * 0.3;
+                inputLabel = "Idiom Meaning";
+                
+                // Draw arrow
+                ctx.strokeStyle = "#fff";
+                ctx.setLineDash([5, 5]);
+                ctx.beginPath();
+                ctx.moveTo(w/2, h/2);
+                ctx.lineTo(inputX, inputY);
+                ctx.stroke();
+                ctx.setLineDash([]);
+            }
+
+            drawPoint(inputX, inputY, inputLabel, "#fff", true);
+        }
+
+        function drawPoint(x, y, label, color, isMain=false) {
+            ctx.fillStyle = color;
+            ctx.beginPath();
+            ctx.arc(x, y, isMain ? 6 : 4, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.fillStyle = "#ccc";
+            ctx.font = "12px sans-serif";
+            ctx.fillText(label, x + 10, y + 4);
+        }
+
+        function runNLPSim() {
+            if(nlpSimRunning) return;
+            nlpSimRunning = true;
+
+            // Old Logic
+            document.getElementById('out-old').innerHTML = "Scanning input...<br>Found keywords: 'cats', 'dogs'.<br><strong>Bot:</strong> Do you have any pets?";
+            
+            // New Logic
+            document.getElementById('out-new').innerText = "Vectorizing input...";
+            drawVectorGraph('active');
+            
+            setTimeout(() => {
+                document.getElementById('out-new').innerHTML = "Distance check: Closer to [Weather] than [Animals].<br><strong>Bot:</strong> You should take an umbrella.";
+                nlpSimRunning = false;
+            }, 1000);
+        }
+
+        // Init Canvas
+        window.addEventListener('resize', () => drawVectorGraph('static'));
+        setTimeout(() => drawVectorGraph('static'), 500);
+
+
+        /* --- SECTION 3: RAG LOGIC --- */
+        const ragToggle = document.getElementById('rag-toggle');
+        const ragStatus = document.getElementById('rag-status');
+        const ragCode = document.getElementById('rag-code');
+        const ragOutput = document.getElementById('rag-output');
+        const ragParticle = document.getElementById('rag-particle');
+        const ragViz = document.getElementById('rag-viz-container');
+
+        ragToggle.addEventListener('change', (e) => {
+            if(e.target.checked) {
+                ragStatus.innerText = "Mode: RAG Enabled (Fact Checked)";
+                ragCode.innerText = "Prompt = Context + Question";
+                ragStatus.style.color = "var(--accent-cyan)";
+                ragViz.classList.add('rag-active');
+            } else {
+                ragStatus.innerText = "Mode: Pure Generation (Prone to Hallucination)";
+                ragCode.innerText = "Prompt = Question";
+                ragStatus.style.color = "#ccc";
+                ragViz.classList.remove('rag-active');
+            }
+        });
+
+        function runRAGSim() {
+            ragOutput.innerText = "...";
+            const isRAG = ragToggle.checked;
+            const w = ragViz.clientWidth;
+            
+            if (!isRAG) {
+                // Direct path User -> AI
+                ragParticle.style.transition = "none";
+                ragParticle.style.opacity = 1;
+                ragParticle.style.left = "10%";
+                ragParticle.style.top = "50%";
+                
+                setTimeout(() => {
+                    ragParticle.style.transition = "left 1s linear";
+                    ragParticle.style.left = "90%"; // Move to AI
+                }, 50);
+
+                setTimeout(() => {
+                    ragParticle.style.opacity = 0;
+                    ragOutput.style.color = "var(--accent-magenta)";
+                    typeWriter("The capital of Mars is Elon City. (Hallucination)", ragOutput);
+                }, 1100);
+
+            } else {
+                // RAG Path: User -> DB -> AI
+                ragParticle.style.transition = "none";
+                ragParticle.style.opacity = 1;
+                ragParticle.style.left = "10%";
+                
+                // Step 1: To DB
+                setTimeout(() => {
+                    ragParticle.style.transition = "left 0.5s linear";
+                    ragParticle.style.left = "50%";
+                }, 50);
+
+                // Step 2: Retrieve
+                setTimeout(() => {
+                    ragOutput.innerText = "Retrieving context: 'Mars has no government'...";
+                }, 600);
+
+                // Step 3: To AI
+                setTimeout(() => {
+                    ragParticle.style.left = "90%";
+                }, 1500);
+
+                // Result
+                setTimeout(() => {
+                    ragParticle.style.opacity = 0;
+                    ragOutput.style.color = "var(--accent-cyan)";
+                    typeWriter("Based on current records, Mars does not have a capital city.", ragOutput);
+                }, 2100);
+            }
+        }
+
+        function typeWriter(text, element) {
+            element.innerText = "";
+            let i = 0;
+            const speed = 30;
+            function type() {
+                if (i < text.length) {
+                    element.innerHTML += text.charAt(i);
+                    i++;
+                    setTimeout(type, speed);
+                }
+            }
+            type();
+        }
+
+        /* --- SECTION 4: SUSTAINABILITY LOGIC --- */
+        const sSize = document.getElementById('sus-size');
+        const sData = document.getElementById('sus-data');
+        const sEff = document.getElementById('sus-eff');
+        const barIntel = document.getElementById('bar-intel');
+        const cloud = document.getElementById('cloud-co2');
+        const sFeedback = document.getElementById('sus-feedback');
+
+        function updateSus() {
+            const size = parseInt(sSize.value);
+            const data = parseInt(sData.value);
+            const eff = parseInt(sEff.value); // Higher is better hardware
+
+            // Logic:
+            // Intelligence = Log(Size * Data). 
+            // Bonus: If Data is Low (Curated) AND Size is Low (Specialized), Intelligence stays decent.
+            
+            let rawIntel = (size * data) / 100;
+            
+            // "Curated Small Model" bonus logic
+            if (size < 40 && data < 40) {
+                rawIntel *= 3.5; // Efficiency bonus
+                sFeedback.innerText = "Status: Specialized Expert (Sustainable)";
+                sFeedback.style.color = "var(--accent-cyan)";
+            } else if (size > 80 && data > 80) {
+                sFeedback.innerText = "Status: Massive Generalist (Energy Hog)";
+                sFeedback.style.color = "var(--accent-magenta)";
+            } else {
+                sFeedback.innerText = "Status: Average Model";
+                sFeedback.style.color = "#ccc";
+            }
+
+            // Cap Intelligence for visual
+            let visualIntel = Math.min(100, Math.max(10, Math.sqrt(rawIntel) * 10));
+            
+            // Energy = Size * Data / Efficiency
+            // Inefficiency factor: (101 - eff)
+            let energy = (size * data * (101 - eff)) / 5000; 
+            
+            // Update Visuals
+            barIntel.style.height = `${visualIntel}%`;
+            
+            // Cloud Scale
+            let scale = 0.5 + (energy / 50); 
+            if(scale > 2.5) scale = 2.5;
+            cloud.style.transform = `scale(${scale})`;
+            
+            // Cloud Color (Green to Red)
+            const red = Math.min(255, energy * 10);
+            const green = Math.max(0, 255 - (energy * 10));
+            cloud.style.backgroundColor = `rgb(${red}, ${green}, 50)`;
+        }
+
+        [sSize, sData, sEff].forEach(el => el.addEventListener('input', updateSus));
+        updateSus(); // Init
+
+
+        /* --- SECTION 5: HUMAN ROLE PUZZLE --- */
+        const draggables = document.querySelectorAll('.draggable-item');
+        const zoneHuman = document.getElementById('zone-human');
+        const zoneAi = document.getElementById('zone-ai');
+        const puzzleFeedback = document.getElementById('puzzle-feedback');
+
+        // Simple Click-to-Move logic for better mobile support than Drag-n-Drop API
+        let selectedItem = null;
+
+        draggables.forEach(item => {
+            item.addEventListener('click', () => {
+                // If item is already in a zone, don't allow re-select to simplify logic
+                if(item.parentElement !== document.getElementById('source-zone')) return;
+
+                // Deselect others
+                draggables.forEach(i => i.style.borderColor = '#555');
+                
+                selectedItem = item;
+                item.style.borderColor = '#fff'; // Highlight selection
+                puzzleFeedback.innerText = "Tap a box below to assign this task.";
+                puzzleFeedback.style.color = "#fff";
+            });
+        });
+
+        [zoneHuman, zoneAi].forEach(zone => {
+            zone.addEventListener('click', () => {
+                if(!selectedItem) return;
+
+                const itemType = selectedItem.getAttribute('data-type'); // 'why' or 'how'
+                const zoneType = zone.id === 'zone-human' ? 'why' : 'how';
+
+                if(itemType === zoneType) {
+                    // Success
+                    zone.appendChild(selectedItem);
+                    selectedItem.style.borderColor = '#555';
+                    selectedItem.style.cursor = 'default';
+                    selectedItem = null;
+                    
+                    puzzleFeedback.innerText = "Correct assignment.";
+                    puzzleFeedback.style.color = "var(--accent-cyan)";
+                    checkCompletion();
+                } else {
+                    // Failure
+                    puzzleFeedback.innerText = zone.id === 'zone-human' 
+                        ? "Wait! Humans define outcome. That's an execution task." 
+                        : "Wait! That's a strategic goal. Humans must define that.";
+                    puzzleFeedback.style.color = "var(--accent-magenta)";
+                }
+            });
+        });
+
+        function checkCompletion() {
+            const source = document.getElementById('source-zone');
+            if(source.children.length === 0) {
+                puzzleFeedback.innerText = "System Optimized: Humans lead, AI executes.";
+                puzzleFeedback.style.fontSize = "1.2rem";
+            }
+        }
+
+    </script>
+</body>
+</html>

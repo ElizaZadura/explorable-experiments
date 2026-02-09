@@ -1,0 +1,670 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>The Architect of Agents: Design Patterns</title>
+    <style>
+        /* --- GLOBAL VARIABLES & RESET --- */
+        :root {
+            --bg-dark: #0f172a;
+            --card-bg: rgba(30, 41, 59, 0.7);
+            --text-main: #e2e8f0;
+            --text-muted: #94a3b8;
+            --accent-cyan: #06b6d4;
+            --accent-pink: #ec4899;
+            --accent-green: #10b981;
+            --accent-amber: #f59e0b;
+            --font-mono: 'Courier New', Courier, monospace;
+            --font-sans: system-ui, -apple-system, sans-serif;
+            --glass-border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+
+        body {
+            background-color: var(--bg-dark);
+            color: var(--text-main);
+            font-family: var(--font-sans);
+            line-height: 1.6;
+            padding-bottom: 100px;
+            overflow-x: hidden;
+        }
+
+        /* --- UTILITIES --- */
+        .hidden { display: none !important; }
+        .flex { display: flex; }
+        .flex-col { flex-direction: column; }
+        .items-center { align-items: center; }
+        .justify-between { justify-content: space-between; }
+        .justify-center { justify-content: center; }
+        .gap-4 { gap: 1rem; }
+        .mt-4 { margin-top: 1rem; }
+        .mb-4 { margin-bottom: 1rem; }
+        .text-cyan { color: var(--accent-cyan); }
+        .text-pink { color: var(--accent-pink); }
+        .text-green { color: var(--accent-green); }
+        .font-mono { font-family: var(--font-mono); }
+        
+        /* --- LAYOUT COMPONENTS --- */
+        header {
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            background: rgba(15, 23, 42, 0.9);
+            backdrop-filter: blur(10px);
+            padding: 1rem;
+            border-bottom: var(--glass-border);
+        }
+
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 0 1rem;
+        }
+
+        .progress-container {
+            width: 100%;
+            height: 6px;
+            background: #334155;
+            border-radius: 3px;
+            margin-top: 0.5rem;
+            overflow: hidden;
+        }
+
+        .progress-bar {
+            height: 100%;
+            background: var(--accent-cyan);
+            width: 0%;
+            transition: width 0.5s ease;
+            box-shadow: 0 0 10px var(--accent-cyan);
+        }
+
+        section {
+            margin: 4rem 0;
+            opacity: 0.3;
+            transition: opacity 0.5s ease, transform 0.5s ease;
+            transform: translateY(20px);
+            pointer-events: none; /* Locked by default */
+        }
+
+        section.active {
+            opacity: 1;
+            transform: translateY(0);
+            pointer-events: all;
+        }
+
+        section.completed {
+            opacity: 0.6;
+            border-left: 4px solid var(--accent-green);
+            padding-left: 1rem;
+        }
+
+        /* --- CARDS & UI ELEMENTS --- */
+        .card {
+            background: var(--card-bg);
+            border: var(--glass-border);
+            border-radius: 12px;
+            padding: 1.5rem;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+            margin-top: 1.5rem;
+        }
+
+        h2 { font-size: 1.8rem; margin-bottom: 0.5rem; color: #fff; }
+        h3 { font-size: 1.2rem; margin-bottom: 1rem; color: var(--accent-cyan); text-transform: uppercase; letter-spacing: 1px; }
+        p { color: var(--text-muted); margin-bottom: 1rem; }
+
+        .terminal {
+            background: #000;
+            border: 1px solid #333;
+            border-radius: 6px;
+            padding: 1rem;
+            font-family: var(--font-mono);
+            font-size: 0.9rem;
+            color: #ddd;
+            min-height: 100px;
+            overflow-y: auto;
+        }
+
+        .terminal-line { margin-bottom: 0.5rem; display: block; }
+        .cmd-input { color: var(--accent-cyan); }
+        .json-output { color: var(--accent-amber); }
+
+        input[type="text"] {
+            background: #1e293b;
+            border: 1px solid #475569;
+            color: white;
+            padding: 0.5rem;
+            border-radius: 4px;
+            width: 100%;
+            font-family: var(--font-mono);
+        }
+
+        button.btn-run {
+            background: var(--accent-cyan);
+            color: #0f172a;
+            border: none;
+            padding: 0.75rem 1.5rem;
+            border-radius: 6px;
+            font-weight: bold;
+            cursor: pointer;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            transition: all 0.2s;
+            box-shadow: 0 0 15px rgba(6, 182, 212, 0.4);
+        }
+
+        button.btn-run:hover {
+            background: #22d3ee;
+            transform: scale(1.02);
+            box-shadow: 0 0 25px rgba(6, 182, 212, 0.6);
+        }
+        
+        button.btn-run:disabled {
+            background: #475569;
+            cursor: not-allowed;
+            box-shadow: none;
+        }
+
+        /* --- MODULE SPECIFIC VISUALS --- */
+        
+        /* Module 1: Chain */
+        .chain-wrapper { display: flex; align-items: center; gap: 10px; overflow-x: auto; padding-bottom: 10px; }
+        .node { 
+            background: #1e293b; border: 1px solid #475569; padding: 10px; border-radius: 8px; 
+            min-width: 100px; text-align: center; font-size: 0.8rem; position: relative;
+        }
+        .arrow { color: var(--text-muted); font-size: 1.5rem; }
+        .node.active { border-color: var(--accent-cyan); box-shadow: 0 0 10px rgba(6,182,212,0.2); }
+        .switch { position: relative; display: inline-block; width: 50px; height: 24px; }
+        .switch input { opacity: 0; width: 0; height: 0; }
+        .slider { position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background-color: #ccc; transition: .4s; border-radius: 24px; }
+        .slider:before { position: absolute; content: ""; height: 16px; width: 16px; left: 4px; bottom: 4px; background-color: white; transition: .4s; border-radius: 50%; }
+        input:checked + .slider { background-color: var(--accent-cyan); }
+        input:checked + .slider:before { transform: translateX(26px); }
+
+        /* Module 2: Router */
+        .router-brain { 
+            width: 80px; height: 80px; border-radius: 50%; border: 2px solid var(--accent-cyan);
+            display: flex; align-items: center; justify-content: center; margin: 0 auto;
+            box-shadow: 0 0 20px rgba(6,182,212,0.3);
+        }
+        .bucket-container { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; margin-top: 20px; }
+        .bucket { 
+            background: #1e293b; padding: 10px; border-radius: 8px; text-align: center; font-size: 0.8rem; 
+            border: 1px solid transparent; transition: all 0.3s;
+        }
+        .bucket.target { border-color: var(--accent-green); background: rgba(16, 185, 129, 0.1); }
+        .bucket.error { border-color: var(--accent-pink); background: rgba(236, 72, 153, 0.1); }
+
+        /* Module 3: Parallel */
+        .shard-container { display: flex; flex-direction: column; gap: 5px; margin-top: 10px; }
+        .shard-track { background: #334155; height: 8px; border-radius: 4px; overflow: hidden; }
+        .shard-bar { background: var(--accent-amber); height: 100%; width: 0%; }
+
+        /* Module 4: Loop */
+        .loop-circle {
+            width: 150px; height: 150px; border: 4px dashed #334155; border-radius: 50%;
+            margin: 0 auto; position: relative; animation: spin 4s linear infinite; animation-play-state: paused;
+        }
+        .loop-status {
+            position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
+            font-weight: bold; font-family: var(--font-mono);
+        }
+        @keyframes spin { 100% { transform: rotate(360deg); } }
+
+        /* Certificate */
+        .badge {
+            border: 2px solid var(--accent-cyan);
+            background: rgba(6, 182, 212, 0.1);
+            padding: 2rem;
+            text-align: center;
+            border-radius: 16px;
+            animation: popIn 0.6s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+        @keyframes popIn { from { transform: scale(0.5); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+
+    </style>
+</head>
+<body>
+
+    <header>
+        <div class="container">
+            <div class="flex justify-between items-center">
+                <h1 style="font-size: 1.2rem;">THE ARCHITECT OF AGENTS</h1>
+                <span class="font-mono text-cyan">SYSTEM INTEGRITY</span>
+            </div>
+            <div class="progress-container">
+                <div class="progress-bar" id="global-progress"></div>
+            </div>
+        </div>
+    </header>
+
+    <main class="container">
+
+        <!-- MODULE 0: HOOK -->
+        <section id="mod-0" class="active">
+            <h2>Module 0: The Agent Definition</h2>
+            <p>Welcome, Architect. Standard LLMs just talk. <strong>Agents do work.</strong></p>
+            <p>An Agent is a loop: It Thinks &rarr; Picks a Tool &rarr; Executes. Let's send your first command.</p>
+            
+            <div class="card">
+                <h3>Simulation: Hello World</h3>
+                <div class="terminal mb-4" id="term-0">
+                    <span class="terminal-line text-muted">// System Ready. Waiting for input...</span>
+                </div>
+                <div class="flex gap-4">
+                    <input type="text" id="input-0" placeholder="Type: 'Check server status'" value="Check server status">
+                    <button class="btn-run" onclick="runModule0()">Execute</button>
+                </div>
+            </div>
+        </section>
+
+        <!-- MODULE 1: CHAIN -->
+        <section id="mod-1">
+            <h2>Module 1: The Chain</h2>
+            <p>LLMs hallucinate when doing too much at once. The <strong>Chain Pattern</strong> breaks logic into steps.</p>
+            <p>We need a "Decision Gate" to stop bad investments. If the gate is OFF, the agent blindly approves.</p>
+
+            <div class="card">
+                <h3>Simulation: The Chain Reactor</h3>
+                <div class="flex justify-between items-center mb-4">
+                    <span class="font-mono">Input: "Invest $10k in Crypto"</span>
+                    <label class="flex items-center gap-4">
+                        <span class="font-mono text-cyan">SAFETY GATE</span>
+                        <div class="switch">
+                            <input type="checkbox" id="gate-toggle">
+                            <span class="slider"></span>
+                        </div>
+                    </label>
+                </div>
+
+                <div class="chain-wrapper mb-4">
+                    <div class="node" id="node-1">1. Analyze</div>
+                    <div class="arrow">&rarr;</div>
+                    <div class="node" id="node-2">2. Research</div>
+                    <div class="arrow">&rarr;</div>
+                    <div class="node" id="node-3" style="border-style: dashed;">3. Gate</div>
+                </div>
+
+                <div class="terminal mb-4" id="term-1" style="height: 80px;">
+                    <span class="terminal-line text-muted">// Configure Gate and Execute...</span>
+                </div>
+
+                <button class="btn-run" onclick="runModule1()">Run Chain</button>
+            </div>
+        </section>
+
+        <!-- MODULE 2: ROUTER -->
+        <section id="mod-2">
+            <h2>Module 2: The Router</h2>
+            <p>Generalists are slow. Specialists are fast. The <strong>Router Pattern</strong> classifies intent and directs traffic.</p>
+            <p><strong>Mission:</strong> Configure the router keywords to send "Plot this CSV" to the Data Analyst.</p>
+
+            <div class="card">
+                <h3>Simulation: The Switchboard</h3>
+                
+                <div class="flex flex-col items-center mb-4">
+                    <div class="font-mono mb-2">Incoming Query: <span class="text-cyan">"Please plot this sales CSV"</span></div>
+                    <div class="router-brain">
+                        <span style="font-size: 2rem;">&#9881;</span>
+                    </div>
+                </div>
+
+                <div class="mb-4" style="background: rgba(0,0,0,0.2); padding: 10px; border-radius: 8px;">
+                    <p class="font-mono text-sm mb-2">Configure Router Logic:</p>
+                    <label class="flex items-center gap-2 mb-2">
+                        <input type="checkbox" id="kw-refund"> If contains "refund" &rarr; Refund Agent
+                    </label>
+                    <label class="flex items-center gap-2">
+                        <input type="checkbox" id="kw-plot"> If contains "plot" &rarr; Data Analyst
+                    </label>
+                </div>
+
+                <div class="bucket-container">
+                    <div class="bucket" id="b-general">General Chat</div>
+                    <div class="bucket" id="b-refund">Refund Agent</div>
+                    <div class="bucket" id="b-data">Data Analyst</div>
+                </div>
+                <div id="router-msg" class="font-mono text-center mt-4 text-pink" style="min-height: 1.5rem;"></div>
+
+                <button class="btn-run mt-4" onclick="runModule2()">Route Packet</button>
+            </div>
+        </section>
+
+        <!-- MODULE 3: PARALLEL -->
+        <section id="mod-3">
+            <h2>Module 3: Parallelization</h2>
+            <p>Processing a massive contract linearly takes forever. We need <strong>Sharding</strong>.</p>
+            <p>Increase the worker count to process shards in parallel.</p>
+
+            <div class="card">
+                <h3>Simulation: The Hive Mind</h3>
+                
+                <div class="flex justify-between items-center mb-4">
+                    <div class="font-mono">Task: Summarize 100 Pages</div>
+                    <div class="font-mono text-cyan" id="speed-display">Speed: 1x</div>
+                </div>
+
+                <input type="range" id="worker-slider" min="1" max="5" value="1" style="width: 100%; margin-bottom: 1rem;">
+                <p class="text-center font-mono text-sm mb-4">Workers: <span id="worker-count" class="text-cyan">1</span></p>
+
+                <div class="shard-container" id="shard-wrapper">
+                    <div class="shard-track"><div class="shard-bar" id="bar-0"></div></div>
+                </div>
+
+                <div class="flex justify-between mt-4 font-mono text-sm">
+                    <span>Est Time: <span id="time-est" class="text-pink">5.0s</span></span>
+                    <span>Cost: <span class="text-muted">~Same</span></span>
+                </div>
+
+                <button class="btn-run mt-4" onclick="runModule3()">Process Document</button>
+            </div>
+        </section>
+
+        <!-- MODULE 4: OPTIMIZER -->
+        <section id="mod-4">
+            <h2>Module 4: The Evaluator-Optimizer</h2>
+            <p>Agents make mistakes. This pattern creates a <strong>Self-Correction Loop</strong>.</p>
+            <p>The agent generates code, the Evaluator checks it, and sends feedback. Without this, the user gets broken code.</p>
+
+            <div class="card">
+                <h3>Simulation: The Code Forge</h3>
+                
+                <div class="flex justify-center mb-4">
+                    <div class="loop-circle" id="loop-ring">
+                        <div class="loop-status" id="loop-text">IDLE</div>
+                    </div>
+                </div>
+
+                <div class="terminal mb-4" id="term-4" style="height: 120px;">
+                    <span class="terminal-line text-muted">// Waiting to generate Python function...</span>
+                </div>
+
+                <button class="btn-run" onclick="runModule4()">Start Loop</button>
+            </div>
+        </section>
+
+        <!-- CERTIFICATION -->
+        <section id="cert-section" class="hidden">
+            <div class="badge">
+                <h1 class="text-cyan mb-4">CERTIFICATION COMPLETE</h1>
+                <p class="mb-4">You have successfully configured all 4 Agentic Workflow Patterns.</p>
+                <div class="font-mono text-xl" style="border-top: 1px solid var(--accent-cyan); border-bottom: 1px solid var(--accent-cyan); padding: 1rem; margin: 1rem 0;">
+                    RANK: SENIOR ARCHITECT
+                </div>
+                <p class="text-sm text-muted">System Integrity: 100%</p>
+                <button class="btn-run mt-4" onclick="location.reload()">Reset Simulation</button>
+            </div>
+        </section>
+
+    </main>
+
+    <script>
+        // --- STATE MANAGEMENT ---
+        const state = {
+            modulesCompleted: 0,
+            totalModules: 5
+        };
+
+        // --- UTILS ---
+        const sleep = (ms) => new Promise(resolve => setTimeout(resolve, ms));
+        
+        function updateProgress() {
+            state.modulesCompleted++;
+            const pct = (state.modulesCompleted / state.totalModules) * 100;
+            document.getElementById('global-progress').style.width = `${pct}%`;
+        }
+
+        function unlockSection(id) {
+            const el = document.getElementById(id);
+            el.classList.add('active');
+            // Smooth scroll to new section
+            setTimeout(() => {
+                el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            }, 500);
+        }
+
+        function markCompleted(id) {
+            document.getElementById(id).classList.add('completed');
+        }
+
+        function typeWriter(elementId, text, speed = 20) {
+            return new Promise(resolve => {
+                const el = document.getElementById(elementId);
+                let i = 0;
+                el.innerHTML += '<br/>> ';
+                function type() {
+                    if (i < text.length) {
+                        el.innerHTML += text.charAt(i);
+                        i++;
+                        el.scrollTop = el.scrollHeight; // Auto scroll
+                        setTimeout(type, speed);
+                    } else {
+                        resolve();
+                    }
+                }
+                type();
+            });
+        }
+
+        // --- MODULE 0 LOGIC ---
+        async function runModule0() {
+            const btn = document.querySelector('#mod-0 .btn-run');
+            const input = document.getElementById('input-0').value;
+            const term = 'term-0';
+            
+            if(!input) return;
+            btn.disabled = true;
+
+            await typeWriter(term, "Analyzing request...");
+            await sleep(800);
+            
+            // Visualizing the JSON thought process
+            const jsonThink = `<span class="json-output">{ "tool": "check_status", "target": "server_01" }</span>`;
+            document.getElementById(term).innerHTML += `<br/>> <span class="text-cyan">AGENT THOUGHT:</span> ${jsonThink}`;
+            
+            await sleep(1000);
+            await typeWriter(term, "Executing Tool: System Check...");
+            await sleep(800);
+            document.getElementById(term).innerHTML += `<br/>> <span class="text-green">RESULT: All Systems Operational.</span>`;
+            
+            markCompleted('mod-0');
+            updateProgress();
+            unlockSection('mod-1');
+        }
+
+        // --- MODULE 1 LOGIC (CHAIN) ---
+        async function runModule1() {
+            const btn = document.querySelector('#mod-1 .btn-run');
+            const gateActive = document.getElementById('gate-toggle').checked;
+            const term = 'term-1';
+            const nodes = ['node-1', 'node-2', 'node-3'];
+
+            btn.disabled = true;
+            document.getElementById(term).innerHTML = ''; // Clear
+
+            // Step 1
+            document.getElementById(nodes[0]).classList.add('active');
+            await typeWriter(term, "Node 1: Generating Investment Idea...");
+            await sleep(800);
+            document.getElementById(nodes[0]).classList.remove('active');
+
+            // Step 2
+            document.getElementById(nodes[1]).classList.add('active');
+            await typeWriter(term, "Node 2: Researching Crypto Market...");
+            await sleep(800);
+            document.getElementById(nodes[1]).classList.remove('active');
+
+            // Step 3 (Gate)
+            document.getElementById(nodes[2]).classList.add('active');
+            if (gateActive) {
+                document.getElementById(nodes[2]).style.borderColor = 'var(--accent-green)';
+                await typeWriter(term, "GATE CHECK: High Risk Detected. Budget Limit Exceeded.");
+                await sleep(500);
+                document.getElementById(term).innerHTML += `<br/>> <span class="text-green">ACTION: HALT. Recommendation Refused. (Safe)</span>`;
+                
+                // Success Path
+                markCompleted('mod-1');
+                updateProgress();
+                unlockSection('mod-2');
+            } else {
+                document.getElementById(nodes[2]).style.borderColor = 'var(--accent-pink)';
+                await typeWriter(term, "GATE CHECK: Inactive.");
+                await sleep(500);
+                document.getElementById(term).innerHTML += `<br/>> <span class="text-pink">OUTPUT: "Invest everything immediately!" (Reckless)</span>`;
+                btn.disabled = false; // Let them retry
+                document.getElementById(nodes[2]).classList.remove('active');
+            }
+        }
+
+        // --- MODULE 2 LOGIC (ROUTER) ---
+        async function runModule2() {
+            const btn = document.querySelector('#mod-2 .btn-run');
+            const plotChecked = document.getElementById('kw-plot').checked;
+            const refundChecked = document.getElementById('kw-refund').checked;
+            const msgEl = document.getElementById('router-msg');
+            
+            // Reset visuals
+            document.querySelectorAll('.bucket').forEach(b => {
+                b.classList.remove('target', 'error');
+                b.style.opacity = '0.5';
+            });
+            msgEl.innerText = "";
+            btn.disabled = true;
+
+            // Animate Router
+            const brain = document.querySelector('.router-brain');
+            brain.style.background = 'var(--accent-cyan)';
+            await sleep(500);
+            brain.style.background = 'transparent';
+
+            // Logic
+            if (plotChecked) {
+                // Correct
+                document.getElementById('b-data').classList.add('target');
+                document.getElementById('b-data').style.opacity = '1';
+                msgEl.innerHTML = `<span class="text-green">SUCCESS: Routed to Data Analyst</span>`;
+                
+                markCompleted('mod-2');
+                updateProgress();
+                unlockSection('mod-3');
+            } else {
+                // Default / Wrong
+                document.getElementById('b-general').classList.add('error');
+                document.getElementById('b-general').style.opacity = '1';
+                msgEl.innerText = "ERROR: Routed to General Chat (Cannot plot CSV). Check keywords.";
+                btn.disabled = false;
+            }
+        }
+
+        // --- MODULE 3 LOGIC (PARALLEL) ---
+        // UI Updates
+        const slider = document.getElementById('worker-slider');
+        const countDisplay = document.getElementById('worker-count');
+        const timeDisplay = document.getElementById('time-est');
+        const speedDisplay = document.getElementById('speed-display');
+        const shardWrapper = document.getElementById('shard-wrapper');
+
+        slider.addEventListener('input', (e) => {
+            const val = e.target.value;
+            countDisplay.innerText = val;
+            const time = (5.0 / val).toFixed(1);
+            timeDisplay.innerText = `${time}s`;
+            speedDisplay.innerText = `Speed: ${val}x`;
+
+            // Rebuild bars visual
+            shardWrapper.innerHTML = '';
+            for(let i=0; i<val; i++) {
+                shardWrapper.innerHTML += `<div class="shard-track"><div class="shard-bar" id="bar-${i}"></div></div>`;
+            }
+        });
+
+        async function runModule3() {
+            const btn = document.querySelector('#mod-3 .btn-run');
+            const workers = parseInt(slider.value);
+            btn.disabled = true;
+
+            const timeMs = (5000 / workers);
+            
+            // Trigger CSS transitions via JS
+            const bars = document.querySelectorAll('.shard-bar');
+            bars.forEach(bar => {
+                bar.style.transition = `width ${timeMs}ms linear`;
+                // Force reflow
+                void bar.offsetWidth; 
+                bar.style.width = '100%';
+            });
+
+            await sleep(timeMs + 200);
+
+            if (workers >= 4) {
+                markCompleted('mod-3');
+                updateProgress();
+                unlockSection('mod-4');
+            } else {
+                // Encourage higher speed
+                btn.innerText = "Too Slow. Add Workers.";
+                await sleep(1000);
+                btn.innerText = "Process Document";
+                btn.disabled = false;
+                // Reset bars
+                bars.forEach(bar => { bar.style.transition = 'none'; bar.style.width = '0%'; });
+            }
+        }
+
+        // --- MODULE 4 LOGIC (LOOP) ---
+        async function runModule4() {
+            const btn = document.querySelector('#mod-4 .btn-run');
+            const term = 'term-4';
+            const ring = document.getElementById('loop-ring');
+            const status = document.getElementById('loop-text');
+
+            btn.disabled = true;
+            document.getElementById(term).innerHTML = '';
+
+            // Attempt 1
+            ring.style.animationPlayState = 'running';
+            ring.style.borderColor = 'var(--accent-amber)';
+            status.innerText = "GEN";
+            await typeWriter(term, "Attempt 1: Generating code...");
+            await sleep(1000);
+            
+            status.innerText = "EVAL";
+            ring.style.borderColor = 'var(--accent-pink)';
+            document.getElementById(term).innerHTML += `<br/>> <span class="text-pink">EVALUATOR: Syntax Error. Missing import.</span>`;
+            await sleep(1000);
+
+            // Attempt 2
+            status.innerText = "FIX";
+            ring.style.borderColor = 'var(--accent-amber)';
+            await typeWriter(term, "Attempt 2: Rewriting code based on feedback...");
+            await sleep(1000);
+
+            status.innerText = "EVAL";
+            ring.style.borderColor = 'var(--accent-pink)';
+            document.getElementById(term).innerHTML += `<br/>> <span class="text-pink">EVALUATOR: Logic Error. Variable undefined.</span>`;
+            await sleep(1000);
+
+            // Attempt 3
+            status.innerText = "FIX";
+            ring.style.borderColor = 'var(--accent-amber)';
+            await typeWriter(term, "Attempt 3: Final Polish...");
+            await sleep(1000);
+
+            status.innerText = "OK";
+            ring.style.borderColor = 'var(--accent-green)';
+            ring.style.animationPlayState = 'paused';
+            document.getElementById(term).innerHTML += `<br/>> <span class="text-green">EVALUATOR: Test Passed. Code deployed.</span>`;
+
+            markCompleted('mod-4');
+            updateProgress();
+            
+            await sleep(1000);
+            document.getElementById('cert-section').classList.remove('hidden');
+            unlockSection('cert-section');
+        }
+
+    </script>
+</body>
+</html>

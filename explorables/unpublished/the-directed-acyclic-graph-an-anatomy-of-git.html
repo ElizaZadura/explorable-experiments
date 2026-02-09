@@ -1,0 +1,799 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>The Directed Acyclic Graph: An Anatomy of Git</title>
+    <style>
+        /* --- RESET & TYPOGRAPHY --- */
+        :root {
+            --bg-color: #fdfdfd;
+            --text-color: #111111;
+            --accent-color: #F05033; /* Git Red */
+            --subtle-grey: #aaaaaa;
+            --code-bg: #f4f4f4;
+            --font-body: 'Georgia', 'Times New Roman', serif;
+            --font-ui: 'Helvetica', 'Arial', sans-serif;
+            --font-code: 'Courier New', 'Courier Prime', monospace;
+        }
+
+        * { box-sizing: border-box; }
+
+        body {
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            font-family: var(--font-body);
+            line-height: 1.6;
+            margin: 0;
+            padding: 0;
+            overflow-x: hidden;
+        }
+
+        h1, h2, h3 {
+            font-weight: normal;
+            margin-top: 0;
+        }
+
+        h1 { font-size: 2.5rem; letter-spacing: -0.05em; margin-bottom: 2rem; }
+        h2 { font-size: 1.5rem; border-bottom: 1px solid var(--accent-color); padding-bottom: 0.5rem; margin-bottom: 1.5rem; }
+        
+        p { margin-bottom: 1.5rem; font-size: 1.1rem; max-width: 65ch; }
+
+        code {
+            font-family: var(--font-code);
+            background: var(--code-bg);
+            padding: 2px 4px;
+            border-radius: 2px;
+            font-size: 0.9em;
+        }
+
+        pre {
+            background: var(--code-bg);
+            padding: 1rem;
+            overflow-x: auto;
+            border-left: 3px solid var(--subtle-grey);
+        }
+
+        /* --- LAYOUT --- */
+        header {
+            padding: 4rem 2rem;
+            text-align: center;
+            max-width: 800px;
+            margin: 0 auto;
+        }
+
+        .chapter {
+            display: flex;
+            flex-direction: column;
+            border-top: 1px solid #eee;
+            min-height: 100vh;
+        }
+
+        .text-panel {
+            padding: 2rem;
+            flex: 1;
+        }
+
+        .viz-panel {
+            background: #fafafa;
+            padding: 2rem;
+            border-top: 1px solid #eee;
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            overflow: hidden;
+        }
+
+        /* Desktop Layout */
+        @media (min-width: 1024px) {
+            .chapter {
+                flex-direction: row;
+            }
+            .text-panel {
+                width: 50%;
+                padding: 4rem;
+            }
+            .viz-panel {
+                width: 50%;
+                border-top: none;
+                border-left: 1px solid #eee;
+                position: sticky;
+                top: 0;
+                height: 100vh;
+            }
+        }
+
+        /* --- UI COMPONENTS --- */
+        textarea, input[type="text"] {
+            width: 100%;
+            padding: 10px;
+            font-family: var(--font-code);
+            border: 1px solid #ccc;
+            border-radius: 0;
+            font-size: 1rem;
+            resize: none;
+            outline: none;
+        }
+
+        textarea:focus, input:focus {
+            border-color: var(--accent-color);
+        }
+
+        button {
+            background: white;
+            border: 1px solid var(--text-color);
+            font-family: var(--font-ui);
+            padding: 8px 16px;
+            cursor: pointer;
+            font-size: 0.9rem;
+            margin-right: 10px;
+            margin-top: 10px;
+            transition: all 0.2s;
+        }
+
+        button:hover {
+            background: var(--text-color);
+            color: white;
+        }
+
+        button.primary {
+            border-color: var(--accent-color);
+            color: var(--accent-color);
+        }
+        button.primary:hover {
+            background: var(--accent-color);
+            color: white;
+        }
+
+        .math-display {
+            font-family: 'Times New Roman', serif;
+            font-style: italic;
+            text-align: center;
+            margin: 1rem 0;
+            color: #555;
+        }
+
+        /* --- VISUALIZATION SPECIFIC --- */
+        .hash-display {
+            font-family: var(--font-code);
+            color: var(--accent-color);
+            font-weight: bold;
+            margin-top: 10px;
+            word-break: break-all;
+        }
+
+        .byte-stream {
+            font-family: var(--font-code);
+            color: var(--subtle-grey);
+            font-size: 0.85rem;
+            margin-top: 5px;
+        }
+
+        /* File System Builder */
+        .fs-container {
+            display: flex;
+            width: 100%;
+            gap: 1rem;
+            font-family: var(--font-ui);
+        }
+        .fs-col { flex: 1; border: 1px solid #eee; padding: 1rem; background: white; }
+        .fs-title { font-weight: bold; margin-bottom: 0.5rem; border-bottom: 2px solid var(--text-color); padding-bottom: 5px;}
+        .obj-row { font-family: var(--font-code); font-size: 0.8rem; border-bottom: 1px solid #eee; padding: 4px 0; display: flex; justify-content: space-between;}
+        
+        /* Graph SVG */
+        svg { width: 100%; height: 100%; max-height: 400px; }
+        .node circle { fill: white; stroke: var(--text-color); stroke-width: 2px; }
+        .node text { font-family: var(--font-code); font-size: 10px; text-anchor: middle; dominant-baseline: middle; }
+        .edge { stroke: var(--subtle-grey); stroke-width: 2px; marker-end: url(#arrowhead); }
+        .branch-tag { fill: white; stroke: var(--text-color); stroke-width: 1px; }
+        .branch-text { font-family: var(--font-ui); font-size: 10px; }
+        .head-pointer { fill: var(--accent-color); }
+        
+        .changed-hash circle { stroke: var(--accent-color); }
+        .changed-hash text { fill: var(--accent-color); }
+
+        .hidden-details {
+            display: none;
+            margin-top: 1rem;
+            border-top: 1px dashed var(--subtle-grey);
+            padding-top: 1rem;
+            width: 100%;
+        }
+        .show-details-btn { font-size: 0.8rem; color: var(--subtle-grey); text-decoration: underline; cursor: pointer; border: none; background: none; padding: 0;}
+
+    </style>
+</head>
+<body>
+
+    <header>
+        <h1>The Directed Acyclic Graph:<br><span style="color: var(--accent-color); font-size: 0.8em;">An Anatomy of Git</span></h1>
+        <p style="text-align: center; font-style: italic; color: #555;">An interactive exploration of the data structures underlying version control.</p>
+    </header>
+
+    <!-- SECTION 1: CAS -->
+    <article class="chapter" id="section-cas">
+        <div class="text-panel">
+            <h2>1. Content Addressable Storage</h2>
+            <p>Git does not store "files" in the traditional sense of a file system. Instead, it acts as a key-value store. The key is the SHA-1 hash of the content, and the value is the content itself.</p>
+            <p>Before hashing, Git prepends a header to the content: <code>blob {size}\0</code>. This combination creates the "Blob" object.</p>
+            <p>Because the key is mathematically derived from the content, two identical files will always result in the same internal object, regardless of their filename or location. This is the foundation of Git's deduplication.</p>
+            <p><strong>Experiment:</strong> Change a single character in the code below. Observe how the hash changes completely (the Avalanche Effect). Then change it back to restore the original hash.</p>
+        </div>
+        <div class="viz-panel">
+            <div style="width: 100%; max-width: 400px;">
+                <label style="font-family: var(--font-ui); font-size: 0.9rem;">File Content</label>
+                <textarea id="blob-input" rows="4">print("hello world");</textarea>
+                
+                <div style="margin-top: 1.5rem;">
+                    <label style="font-family: var(--font-ui); font-size: 0.9rem;">Internal Byte Stream</label>
+                    <div id="blob-stream" class="byte-stream">blob 21\0print("hello world");</div>
+                </div>
+
+                <div style="margin-top: 1.5rem;">
+                    <label style="font-family: var(--font-ui); font-size: 0.9rem;">SHA-1 Hash (Key)</label>
+                    <div id="blob-hash" class="hash-display">Calculating...</div>
+                </div>
+            </div>
+        </div>
+    </article>
+
+    <!-- SECTION 2: MERKLE TREE -->
+    <article class="chapter" id="section-tree">
+        <div class="text-panel">
+            <h2>2. The Merkle Tree</h2>
+            <p>We have Blobs to store content, but we have lost the filenames. To reconstruct a filesystem, Git uses <strong>Tree</strong> objects.</p>
+            <p>A Tree maps human-readable names to the internal Blob hashes we generated in the previous section. It is a simple list containing permissions, object type, hash, and filename.</p>
+            <p>This structure is recursive: a Tree can point to Blobs (files) or other Trees (subdirectories). This creates a Merkle Tree structure.</p>
+            <p><strong>Experiment:</strong> Add a file to the virtual working directory. Watch how a Blob is created first, and then a Tree object is created to point to it.</p>
+        </div>
+        <div class="viz-panel">
+            <div class="fs-container">
+                <div class="fs-col">
+                    <div class="fs-title">Working Directory</div>
+                    <div id="file-list" style="margin-bottom: 10px;">
+                        <!-- Files go here -->
+                    </div>
+                    <input type="text" id="new-filename" placeholder="filename.txt" style="margin-bottom: 5px;">
+                    <textarea id="new-filecontent" rows="2" placeholder="content" style="margin-bottom: 5px;"></textarea>
+                    <button onclick="fsAddFile()" class="primary">Add File</button>
+                </div>
+                <div class="fs-col" style="background: #f9f9f9;">
+                    <div class="fs-title">Object Database</div>
+                    <div id="db-list">
+                        <!-- DB objects -->
+                    </div>
+                </div>
+            </div>
+            <div style="margin-top: 1rem; width: 100%;">
+                <button class="show-details-btn" onclick="toggleTreeDetails()">Show Raw Tree Data</button>
+                <div id="tree-raw" class="hidden-details">
+                    <pre id="tree-raw-content">No tree generated yet.</pre>
+                </div>
+            </div>
+        </div>
+    </article>
+
+    <!-- SECTION 3: THE COMMIT -->
+    <article class="chapter" id="section-commit">
+        <div class="text-panel">
+            <h2>3. The Snapshot (Commit)</h2>
+            <p>A commit does not contain file diffs. It is a wrapper object that points to a specific Tree (the root of the project) and adds metadata: Author, Time, and Message.</p>
+            <p>Crucially, a commit also points to its <strong>parent</strong>. This forms a linked list backwards in time.</p>
+            <div class="math-display">
+                Hash<sub>commit</sub> = SHA1(tree + parent + author + message)
+            </div>
+            <p>Because the parent hash is part of the input data for the new hash, you cannot change an old commit without changing the hash of every single subsequent commit. This makes history immutable.</p>
+        </div>
+        <div class="viz-panel">
+            <div style="width: 100%; height: 300px; position: relative;">
+                <svg id="commit-svg" viewBox="0 0 300 300">
+                    <defs>
+                        <marker id="arrowhead" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+                            <polygon points="0 0, 10 3.5, 0 7" fill="#aaaaaa" />
+                        </marker>
+                    </defs>
+                    <g id="commit-chain-g"></g>
+                </svg>
+            </div>
+            <div style="text-align: center;">
+                <button onclick="createCommit()" class="primary">Commit Change</button>
+                <p id="commit-status" style="font-size: 0.8rem; color: var(--subtle-grey);">Modify files in Section 2, then commit here.</p>
+            </div>
+        </div>
+    </article>
+
+    <!-- SECTION 4: REFS -->
+    <article class="chapter" id="section-refs">
+        <div class="text-panel">
+            <h2>4. References (Branches)</h2>
+            <p>Commits are immutable, but <strong>Branches</strong> are mutable. A branch is simply a file (a "reference") containing a 40-character SHA-1 hash.</p>
+            <p><code>HEAD</code> is a special reference that usually points to the name of the current branch. It answers the question: "Where are we right now?"</p>
+            <p>When you commit, Git creates the new commit object, and then updates the reference pointed to by HEAD to contain the new hash.</p>
+        </div>
+        <div class="viz-panel">
+            <div style="width: 100%; height: 250px;">
+                <svg id="ref-svg" viewBox="0 0 400 200">
+                    <!-- Graph rendered by JS -->
+                </svg>
+            </div>
+            <div style="display: flex; flex-wrap: wrap; justify-content: center;">
+                <button onclick="refCommit()">Make Commit</button>
+                <button onclick="createBranch()">New Branch</button>
+                <button onclick="checkoutBranch()">Checkout &lt;Other&gt;</button>
+            </div>
+            <div style="margin-top: 1rem; width: 100%; font-family: var(--font-code); font-size: 0.8rem; background: #eee; padding: 10px;">
+                <strong>.git/HEAD:</strong> <span id="head-content">ref: refs/heads/main</span><br>
+                <strong>.git/refs/heads/<span id="active-branch-name">main</span>:</strong> <span id="branch-hash">...</span>
+            </div>
+        </div>
+    </article>
+
+    <!-- SECTION 5: MERGE vs REBASE -->
+    <article class="chapter" id="section-divergence">
+        <div class="text-panel">
+            <h2>5. Divergence: Merge vs. Rebase</h2>
+            <p>When history splits, we must eventually reconcile it. There are two primary mathematical ways to do this.</p>
+            <p><strong>Merge:</strong> Creates a new "Tie" commit with <em>two</em> parents. It preserves the exact history of what happened when.</p>
+            <p><strong>Rebase:</strong> Takes the unique commits from one branch and "re-plays" them on top of the other. </p>
+            <p style="color: var(--accent-color); font-weight: bold;">Watch closely:</p>
+            <p>When you Rebase, the commits get new Hash IDs (colored red). Since the <code>parent</code> field changed, the SHA-1 input changed. These are mathematically new objects, distinct from the originals.</p>
+        </div>
+        <div class="viz-panel">
+            <div style="width: 100%; height: 300px;">
+                <svg id="diverge-svg" viewBox="0 0 500 300">
+                    <!-- Graph rendered by JS -->
+                </svg>
+            </div>
+            <div style="display: flex; gap: 10px;">
+                <button onclick="resetDivergence()" style="font-size: 0.8rem;">Reset</button>
+                <button onclick="performMerge()" class="primary">Merge</button>
+                <button onclick="performRebase()" class="primary">Rebase</button>
+            </div>
+            <p id="diverge-msg" style="font-family: var(--font-ui); font-size: 0.9rem; margin-top: 1rem; color: var(--accent-color);"></p>
+        </div>
+    </article>
+
+    <!-- SECTION 6: CONCLUSION -->
+    <article class="chapter" style="min-height: 50vh; justify-content: center; text-align: center; padding: 4rem;">
+        <div style="max-width: 700px; margin: 0 auto;">
+            <h2>Conclusion</h2>
+            <p>Git is a Merkle Directed Acyclic Graph. Every command you run—commit, checkout, merge, rebase—is simply a graph manipulation operation.</p>
+            <p>By understanding that Git maps content to keys, and keys to a graph structure, the "magic" disappears, replaced by a simple, elegant data structure.</p>
+            <div style="margin-top: 3rem;">
+                <svg width="100" height="100" viewBox="0 0 100 100">
+                    <circle cx="50" cy="50" r="40" stroke="#F05033" stroke-width="2" fill="none" />
+                    <circle cx="50" cy="50" r="10" fill="#111" />
+                    <line x1="50" y1="50" x2="50" y2="10" stroke="#111" stroke-width="2" />
+                </svg>
+            </div>
+        </div>
+    </article>
+
+    <script>
+        /* --- CORE GIT ENGINE & UTILS --- */
+        
+        // Native SHA-1 implementation
+        async function sha1(text) {
+            const encoder = new TextEncoder();
+            const data = encoder.encode(text);
+            const hashBuffer = await crypto.subtle.digest('SHA-1', data);
+            const hashArray = Array.from(new Uint8Array(hashBuffer));
+            const hashHex = hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+            return hashHex;
+        }
+
+        // Global State
+        const gitState = {
+            objects: {}, // Map hash -> content
+            files: [],   // [{name, content, hash}]
+            commits: [], // [{hash, parent, tree, msg}]
+            head: 'main',
+            refs: { 'main': null },
+            divergence: {
+                state: 'initial', // initial, merged, rebased
+                nodes: [] 
+            }
+        };
+
+        // Helper to shorten hashes
+        const short = (h) => h ? h.substring(0, 6) : '';
+
+        /* --- SECTION 1: BLOB LOGIC --- */
+        const blobInput = document.getElementById('blob-input');
+        const blobStream = document.getElementById('blob-stream');
+        const blobHash = document.getElementById('blob-hash');
+
+        async function updateBlobSection() {
+            const content = blobInput.value;
+            const size = new TextEncoder().encode(content).length;
+            const header = `blob ${size}\0`;
+            const store = header + content;
+            
+            // Visual update
+            // Escape null byte for display
+            blobStream.innerText = `blob ${size}\\0${content}`;
+            
+            const hash = await sha1(store);
+            blobHash.innerText = hash;
+        }
+
+        blobInput.addEventListener('input', updateBlobSection);
+        updateBlobSection(); // Init
+
+        /* --- SECTION 2: TREE LOGIC --- */
+        async function fsAddFile() {
+            const name = document.getElementById('new-filename').value || 'unnamed.txt';
+            const content = document.getElementById('new-filecontent').value || '';
+            
+            // 1. Create Blob
+            const size = new TextEncoder().encode(content).length;
+            const store = `blob ${size}\0${content}`;
+            const hash = await sha1(store);
+            
+            // Store in DB
+            gitState.objects[hash] = { type: 'blob', content: content };
+            
+            // Update File List State
+            const existingIdx = gitState.files.findIndex(f => f.name === name);
+            if(existingIdx >= 0) gitState.files[existingIdx] = { name, content, hash };
+            else gitState.files.push({ name, content, hash });
+
+            renderFileSystem();
+            await updateTreeObject();
+        }
+
+        function renderFileSystem() {
+            const fileList = document.getElementById('file-list');
+            const dbList = document.getElementById('db-list');
+            
+            fileList.innerHTML = gitState.files.map(f => 
+                `<div style="padding:5px; border-bottom:1px solid #eee;">📄 ${f.name}</div>`
+            ).join('');
+
+            // Render DB (Last 5 objects)
+            const hashes = Object.keys(gitState.objects).reverse().slice(0, 6);
+            dbList.innerHTML = hashes.map(h => {
+                const obj = gitState.objects[h];
+                return `<div class="obj-row"><span>${short(h)}</span><span>${obj.type}</span></div>`
+            }).join('');
+        }
+
+        async function updateTreeObject() {
+            // Sort files by name (Git requirement)
+            gitState.files.sort((a,b) => a.name.localeCompare(b.name));
+            
+            // Construct Tree content
+            // Format: 100644 blob <hash>\t<filename>
+            let treeContent = "";
+            gitState.files.forEach(f => {
+                treeContent += `100644 blob ${f.hash}\t${f.name}\n`;
+            });
+
+            const header = `tree ${treeContent.length}\0`;
+            const store = header + treeContent;
+            const treeHash = await sha1(store);
+
+            // Store Tree
+            gitState.objects[treeHash] = { type: 'tree', content: treeContent };
+            
+            // Update UI
+            document.getElementById('tree-raw-content').innerText = treeContent || "(empty tree)";
+            renderFileSystem();
+
+            return treeHash;
+        }
+
+        function toggleTreeDetails() {
+            const el = document.getElementById('tree-raw');
+            el.style.display = el.style.display === 'block' ? 'none' : 'block';
+        }
+
+        /* --- SECTION 3: COMMIT LOGIC --- */
+        async function createCommit() {
+            if (gitState.files.length === 0) {
+                alert("Add files in Section 2 first!");
+                return;
+            }
+
+            const treeHash = await updateTreeObject();
+            const parent = gitState.commits.length > 0 ? gitState.commits[gitState.commits.length-1].hash : null;
+            const author = "User <user@git.com>";
+            const timestamp = Math.floor(Date.now() / 1000);
+            const msg = "Update content";
+
+            let content = `tree ${treeHash}\n`;
+            if (parent) content += `parent ${parent}\n`;
+            content += `author ${author} ${timestamp}\n`;
+            content += `\n${msg}`;
+
+            const header = `commit ${content.length}\0`;
+            const commitHash = await sha1(header + content);
+
+            gitState.commits.push({
+                hash: commitHash,
+                parent: parent,
+                tree: treeHash
+            });
+
+            renderCommitChain();
+            document.getElementById('commit-status').innerText = `Created commit ${short(commitHash)}`;
+        }
+
+        function renderCommitChain() {
+            const svg = document.getElementById('commit-chain-g');
+            svg.innerHTML = '';
+            
+            let y = 30;
+            gitState.commits.forEach((c, i) => {
+                const cy = 30 + (i * 60);
+                
+                // Draw Line to parent
+                if (c.parent) {
+                    const line = document.createElementNS("http://www.w3.org/2000/svg", "line");
+                    line.setAttribute("x1", 150);
+                    line.setAttribute("y1", cy);
+                    line.setAttribute("x2", 150);
+                    line.setAttribute("y2", cy - 60 + 20); // Connect to bottom of prev
+                    line.setAttribute("class", "edge");
+                    svg.appendChild(line);
+                }
+
+                // Draw Circle
+                const circle = document.createElementNS("http://www.w3.org/2000/svg", "circle");
+                circle.setAttribute("cx", 150);
+                circle.setAttribute("cy", cy);
+                circle.setAttribute("r", 20);
+                circle.setAttribute("class", "node");
+                circle.setAttribute("fill", "white");
+                circle.setAttribute("stroke", "#111");
+                circle.setAttribute("stroke-width", "2");
+
+                // Text
+                const text = document.createElementNS("http://www.w3.org/2000/svg", "text");
+                text.setAttribute("x", 150);
+                text.setAttribute("y", cy);
+                text.setAttribute("dy", "0.3em");
+                text.setAttribute("text-anchor", "middle");
+                text.setAttribute("font-family", "monospace");
+                text.setAttribute("font-size", "10px");
+                text.textContent = short(c.hash);
+
+                svg.appendChild(circle);
+                svg.appendChild(text);
+            });
+            
+            // Adjust SVG height
+            const h = Math.max(300, gitState.commits.length * 70);
+            document.getElementById('commit-svg').setAttribute("viewBox", `0 0 300 ${h}`);
+        }
+
+        /* --- SECTION 4: REFS LOGIC --- */
+        // Simplified Ref Graph State
+        const refGraph = {
+            nodes: [{id: 'C1', x: 50, y: 100}],
+            head: 'main',
+            branches: { 'main': 'C1' }
+        };
+
+        function renderRefGraph() {
+            const svg = document.getElementById('ref-svg');
+            svg.innerHTML = ''; // Clear
+
+            // Draw Edges
+            refGraph.nodes.forEach((node, i) => {
+                if (i > 0) {
+                    const prev = refGraph.nodes[i-1];
+                    // Simple linear for this demo
+                    const line = document.createElementNS("http://www.w3.org/2000/svg", "line");
+                    line.setAttribute("x1", prev.x);
+                    line.setAttribute("y1", prev.y);
+                    line.setAttribute("x2", node.x);
+                    line.setAttribute("y2", node.y);
+                    line.setAttribute("class", "edge");
+                    svg.appendChild(line);
+                }
+            });
+
+            // Draw Nodes
+            refGraph.nodes.forEach(node => {
+                const g = document.createElementNS("http://www.w3.org/2000/svg", "g");
+                g.innerHTML = `
+                    <circle cx="${node.x}" cy="${node.y}" r="15" fill="white" stroke="#111" stroke-width="2"/>
+                    <text x="${node.x}" y="${node.y}" dy="4" text-anchor="middle" font-family="monospace" font-size="10">${node.id}</text>
+                `;
+                svg.appendChild(g);
+            });
+
+            // Draw Branches
+            Object.keys(refGraph.branches).forEach((branchName, i) => {
+                const nodeId = refGraph.branches[branchName];
+                const node = refGraph.nodes.find(n => n.id === nodeId);
+                
+                const tagX = node.x;
+                const tagY = node.y - 35 - (i*25);
+
+                const g = document.createElementNS("http://www.w3.org/2000/svg", "g");
+                
+                // Line from node to tag
+                g.innerHTML += `<line x1="${node.x}" y1="${node.y-15}" x2="${tagX}" y2="${tagY+10}" stroke="#111" stroke-dasharray="2,2" />`;
+
+                // Tag Box
+                let color = branchName === refGraph.head ? '#F05033' : '#111';
+                let bg = branchName === refGraph.head ? '#F05033' : 'white';
+                let txt = branchName === refGraph.head ? 'white' : 'black';
+
+                g.innerHTML += `
+                    <rect x="${tagX-25}" y="${tagY-10}" width="50" height="20" rx="4" fill="${bg}" stroke="${color}" />
+                    <text x="${tagX}" y="${tagY+4}" text-anchor="middle" fill="${txt}" font-size="10" font-family="sans-serif">${branchName}</text>
+                `;
+
+                // HEAD eye icon if active
+                if (branchName === refGraph.head) {
+                     g.innerHTML += `
+                        <text x="${tagX-35}" y="${tagY+4}" font-size="14">👁️</text>
+                     `;
+                }
+
+                svg.appendChild(g);
+            });
+
+            // Update Text Info
+            document.getElementById('head-content').innerText = `ref: refs/heads/${refGraph.head}`;
+            document.getElementById('active-branch-name').innerText = refGraph.head;
+            // Fake hash for demo
+            document.getElementById('branch-hash').innerText = sha1(refGraph.branches[refGraph.head]).then(h => document.getElementById('branch-hash').innerText = short(h));
+        }
+
+        async function refCommit() {
+            const currentTipId = refGraph.branches[refGraph.head];
+            const currentTipNode = refGraph.nodes.find(n => n.id === currentTipId);
+            
+            const nextId = 'C' + (parseInt(currentTipId.substring(1)) + 1); // Simple increment logic for demo
+            // In a real DAG this position logic is complex, keeping it linear/simple for this section
+            const newNode = { id: nextId, x: currentTipNode.x + 60, y: currentTipNode.y };
+            
+            // Check if node exists (if multiple branches point to same)
+            if (!refGraph.nodes.find(n => n.id === nextId)) {
+                refGraph.nodes.push(newNode);
+            }
+            
+            refGraph.branches[refGraph.head] = nextId;
+            renderRefGraph();
+        }
+
+        function createBranch() {
+            const name = prompt("Branch Name:", "feature");
+            if (name) {
+                refGraph.branches[name] = refGraph.branches[refGraph.head];
+                renderRefGraph();
+            }
+        }
+
+        function checkoutBranch() {
+            const branches = Object.keys(refGraph.branches);
+            const next = branches.find(b => b !== refGraph.head) || branches[0];
+            refGraph.head = next;
+            renderRefGraph();
+        }
+        
+        renderRefGraph(); // Init
+
+        /* --- SECTION 5: MERGE/REBASE LOGIC --- */
+        // Initial setup: Divergent history
+        // C1 -> C2 (Main)
+        //    \> C3 (Feature)
+        function resetDivergence() {
+            gitState.divergence.state = 'initial';
+            gitState.divergence.nodes = [
+                {id: 'C1', x: 50, y: 150, color: '#111'},
+                {id: 'C2', x: 150, y: 100, parents: ['C1'], color: '#111'}, // Main
+                {id: 'C3', x: 150, y: 200, parents: ['C1'], color: '#111'}, // Feature
+            ];
+            document.getElementById('diverge-msg').innerText = "";
+            renderDivergence();
+        }
+
+        function renderDivergence() {
+            const svg = document.getElementById('diverge-svg');
+            svg.innerHTML = '';
+            const nodes = gitState.divergence.nodes;
+
+            // Draw Edges
+            nodes.forEach(n => {
+                if (n.parents) {
+                    n.parents.forEach(pid => {
+                        const p = nodes.find(x => x.id === pid);
+                        if (p) {
+                            const line = document.createElementNS("http://www.w3.org/2000/svg", "line");
+                            line.setAttribute("x1", p.x);
+                            line.setAttribute("y1", p.y);
+                            line.setAttribute("x2", n.x);
+                            line.setAttribute("y2", n.y);
+                            line.setAttribute("class", "edge");
+                            svg.appendChild(line);
+                        }
+                    });
+                }
+            });
+
+            // Draw Nodes
+            nodes.forEach(n => {
+                const g = document.createElementNS("http://www.w3.org/2000/svg", "g");
+                const stroke = n.color === 'red' ? '#F05033' : '#111';
+                const fill = n.color === 'red' ? '#fff0f0' : 'white';
+                
+                g.innerHTML = `
+                    <circle cx="${n.x}" cy="${n.y}" r="20" fill="${fill}" stroke="${stroke}" stroke-width="2"/>
+                    <text x="${n.x}" y="${n.y}" dy="4" text-anchor="middle" font-family="monospace" font-size="12" fill="${stroke}">${n.id}</text>
+                `;
+                svg.appendChild(g);
+            });
+
+            // Labels
+            const mainTip = nodes.find(n => n.id === 'C2');
+            const featTip = nodes[nodes.length-1]; // Last node usually tip of feature
+            
+            // Simplified labelling logic
+            if (gitState.divergence.state === 'initial') {
+                addLabel(svg, 150, 80, "Main");
+                addLabel(svg, 150, 240, "Feature");
+            }
+        }
+
+        function addLabel(svg, x, y, text) {
+            const t = document.createElementNS("http://www.w3.org/2000/svg", "text");
+            t.setAttribute("x", x);
+            t.setAttribute("y", y);
+            t.setAttribute("text-anchor", "middle");
+            t.setAttribute("font-family", "sans-serif");
+            t.setAttribute("font-size", "12");
+            t.textContent = text;
+            svg.appendChild(t);
+        }
+
+        function performMerge() {
+            if (gitState.divergence.state !== 'initial') { resetDivergence(); }
+            
+            // Create Merge Commit C4
+            gitState.divergence.nodes.push({
+                id: 'C4', 
+                x: 250, 
+                y: 150, 
+                parents: ['C2', 'C3'], 
+                color: '#111'
+            });
+            
+            gitState.divergence.state = 'merged';
+            renderDivergence();
+            document.getElementById('diverge-msg').innerText = "Merge Commit C4 created. It has two parents, preserving history.";
+        }
+
+        function performRebase() {
+            if (gitState.divergence.state !== 'initial') { resetDivergence(); }
+
+            // Rebase C3 onto C2. 
+            // C3 becomes C3' (new hash) with parent C2.
+            
+            // 1. Detach C3 visually (fade it out or remove? Let's keep it ghosted)
+            // Actually, let's create a new node C3'
+            
+            gitState.divergence.nodes.push({
+                id: "C3'",
+                x: 250,
+                y: 100, // Linear with Main
+                parents: ['C2'],
+                color: 'red'
+            });
+
+            gitState.divergence.state = 'rebased';
+            renderDivergence();
+            document.getElementById('diverge-msg').innerText = "Rebase complete. C3' is a NEW commit (Red) because its parent changed from C1 to C2.";
+        }
+
+        resetDivergence(); // Init
+
+    </script>
+</body>
+</html>
