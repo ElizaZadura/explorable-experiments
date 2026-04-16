@@ -13,6 +13,7 @@
       --accent: #6e6ef5;
       --border: #424245;
       --indigo: #6366f1;
+      --maxw: 800px;
     }
 
     * { box-sizing: border-box; }
@@ -28,7 +29,7 @@
 
     /* ── HEADER ── */
     .site-header {
-      max-width: 800px;
+      max-width: var(--maxw);
       margin: 3.5rem auto 0;
       padding: 0 1.5rem;
     }
@@ -49,14 +50,15 @@
       position: sticky;
       top: 0;
       z-index: 10;
-      background: rgba(29, 29, 31, 0.94);
+      background: rgba(29, 29, 31, 0.94); /* --bg at 94% opacity */
+      -webkit-backdrop-filter: blur(8px);
       backdrop-filter: blur(8px);
       border-bottom: 1px solid var(--border);
       padding: 0.75rem 0;
       margin-top: 2rem;
     }
     .filter-inner {
-      max-width: 800px;
+      max-width: var(--maxw);
       margin: 0 auto;
       padding: 0 1.5rem;
       display: flex;
@@ -75,7 +77,8 @@
     }
     .search-input::placeholder { color: #636366; }
     .search-input:focus {
-      outline: none;
+      outline: 2px solid var(--indigo);
+      outline-offset: 2px;
       border-color: var(--indigo);
     }
     .cat-chips {
@@ -93,6 +96,10 @@
       cursor: pointer;
       user-select: none;
     }
+    .cat-chip:hover {
+      color: var(--text);
+      border-color: #636366;
+    }
     .cat-chip.active {
       background: rgba(99, 102, 241, 0.15);
       border-color: rgba(99, 102, 241, 0.45);
@@ -102,14 +109,14 @@
 
     /* ── MAIN ── */
     main {
-      max-width: 800px;
+      max-width: var(--maxw);
       margin: 0 auto;
       padding: 0 1.5rem 4rem;
     }
 
     /* ── SECTION ── */
     .section { margin-top: 2.75rem; }
-    .section-heading {
+    h2.section-heading {
       font-size: 0.72rem;
       font-weight: 600;
       letter-spacing: 0.1em;
@@ -117,7 +124,7 @@
       color: var(--muted);
       padding: 0.35rem 0 0.35rem 0.75rem;
       border-left: 3px solid var(--indigo);
-      margin-bottom: 0.5rem;
+      margin: 0 0 0.5rem;
     }
 
     /* ── ENTRY ── */
@@ -159,7 +166,7 @@
 
     /* ── FOOTER ── */
     footer {
-      max-width: 800px;
+      max-width: var(--maxw);
       margin: 0 auto;
       padding: 1.5rem 1.5rem 3rem;
       border-top: 1px solid var(--border);
@@ -196,36 +203,356 @@
 
   <main id="main">
 
+    <!-- ── AI & ML ── -->
     <div class="section" data-section="ai-ml">
-      <div class="section-heading">AI &amp; Machine Learning</div>
+      <h2 class="section-heading">AI &amp; Machine Learning</h2>
+
+      <div class="entry">
+        <a class="entry-title" href="explorables/neural-network-playground.html">Neural Network Playground</a>
+        <p class="entry-desc">Visualize neurons, weights, and activations in real time.</p>
+      </div>
+
+      <div class="entry">
+        <a class="entry-title" href="explorables/the-trillion-sliders-demystifying-ai-parameters.html">The Trillion Sliders</a>
+        <p class="entry-desc">Demystifying AI parameters through interactive weight manipulation.</p>
+      </div>
+
+      <div class="entry">
+        <a class="entry-title" href="explorables/unpublished/the-mechanics-of-learning.html">The Mechanics of Learning</a>
+        <p class="entry-desc">How learning actually happens — gradients, loss, and iteration.</p>
+        <div class="entry-variants">
+          <a class="vp vp-academic" href="explorables/unpublished/the-mechanics-of-pre-training__academic.html">academic</a>
+        </div>
+      </div>
+
+      <div class="entry">
+        <a class="entry-title" href="explorables/unpublished/how-to-train-your-ai__game.html">How to Train Your AI</a>
+        <p class="entry-desc">Gradient descent, loss landscapes, and what training actually does.</p>
+        <div class="entry-variants">
+          <a class="vp vp-game" href="explorables/unpublished/how-to-train-your-ai__game.html">game</a>
+        </div>
+      </div>
+
+      <div class="entry">
+        <a class="entry-title" href="explorables/unpublished/inside-the-black-box-how-neural-networks-think.html">Inside the Black Box</a>
+        <p class="entry-desc">How neural networks build internal representations of the world.</p>
+      </div>
+
+      <div class="entry">
+        <a class="entry-title" href="explorables/unpublished/how-computers-see-numbers__beginner.html">How Computers See Numbers</a>
+        <p class="entry-desc">From binary to floating point — what numbers look like to a machine.</p>
+        <div class="entry-variants">
+          <a class="vp vp-beginner" href="explorables/unpublished/how-computers-see-numbers__beginner.html">beginner</a>
+        </div>
+      </div>
+
+      <div class="entry">
+        <a class="entry-title" href="explorables/unpublished/the-learning-illusion-deconstructing-gpt__skeptical.html">The Learning Illusion</a>
+        <p class="entry-desc">Deconstructing GPT — what it means (and doesn't) to "learn".</p>
+        <div class="entry-variants">
+          <a class="vp vp-skeptical" href="explorables/unpublished/the-learning-illusion-deconstructing-gpt__skeptical.html">skeptical</a>
+        </div>
+      </div>
     </div>
 
+    <!-- ── AGENTS & SYSTEMS ── -->
     <div class="section" data-section="agents">
-      <div class="section-heading">AI Agents &amp; Systems</div>
+      <h2 class="section-heading">AI Agents &amp; Systems</h2>
+
+      <div class="entry">
+        <a class="entry-title" href="explorables/the-anatomy-of-an-ai-agent.html">The Anatomy of an AI Agent</a>
+        <p class="entry-desc">Perception, reasoning, and action loops in agent systems.</p>
+      </div>
+
+      <div class="entry">
+        <a class="entry-title" href="explorables/agent-architecture-sandbox.html">Agent Architecture Sandbox</a>
+        <p class="entry-desc">Build and watch AI agents execute tool-driven workflows.</p>
+      </div>
+
+      <div class="entry">
+        <a class="entry-title" href="explorables/unpublished/agentic-patterns-from-chatbots-to-systems.html">Agentic Patterns</a>
+        <p class="entry-desc">From chatbots to autonomous systems — the design patterns in between.</p>
+        <div class="entry-variants">
+          <a class="vp vp-game" href="explorables/unpublished/the-architect-of-agents-design-patterns__game.html">game</a>
+        </div>
+      </div>
+
+      <div class="entry">
+        <a class="entry-title" href="explorables/unpublished/the-architecture-of-agentic-systems__academic.html">The Architecture of Agentic Systems</a>
+        <p class="entry-desc">A structured look at how agentic systems are designed and composed.</p>
+        <div class="entry-variants">
+          <a class="vp vp-academic" href="explorables/unpublished/the-architecture-of-agentic-systems__academic.html">academic</a>
+          <a class="vp vp-game" href="explorables/unpublished/the-architect-of-agents-ai-workflow-design__game.html">game</a>
+        </div>
+      </div>
+
+      <div class="entry">
+        <a class="entry-title" href="explorables/unpublished/taming-the-machine-the-architecture-of-agent-harnesses.html">Taming the Machine</a>
+        <p class="entry-desc">The architecture of agent harnesses — how orchestration actually works.</p>
+      </div>
+
+      <div class="entry">
+        <a class="entry-title" href="explorables/the-context-bottleneck-how-beads-gives-ai-agents-long-term-memory.html">The Context Bottleneck</a>
+        <p class="entry-desc">How 'Beads' gives AI agents long-term memory beyond the context window.</p>
+      </div>
+
+      <div class="entry">
+        <a class="entry-title" href="explorables/the-agent-expert-from-amnesia-to-expertise.html">The Agent Expert</a>
+        <p class="entry-desc">From amnesia to expertise: how agents learn and retain knowledge.</p>
+      </div>
+
+      <div class="entry">
+        <a class="entry-title" href="explorables/unpublished/the-ceiling-of-automation.html">The Ceiling of Automation</a>
+        <p class="entry-desc">Where agent autonomy breaks down — and why the ceiling keeps moving.</p>
+      </div>
+
+      <div class="entry">
+        <a class="entry-title" href="explorables/unpublished/the-ralph-loop-beating-ai-context-rot.html">The Ralph Loop</a>
+        <p class="entry-desc">Beating AI context rot with iterative self-summarisation.</p>
+        <div class="entry-variants">
+          <a class="vp vp-game" href="explorables/unpublished/the-ralph-loop-interactive-guide__game.html">game</a>
+          <a class="vp vp-skeptical" href="explorables/unpublished/the-ralph-loop-hypothesis-an-audit__skeptical.html">skeptical</a>
+        </div>
+      </div>
+
+      <div class="entry">
+        <a class="entry-title" href="explorables/unpublished/escaping-the-context-window-the-recursive-language-model.html">Escaping the Context Window</a>
+        <p class="entry-desc">The recursive language model and what lies beyond the token limit.</p>
+      </div>
     </div>
 
+    <!-- ── PHYSICS & SCIENCE ── -->
     <div class="section" data-section="physics">
-      <div class="section-heading">Physics &amp; Everyday Science</div>
+      <h2 class="section-heading">Physics &amp; Everyday Science</h2>
+
+      <div class="entry">
+        <a class="entry-title" href="explorables/the-geometry-of-packing-rolling-vs-folding.html">The Geometry of Packing</a>
+        <p class="entry-desc">Rolling vs folding through volume, void space, and time.</p>
+      </div>
+
+      <div class="entry">
+        <a class="entry-title" href="explorables/the-topology-of-the-fitted-sheet.html">The Topology of the Fitted Sheet</a>
+        <p class="entry-desc">Why folding fitted sheets is a battle against geometry.</p>
+        <div class="entry-variants">
+          <a class="vp vp-skeptical" href="explorables/unpublished/case-study-the-fitted-sheet-manifold__skeptical.html">skeptical</a>
+        </div>
+      </div>
+
+      <div class="entry">
+        <a class="entry-title" href="explorables/stress-shear-and-survival.html">Stress, Shear &amp; Survival</a>
+        <p class="entry-desc">How tape holds under tension, peel, and shear forces.</p>
+      </div>
+
+      <div class="entry">
+        <a class="entry-title" href="explorables/the-mechanics-of-magic-the-slip-force.html">The Mechanics of Magic</a>
+        <p class="entry-desc">The slip force and how card magicians control your choice.</p>
+      </div>
+
+      <div class="entry">
+        <a class="entry-title" href="explorables/the-algorithm-of-salsa.html">The Algorithm of Salsa</a>
+        <p class="entry-desc">Rhythm, weight transfer, and timing as controllable parameters.</p>
+      </div>
+
+      <div class="entry">
+        <a class="entry-title" href="explorables/the-geometry-of-the-cascade.html">The Geometry of the Cascade</a>
+        <p class="entry-desc">Domino physics, timing, and chain reactions.</p>
+      </div>
+
+      <div class="entry">
+        <a class="entry-title" href="explorables/unpublished/the-algorithm-of-sparkle.html">The Algorithm of Sparkle</a>
+        <p class="entry-desc">The physics and pattern behind glitter, shimmer, and light scatter.</p>
+      </div>
+
+      <div class="entry">
+        <a class="entry-title" href="explorables/unpublished/the-immune-system-an-interactive-battle.html">The Immune System</a>
+        <p class="entry-desc">An interactive battle — how your body identifies and destroys threats.</p>
+      </div>
+
+      <div class="entry">
+        <a class="entry-title" href="explorables/unpublished/the-unstable-equilibrium-an-audit-of-human-sitting__skeptical.html">The Unstable Equilibrium</a>
+        <p class="entry-desc">An audit of human sitting — why posture is a dynamic problem.</p>
+        <div class="entry-variants">
+          <a class="vp vp-skeptical" href="explorables/unpublished/the-unstable-equilibrium-an-audit-of-human-sitting__skeptical.html">skeptical</a>
+        </div>
+      </div>
+
+      <div class="entry">
+        <a class="entry-title" href="explorables/unpublished/diamond-painting-academy-the-mechanics-of-pixel-art__game.html">Diamond Painting Academy</a>
+        <p class="entry-desc">The mechanics of pixel art — colour, coverage, and craft.</p>
+        <div class="entry-variants">
+          <a class="vp vp-game" href="explorables/unpublished/diamond-painting-academy-the-mechanics-of-pixel-art__game.html">game</a>
+        </div>
+      </div>
     </div>
 
+    <!-- ── SECURITY ── -->
     <div class="section" data-section="security">
-      <div class="section-heading">Security &amp; Red Teaming</div>
+      <h2 class="section-heading">Security &amp; Red Teaming</h2>
+
+      <div class="entry">
+        <a class="entry-title" href="explorables/security-by-imperfection-the-physics-of-lock-cracking.html">Security by Imperfection</a>
+        <p class="entry-desc">The physics of lock cracking and why flaws enable picking.</p>
+      </div>
+
+      <div class="entry">
+        <a class="entry-title" href="explorables/the-mechanics-of-security.html">The Mechanics of Security</a>
+        <p class="entry-desc">How locks work, from pins to shear lines.</p>
+      </div>
+
+      <div class="entry">
+        <a class="entry-title" href="explorables/unpublished/the-psychology-of-ai-red-teaming.html">The Psychology of AI Red Teaming</a>
+        <p class="entry-desc">What it means to think adversarially about AI systems.</p>
+      </div>
+
+      <div class="entry">
+        <a class="entry-title" href="explorables/unpublished/adversarial-alignment-the-mechanics-of-ai-red-teaming__academic.html">Adversarial Alignment</a>
+        <p class="entry-desc">The mechanics of AI red-teaming — probing, provoking, patching.</p>
+        <div class="entry-variants">
+          <a class="vp vp-academic" href="explorables/unpublished/adversarial-alignment-the-mechanics-of-ai-red-teaming__academic.html">academic</a>
+          <a class="vp vp-game" href="explorables/unpublished/the-art-of-the-jailbreak-red-team-simulator__game.html">game</a>
+          <a class="vp vp-skeptical" href="explorables/unpublished/the-fragility-of-alignment-an-adversarial-audit__skeptical.html">skeptical</a>
+        </div>
+      </div>
     </div>
 
+    <!-- ── QUANTUM & COMPUTATION ── -->
     <div class="section" data-section="quantum">
-      <div class="section-heading">Quantum &amp; Computation</div>
+      <h2 class="section-heading">Quantum &amp; Computation</h2>
+
+      <div class="entry">
+        <a class="entry-title" href="explorables/the-quantum-observer-effect-interactive-double-slit-experiment.html">The Quantum Observer Effect</a>
+        <p class="entry-desc">Interactive double-slit experiment: particles, waves, and observation.</p>
+      </div>
+
+      <div class="entry">
+        <a class="entry-title" href="explorables/the-linear-race-a-linear-algebra-playground.html">The Linear Race</a>
+        <p class="entry-desc">A linear algebra playground: vectors, transformations, and racing.</p>
+      </div>
+
+      <div class="entry">
+        <a class="entry-title" href="explorables/unpublished/the-fraught-road-to-quantum-advantage__academic.html">The Fraught Road to Quantum Advantage</a>
+        <p class="entry-desc">Where quantum computing actually stands — and why it's so hard.</p>
+        <div class="entry-variants">
+          <a class="vp vp-academic" href="explorables/unpublished/the-fraught-road-to-quantum-advantage__academic.html">academic</a>
+          <a class="vp vp-skeptical" href="explorables/unpublished/the-quantum-mirage-a-status-report__skeptical.html">skeptical</a>
+          <a class="vp vp-game" href="explorables/unpublished/quantum-quest-the-reality-check__game.html">game</a>
+        </div>
+      </div>
+
+      <div class="entry">
+        <a class="entry-title" href="explorables/unpublished/the-limits-of-computation__minimalist.html">The Limits of Computation</a>
+        <p class="entry-desc">Halting problems, Gödel, and what no computer can ever solve.</p>
+      </div>
+
+      <div class="entry">
+        <a class="entry-title" href="explorables/unpublished/the-non-computable-mind.html">The Non-Computable Mind</a>
+        <p class="entry-desc">Is consciousness beyond the reach of any algorithm?</p>
+        <div class="entry-variants">
+          <a class="vp vp-beginner" href="explorables/unpublished/more-than-a-machine-the-physics-of-mind__beginner.html">beginner</a>
+        </div>
+      </div>
     </div>
 
+    <!-- ── GIT ── -->
     <div class="section" data-section="git">
-      <div class="section-heading">Git &amp; Version Control</div>
+      <h2 class="section-heading">Git &amp; Version Control</h2>
+
+      <div class="entry">
+        <a class="entry-title" href="explorables/unpublished/git-the-time-traveler-s-file-system.html">Git: The Time Traveler's File System</a>
+        <p class="entry-desc">Commits, branches, and merges as a journey through time.</p>
+      </div>
+
+      <div class="entry">
+        <a class="entry-title" href="explorables/unpublished/the-directed-acyclic-graph-an-anatomy-of-git.html">The Directed Acyclic Graph</a>
+        <p class="entry-desc">An anatomy of Git — why history is a graph, not a line.</p>
+      </div>
+
+      <div class="entry">
+        <a class="entry-title" href="explorables/unpublished/git-the-immutable-graph.html">Git: The Immutable Graph</a>
+        <p class="entry-desc">Content-addressed storage and why you can't lose history.</p>
+      </div>
     </div>
 
+    <!-- ── AI ECONOMICS ── -->
     <div class="section" data-section="economics">
-      <div class="section-heading">AI Economics &amp; Limits</div>
+      <h2 class="section-heading">AI Economics &amp; Limits</h2>
+
+      <div class="entry">
+        <a class="entry-title" href="explorables/the-ai-profit-paradox.html">The AI Profit Paradox</a>
+        <p class="entry-desc">Why failure dominates, incentives matter, and hype beats utility.</p>
+      </div>
+
+      <div class="entry">
+        <a class="entry-title" href="explorables/betting-against-ai-from-data-to-wisdom.html">Betting Against AI</a>
+        <p class="entry-desc">From data to wisdom — a sceptic's guide to AI expectations.</p>
+        <div class="entry-variants">
+          <a class="vp vp-skeptical" href="explorables/the-evolving-limits-of-ai-from-data-to-wisdom.html">skeptical</a>
+        </div>
+      </div>
+
+      <div class="entry">
+        <a class="entry-title" href="explorables/unpublished/the-ai-skill-ceiling__skeptical.html">The AI Skill Ceiling</a>
+        <p class="entry-desc">What coding with AI actually does to the engineer over time.</p>
+        <div class="entry-variants">
+          <a class="vp vp-skeptical" href="explorables/unpublished/the-ai-skill-ceiling__skeptical.html">skeptical</a>
+          <a class="vp vp-game" href="explorables/unpublished/the-pilot-the-autopilot-surviving-the-ai-code-era__game.html">game</a>
+        </div>
+      </div>
+
+      <div class="entry">
+        <a class="entry-title" href="explorables/unpublished/the-age-of-agents-thread-based-engineering.html">The Age of Agents</a>
+        <p class="entry-desc">Thread-based engineering and what it means for software teams.</p>
+        <div class="entry-variants">
+          <a class="vp vp-skeptical" href="explorables/unpublished/the-thread-based-engineering-manifesto__skeptical.html">skeptical</a>
+        </div>
+      </div>
+
+      <div class="entry">
+        <a class="entry-title" href="explorables/unpublished/the-entropy-of-agentic-threads__skeptical.html">The Entropy of Agentic Threads</a>
+        <p class="entry-desc">Why long agentic threads degrade — and what to do about it.</p>
+        <div class="entry-variants">
+          <a class="vp vp-skeptical" href="explorables/unpublished/the-entropy-of-agentic-threads__skeptical.html">skeptical</a>
+        </div>
+      </div>
+
+      <div class="entry">
+        <a class="entry-title" href="explorables/unpublished/the-truth-filter-navigating-the-internet.html">The Truth Filter</a>
+        <p class="entry-desc">Navigating the internet — epistemics, signals, and noise.</p>
+      </div>
     </div>
 
+    <!-- ── CASE STUDIES ── -->
     <div class="section" data-section="cases">
-      <div class="section-heading">Case Studies</div>
+      <h2 class="section-heading">Case Studies</h2>
+
+      <div class="entry">
+        <a class="entry-title" href="explorables/unpublished/the-no-code-catastrophe-anatomy-of-a-failure.html">The "No-Code" Catastrophe</a>
+        <p class="entry-desc">BOLA, open databases, and bot swarms: why Moltbook died in 72 hours.</p>
+      </div>
+
+      <div class="entry">
+        <a class="entry-title" href="explorables/unpublished/autopsy-the-moltbook-incident__skeptical.html">Autopsy: The Moltbook Incident</a>
+        <p class="entry-desc">A scrollytelling post-mortem of "Vision-First" engineering.</p>
+        <div class="entry-variants">
+          <a class="vp vp-skeptical" href="explorables/unpublished/autopsy-the-moltbook-incident__skeptical.html">skeptical</a>
+        </div>
+      </div>
+
+      <div class="entry">
+        <a class="entry-title" href="explorables/unpublished/the-architecture-of-a-crash-out__game.html">The Architecture of a Crash Out</a>
+        <p class="entry-desc">Deploy your vision, spam the API, watch the Signal/Noise collapse.</p>
+        <div class="entry-variants">
+          <a class="vp vp-game" href="explorables/unpublished/the-architecture-of-a-crash-out__game.html">game</a>
+        </div>
+      </div>
+
+      <div class="entry">
+        <a class="entry-title" href="explorables/unpublished/case-study-the-recursive-illusion__skeptical.html">Case Study: The Recursive Illusion</a>
+        <p class="entry-desc">When a system appears to recurse — but doesn't.</p>
+        <div class="entry-variants">
+          <a class="vp vp-skeptical" href="explorables/unpublished/case-study-the-recursive-illusion__skeptical.html">skeptical</a>
+        </div>
+      </div>
     </div>
 
   </main>
@@ -234,6 +561,51 @@
     These are experiments, not reference material.
     <div>Generated in collaboration with Gemini (Google AI Studio).</div>
   </footer>
+
+  <script>
+    const search   = document.getElementById('search');
+    const chips    = document.getElementById('chips');
+    const sections = Array.from(document.querySelectorAll('.section'));
+
+    let activeChip = 'all';
+
+    function applyFilters() {
+      const query = search.value.trim().toLowerCase();
+
+      sections.forEach(section => {
+        const cat = section.dataset.section;
+        const catVisible = activeChip === 'all' || activeChip === cat;
+
+        if (!catVisible) {
+          section.style.display = 'none';
+          return;
+        }
+
+        const entries = Array.from(section.querySelectorAll('.entry'));
+        let visibleCount = 0;
+
+        entries.forEach(entry => {
+          const title = entry.querySelector('.entry-title').textContent.toLowerCase();
+          const matches = !query || title.includes(query);
+          entry.style.display = matches ? '' : 'none';
+          if (matches) visibleCount++;
+        });
+
+        section.style.display = visibleCount > 0 ? '' : 'none';
+      });
+    }
+
+    search.addEventListener('input', applyFilters);
+
+    chips.addEventListener('click', e => {
+      const chip = e.target.closest('.cat-chip');
+      if (!chip) return;
+      chips.querySelectorAll('.cat-chip').forEach(c => c.classList.remove('active'));
+      chip.classList.add('active');
+      activeChip = chip.dataset.cat;
+      applyFilters();
+    });
+  </script>
 
 </body>
 </html>
