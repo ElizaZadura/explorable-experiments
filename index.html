@@ -4,16 +4,18 @@
   <meta charset="utf-8" />
   <title>Explorable Experiments</title>
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-
   <style>
     :root {
-      --bg: #f9fafb;
-      --text: #1f2933;
-      --muted: #6b7280;
-      --accent: #3b5bdb;
-      --border: #e5e7eb;
-      --maxw: 680px;
+      --bg: #1d1d1f;
+      --bg-surface: #2d2d2f;
+      --text: #f5f5f7;
+      --muted: #86868b;
+      --accent: #6e6ef5;
+      --border: #424245;
+      --indigo: #6366f1;
     }
+
+    * { box-sizing: border-box; }
 
     body {
       margin: 0;
@@ -24,266 +26,214 @@
       line-height: 1.65;
     }
 
-    main {
-      max-width: var(--maxw);
-      margin: 4rem auto;
-      padding: 0 1.25rem;
+    /* ── HEADER ── */
+    .site-header {
+      max-width: 800px;
+      margin: 3.5rem auto 0;
+      padding: 0 1.5rem;
     }
-
-    h1 {
+    .site-header h1 {
       font-size: 2rem;
       font-weight: 600;
-      margin-bottom: 0.75rem;
+      margin: 0 0 0.5rem;
+    }
+    .site-header p {
+      margin: 0;
+      color: var(--muted);
+      font-size: 0.95rem;
+      max-width: 520px;
     }
 
-    p {
-      margin: 1rem 0;
-    }
-
-    ul {
-      list-style: none;
-      padding: 0;
-      margin: 2.5rem 0;
-    }
-
-    li {
-      padding: 1.25rem 0;
+    /* ── FILTER BAR ── */
+    .filter-bar {
+      position: sticky;
+      top: 0;
+      z-index: 10;
+      background: rgba(29, 29, 31, 0.94);
+      backdrop-filter: blur(8px);
       border-bottom: 1px solid var(--border);
+      padding: 0.75rem 0;
+      margin-top: 2rem;
     }
-
-    li:last-child {
-      border-bottom: none;
+    .filter-inner {
+      max-width: 800px;
+      margin: 0 auto;
+      padding: 0 1.5rem;
+      display: flex;
+      flex-direction: column;
+      gap: 0.55rem;
     }
-
-    a {
-      color: var(--accent);
-      text-decoration: none;
+    .search-input {
+      width: 100%;
+      padding: 0.5rem 0.9rem;
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      font-size: 0.9rem;
+      font-family: inherit;
+      background: var(--bg-surface);
+      color: var(--text);
     }
-
-    a:hover {
-      text-decoration: underline;
+    .search-input::placeholder { color: #636366; }
+    .search-input:focus {
+      outline: none;
+      border-color: var(--indigo);
     }
-
-    .title {
-      font-size: 1.05rem;
+    .cat-chips {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.4rem;
+    }
+    .cat-chip {
+      font-size: 0.76rem;
+      padding: 0.18rem 0.65rem;
+      border-radius: 3px;
+      border: 1px solid var(--border);
+      background: var(--bg-surface);
+      color: var(--muted);
+      cursor: pointer;
+      user-select: none;
+    }
+    .cat-chip.active {
+      background: rgba(99, 102, 241, 0.15);
+      border-color: rgba(99, 102, 241, 0.45);
+      color: #a5b4fc;
       font-weight: 500;
     }
 
-    .title:hover {
+    /* ── MAIN ── */
+    main {
+      max-width: 800px;
+      margin: 0 auto;
+      padding: 0 1.5rem 4rem;
+    }
+
+    /* ── SECTION ── */
+    .section { margin-top: 2.75rem; }
+    .section-heading {
+      font-size: 0.72rem;
+      font-weight: 600;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: var(--muted);
+      padding: 0.35rem 0 0.35rem 0.75rem;
+      border-left: 3px solid var(--indigo);
+      margin-bottom: 0.5rem;
+    }
+
+    /* ── ENTRY ── */
+    .entry {
+      padding: 0.85rem 0;
+      border-bottom: 1px solid var(--border);
+    }
+    .entry:last-child { border-bottom: none; }
+    .entry-title {
+      font-size: 1rem;
+      font-weight: 500;
+      color: var(--accent);
+      text-decoration: none;
+      display: block;
+    }
+    .entry-title:hover { text-decoration: underline; }
+    .entry-desc {
+      font-size: 0.9rem;
+      color: var(--muted);
+      margin: 0.15rem 0 0;
+    }
+    .entry-variants {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.35rem;
+      margin-top: 0.4rem;
+    }
+    .vp {
+      font-size: 0.72rem;
+      padding: 0.12rem 0.55rem;
+      border-radius: 3px;
+      border: 1px solid;
       text-decoration: none;
     }
+    .vp-game      { background: #052e16; color: #4ade80; border-color: #166534; }
+    .vp-academic  { background: #0c1a3d; color: #93c5fd; border-color: #1e3a6e; }
+    .vp-skeptical { background: #2d1200; color: #fb923c; border-color: #7c2d12; }
+    .vp-beginner  { background: #1e0a2e; color: #c084fc; border-color: #6b21a8; }
 
-    .desc {
-      margin-top: 0.25rem;
-      color: var(--muted);
-      font-size: 0.95rem;
-    }
-
+    /* ── FOOTER ── */
     footer {
-      margin-top: 3.5rem;
-      padding-top: 1.5rem;
+      max-width: 800px;
+      margin: 0 auto;
+      padding: 1.5rem 1.5rem 3rem;
       border-top: 1px solid var(--border);
       color: var(--muted);
       font-size: 0.85rem;
     }
   </style>
 </head>
-
 <body>
-  <main>
+
+  <div class="site-header">
     <h1>Explorable Experiments</h1>
+    <p>Small experiments turning videos into interactive, explorable essays.
+       Generated automatically; structure and lens may vary between runs.</p>
+  </div>
 
-    <p>
-      Small experiments turning videos into interactive, explorable essays.
-      Generated automatically; structure and lens may vary between runs.
-    </p>
+  <div class="filter-bar">
+    <div class="filter-inner">
+      <input class="search-input" type="search" placeholder="Search explorables…"
+             id="search" autocomplete="off" />
+      <div class="cat-chips" id="chips">
+        <span class="cat-chip active" data-cat="all">All</span>
+        <span class="cat-chip" data-cat="ai-ml">AI &amp; ML</span>
+        <span class="cat-chip" data-cat="agents">Agents &amp; Systems</span>
+        <span class="cat-chip" data-cat="physics">Physics &amp; Science</span>
+        <span class="cat-chip" data-cat="security">Security</span>
+        <span class="cat-chip" data-cat="quantum">Quantum &amp; Computation</span>
+        <span class="cat-chip" data-cat="git">Git</span>
+        <span class="cat-chip" data-cat="economics">AI Economics</span>
+        <span class="cat-chip" data-cat="cases">Case Studies</span>
+      </div>
+    </div>
+  </div>
 
-    <ul>
-      <li>
-        <a class="title" href="explorables/the-geometry-of-packing-rolling-vs-folding.html">
-          The Geometry of Packing
-        </a>
-        <div class="desc">
-          Rolling vs folding through volume, void space, and time.
-        </div>
-      </li>
+  <main id="main">
 
-      <li>
-        <a class="title" href="explorables/the-algorithm-of-salsa.html">
-          The Algorithm of Salsa
-        </a>
-        <div class="desc">
-          Rhythm, weight transfer, and timing as controllable parameters.
-        </div>
-      </li>
+    <div class="section" data-section="ai-ml">
+      <div class="section-heading">AI &amp; Machine Learning</div>
+    </div>
 
-      <li>
-        <a class="title" href="explorables/the-ai-profit-paradox.html">
-          The AI Profit Paradox
-        </a>
-        <div class="desc">
-          Why failure dominates, incentives matter, and hype beats utility.
-        </div>
-      </li>
+    <div class="section" data-section="agents">
+      <div class="section-heading">AI Agents &amp; Systems</div>
+    </div>
 
-      <li>
-        <a class="title" href="explorables/the-trillion-sliders-demystifying-ai-parameters.html">
-          The Trillion Sliders
-        </a>
-        <div class="desc">
-          Demystifying AI parameters through interactive weight manipulation.
-        </div>
-      </li>
+    <div class="section" data-section="physics">
+      <div class="section-heading">Physics &amp; Everyday Science</div>
+    </div>
 
-      <li>
-        <a class="title" href="explorables/the-geometry-of-the-cascade.html">
-          The Geometry of the Cascade
-        </a>
-        <div class="desc">
-          Exploring domino physics, timing, and chain reactions.
-        </div>
-      </li>
+    <div class="section" data-section="security">
+      <div class="section-heading">Security &amp; Red Teaming</div>
+    </div>
 
-      <li>
-        <a class="title" href="explorables/security-by-imperfection-the-physics-of-lock-cracking.html">
-          Security by Imperfection
-        </a>
-        <div class="desc">
-          The physics of lock cracking and why flaws enable picking.
-        </div>
-      </li>
+    <div class="section" data-section="quantum">
+      <div class="section-heading">Quantum &amp; Computation</div>
+    </div>
 
-      <li>
-        <a class="title" href="explorables/the-mechanics-of-security.html">
-          The Mechanics of Security
-        </a>
-        <div class="desc">
-          How locks work, from pins to shear lines.
-        </div>
-      </li>
+    <div class="section" data-section="git">
+      <div class="section-heading">Git &amp; Version Control</div>
+    </div>
 
-      <li>
-        <a class="title" href="explorables/stress-shear-and-survival.html">
-          Stress, Shear, and Survival
-        </a>
-        <div class="desc">
-          How tape holds under tension, peel, and shear forces.
-        </div>
-      </li>
+    <div class="section" data-section="economics">
+      <div class="section-heading">AI Economics &amp; Limits</div>
+    </div>
 
-      <li>
-        <a class="title" href="explorables/the-mechanics-of-magic-the-slip-force.html">
-          The Mechanics of Magic
-        </a>
-        <div class="desc">
-          The slip force and how card magicians control your choice.
-        </div>
-      </li>
+    <div class="section" data-section="cases">
+      <div class="section-heading">Case Studies</div>
+    </div>
 
-      <li>
-        <a class="title" href="explorables/the-topology-of-the-fitted-sheet.html">
-          The Topology of the Fitted Sheet
-        </a>
-        <div class="desc">
-          Why folding fitted sheets is a battle against geometry.
-        </div>
-      </li>
-
-      <li>
-        <a class="title" href="explorables/the-anatomy-of-an-ai-agent.html">
-          The Anatomy of an AI Agent
-        </a>
-        <div class="desc">
-          Perception, reasoning, and action loops in agent systems.
-        </div>
-      </li>
-
-      <li>
-        <a class="title" href="explorables/agent-architecture-sandbox.html">
-          Agent Architecture Sandbox
-        </a>
-        <div class="desc">
-          Build and watch AI agents execute tool-driven workflows.
-        </div>
-      </li>
-
-      <li>
-        <a class="title" href="explorables/the-quantum-observer-effect-interactive-double-slit-experiment.html">
-          The Quantum Observer Effect
-        </a>
-        <div class="desc">
-          Interactive double-slit experiment: particles, waves, and observation.
-        </div>
-      </li>
-
-      <li>
-        <a class="title" href="explorables/neural-network-playground.html">
-          Neural Network Playground
-        </a>
-        <div class="desc">
-          Visualize neurons, weights, and activations in real time.
-        </div>
-      </li>
-
-      <li>
-        <a class="title" href="explorables/the-linear-race-a-linear-algebra-playground.html">
-          The Linear Race
-        </a>
-        <div class="desc">
-          A linear algebra playground: vectors, transformations, and racing.
-        </div>
-      </li>
-
-      <li>
-        <a class="title" href="explorables/the-agent-expert-from-amnesia-to-expertise.html">
-          The Agent Expert
-        </a>
-        <div class="desc">
-          From amnesia to expertise: how agents learn and retain knowledge.
-        </div>
-      </li>
-
-      <li>
-        <a class="title" href="explorables/the-context-bottleneck-how-beads-gives-ai-agents-long-term-memory.html">
-          The Context Bottleneck
-        </a>
-        <div class="desc">
-          How 'Beads' gives AI agents long-term memory beyond the context window.
-        </div>
-      </li>
-
-      <li>
-        <a class="title" href="explorables/unpublished/moltbook/the-no-code-catastrophe-anatomy-of-a-failure.html">
-          The "No-Code" Catastrophe
-        </a>
-        <div class="desc">
-          BOLA, open databases, and bot swarms: why Moltbook died in 72 hours.
-        </div>
-      </li>
-
-      <li>
-        <a class="title" href="explorables/unpublished/moltbook/autopsy-the-moltbook-incident__skeptical.html">
-          Autopsy: The Moltbook Incident
-        </a>
-        <div class="desc">
-          A scrollytelling post-mortem of "Vision-First" engineering.
-        </div>
-      </li>
-
-      <li>
-        <a class="title" href="explorables/unpublished/moltbook/the-architecture-of-a-crash-out__game.html">
-          The Architecture of a Crash Out
-        </a>
-        <div class="desc">
-          Deploy your vision, spam the API, watch the Signal/Noise collapse.
-        </div>
-      </li>
-    </ul>
-
-    <footer>
-      These are experiments, not reference material.
-      <div>This page documents experiments generated in collaboration with Gemini (Google AI Studio).</div>
-    </footer>
   </main>
+
+  <footer>
+    These are experiments, not reference material.
+    <div>Generated in collaboration with Gemini (Google AI Studio).</div>
+  </footer>
+
 </body>
 </html>
