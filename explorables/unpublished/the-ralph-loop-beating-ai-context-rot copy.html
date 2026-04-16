@@ -1,0 +1,753 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>The Ralph Loop: Beating AI Context Rot</title>
+    <style>
+        :root {
+            /* Palette: Modern Developer Dark Mode */
+            --bg-body: #0f172a;
+            --bg-card: #1e293b;
+            --bg-terminal: #000000;
+            --text-main: #e2e8f0;
+            --text-muted: #94a3b8;
+            --accent-cyan: #06b6d4; /* The Agent */
+            --accent-green: #10b981; /* Success/Files */
+            --accent-red: #ef4444;   /* Error/Rot */
+            --accent-orange: #f59e0b; /* Warning */
+            --border-color: #334155;
+            
+            --font-sans: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            --font-mono: "JetBrains Mono", "Fira Code", Consolas, monospace;
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+
+        body {
+            background-color: --bg-body;
+            background: radial-gradient(circle at top right, #1e293b 0%, #0f172a 100%);
+            color: var(--text-main);
+            font-family: var(--font-sans);
+            line-height: 1.6;
+            padding-bottom: 100px;
+        }
+
+        h1, h2, h3 { font-weight: 700; letter-spacing: -0.02em; }
+        h1 { font-size: 2.5rem; margin-bottom: 0.5rem; background: linear-gradient(to right, #fff, #94a3b8); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+        h2 { font-size: 1.8rem; margin-top: 3rem; margin-bottom: 1rem; border-left: 4px solid var(--accent-cyan); padding-left: 1rem; }
+        h3 { font-size: 1.2rem; color: var(--text-muted); margin-bottom: 1rem; }
+        p { margin-bottom: 1.5rem; max-width: 65ch; }
+        
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 2rem 1rem;
+        }
+
+        .subtitle {
+            font-size: 1.2rem;
+            color: var(--accent-cyan);
+            margin-bottom: 4rem;
+            font-family: var(--font-mono);
+        }
+
+        /* --- UI Components --- */
+        .card {
+            background-color: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            padding: 1.5rem;
+            margin-bottom: 2rem;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+        }
+
+        .btn {
+            background-color: var(--accent-cyan);
+            color: #0f172a;
+            border: none;
+            padding: 0.75rem 1.5rem;
+            border-radius: 6px;
+            font-weight: 600;
+            cursor: pointer;
+            font-family: var(--font-mono);
+            transition: all 0.2s;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        .btn:hover { filter: brightness(1.1); transform: translateY(-1px); }
+        .btn:active { transform: translateY(0); }
+        .btn.danger { background-color: var(--accent-red); color: white; }
+
+        code {
+            background-color: rgba(0,0,0,0.3);
+            padding: 0.2em 0.4em;
+            border-radius: 4px;
+            font-family: var(--font-mono);
+            font-size: 0.9em;
+            color: var(--accent-cyan);
+        }
+
+        pre {
+            background-color: var(--bg-terminal);
+            padding: 1rem;
+            border-radius: 8px;
+            overflow-x: auto;
+            margin-bottom: 1.5rem;
+            border: 1px solid var(--border-color);
+        }
+
+        /* --- Section 1: Context Rot --- */
+        .rot-container {
+            display: flex;
+            gap: 2rem;
+            align-items: flex-start;
+            flex-wrap: wrap;
+        }
+        .context-visualizer {
+            flex: 1;
+            min-width: 280px;
+            background: #000;
+            border-radius: 8px;
+            padding: 1rem;
+            position: relative;
+        }
+        .memory-bar-container {
+            height: 300px;
+            width: 100%;
+            background: #1e293b;
+            border: 2px solid var(--border-color);
+            border-radius: 6px;
+            position: relative;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column-reverse; /* Fill from bottom */
+        }
+        .memory-block {
+            width: 100%;
+            background: var(--border-color);
+            border-bottom: 1px solid #000;
+            transition: height 0.3s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.7rem;
+            color: #64748b;
+            font-family: var(--font-mono);
+        }
+        .memory-block.pinned {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 40px;
+            background: var(--accent-green);
+            color: #064e3b;
+            z-index: 10;
+            font-weight: bold;
+            border-bottom: none;
+        }
+        .memory-block.fuzzy {
+            filter: blur(2px);
+            background: var(--accent-orange);
+        }
+        .gauge-container {
+            margin-top: 1rem;
+            display: flex;
+            justify-content: space-between;
+            font-family: var(--font-mono);
+            font-size: 0.8rem;
+        }
+        .output-box {
+            margin-top: 1rem;
+            padding: 1rem;
+            border-radius: 6px;
+            font-family: var(--font-mono);
+            font-size: 0.9rem;
+            transition: all 0.3s;
+        }
+        .output-normal { background: rgba(16, 185, 129, 0.1); border: 1px solid var(--accent-green); color: var(--accent-green); }
+        .output-fail { background: rgba(239, 68, 68, 0.1); border: 1px solid var(--accent-red); color: var(--accent-red); }
+
+        /* --- Section 2: Ralph Diagram --- */
+        .diagram-container {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 2rem;
+            padding: 2rem 0;
+            flex-wrap: wrap;
+        }
+        .diagram-box {
+            width: 120px;
+            height: 120px;
+            border: 2px dashed var(--text-muted);
+            border-radius: 12px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            position: relative;
+            transition: all 0.3s;
+            cursor: help;
+        }
+        .diagram-box:hover { border-color: var(--accent-cyan); transform: scale(1.05); }
+        .diagram-box svg { width: 40px; height: 40px; margin-bottom: 10px; fill: var(--text-main); }
+        .diagram-arrow { color: var(--text-muted); font-size: 2rem; }
+        
+        .tooltip {
+            position: absolute;
+            bottom: -40px;
+            background: #000;
+            padding: 5px 10px;
+            border-radius: 4px;
+            font-size: 0.8rem;
+            width: 200px;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.2s;
+            z-index: 20;
+            border: 1px solid var(--border-color);
+        }
+        .diagram-box:hover .tooltip { opacity: 1; }
+
+        /* --- Section 3: Simulation --- */
+        .sim-dashboard {
+            background: #000;
+            border-radius: 12px;
+            border: 1px solid var(--border-color);
+            padding: 1.5rem;
+            display: flex;
+            flex-direction: column;
+            gap: 1.5rem;
+        }
+        .sim-progress {
+            height: 8px;
+            background: #334155;
+            border-radius: 4px;
+            overflow: hidden;
+        }
+        .sim-progress-fill {
+            height: 100%;
+            background: var(--accent-green);
+            width: 0%;
+            transition: width 0.5s ease;
+        }
+        .sim-stage {
+            height: 200px;
+            position: relative;
+            background: radial-gradient(circle at center, #1e293b 0%, #000 70%);
+            border-radius: 8px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+        .sim-agent {
+            width: 60px;
+            height: 60px;
+            background: var(--accent-cyan);
+            border-radius: 50%;
+            box-shadow: 0 0 20px var(--accent-cyan);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.5s ease;
+            opacity: 0;
+            transform: scale(0.5);
+            z-index: 5;
+        }
+        .sim-agent.active { opacity: 1; transform: scale(1); }
+        .sim-agent.dead { opacity: 0; transform: scale(2); filter: blur(10px); }
+        
+        .sim-files {
+            display: flex;
+            justify-content: space-around;
+            padding-top: 1rem;
+            border-top: 1px solid var(--border-color);
+        }
+        .sim-file {
+            text-align: center;
+            font-size: 0.8rem;
+            font-family: var(--font-mono);
+            opacity: 0.5;
+            transition: opacity 0.3s;
+        }
+        .sim-file.highlight { opacity: 1; color: var(--accent-cyan); }
+        
+        /* Connector Lines (Simulated via absolute divs) */
+        .connector {
+            position: absolute;
+            background: var(--accent-cyan);
+            transition: all 0.3s;
+            opacity: 0;
+        }
+        /* Left to Center */
+        .conn-left { bottom: 20px; left: 25%; width: 2px; height: 0; transform-origin: bottom; }
+        /* Center to Right */
+        .conn-right { bottom: 20px; right: 25%; width: 2px; height: 0; transform-origin: bottom; }
+        
+        .sim-log {
+            font-family: var(--font-mono);
+            font-size: 0.85rem;
+            color: var(--accent-green);
+            min-height: 1.5rem;
+        }
+
+        /* --- Section 4: Algorithm --- */
+        .algo-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 2rem;
+        }
+        @media(max-width: 600px) { .algo-grid { grid-template-columns: 1fr; } }
+        
+        .slider-container { margin-top: 1rem; }
+        input[type=range] { width: 100%; accent-color: var(--accent-cyan); }
+        
+        .var-highlight { color: var(--accent-orange); font-weight: bold; cursor: help; border-bottom: 1px dotted var(--accent-orange); }
+
+        /* --- Section 5: Parallel --- */
+        .parallel-arena {
+            height: 200px;
+            background: #000;
+            position: relative;
+            border-radius: 8px;
+            overflow: hidden;
+        }
+        .p-agent {
+            width: 40px; height: 40px;
+            background: var(--accent-cyan);
+            border-radius: 50%;
+            position: absolute;
+            top: 50%;
+            transform: translateY(-50%);
+            transition: left 1s ease, right 1s ease;
+        }
+        .p-agent.left { left: 10px; background: #38bdf8; }
+        .p-agent.right { right: 10px; background: #818cf8; }
+        
+        .p-file {
+            width: 50px; height: 60px;
+            background: #334155;
+            position: absolute;
+            left: 50%; top: 50%;
+            transform: translate(-50%, -50%);
+            border-radius: 4px;
+            z-index: 1;
+        }
+
+        .collision-boom {
+            position: absolute;
+            left: 50%; top: 50%;
+            transform: translate(-50%, -50%) scale(0);
+            width: 100px; height: 100px;
+            background: radial-gradient(circle, var(--accent-red) 0%, transparent 70%);
+            border-radius: 50%;
+            opacity: 0;
+            transition: all 0.2s;
+            z-index: 10;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 900;
+            color: white;
+            font-style: italic;
+        }
+        .collision-boom.boom { transform: translate(-50%, -50%) scale(1.5); opacity: 1; }
+
+        .move-in .p-agent.left { left: 45%; }
+        .move-in .p-agent.right { right: 45%; }
+
+        footer {
+            margin-top: 4rem;
+            text-align: center;
+            color: var(--text-muted);
+            font-size: 0.9rem;
+            border-top: 1px solid var(--border-color);
+            padding-top: 2rem;
+        }
+        a { color: var(--accent-cyan); text-decoration: none; }
+        a:hover { text-decoration: underline; }
+
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <!-- Header -->
+        <header>
+            <h1>The Ralph Loop</h1>
+            <div class="subtitle">How to make AI agents code forever without losing their minds.</div>
+        </header>
+
+        <!-- Section 1: The Problem -->
+        <section>
+            <h2>1. The Problem: "Context Rot"</h2>
+            <p>When you ask an AI to build a large software project, you run into a fundamental limit: <strong>The Context Window</strong>. As the conversation grows, the model has to process more history. Eventually, it hits a limit and forces a "Compaction" (summarization).</p>
+            
+            <div class="card rot-container">
+                <div class="context-visualizer">
+                    <div class="memory-bar-container" id="memoryBar">
+                        <div class="memory-block pinned" id="pinnedRule">⚠️ RULE: ALWAYS USE #FF0000</div>
+                        <!-- Dynamic blocks go here -->
+                    </div>
+                    <div class="gauge-container">
+                        <span>Context Load</span>
+                        <span id="loadPercent">10%</span>
+                    </div>
+                </div>
+                
+                <div style="flex: 1;">
+                    <h3>Simulation Control</h3>
+                    <p>Click to add code iterations. Watch what happens when the memory overflows.</p>
+                    <button class="btn" id="btnAddCode" onclick="addContext()">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12h14"/></svg>
+                        Add Code Iteration
+                    </button>
+                    
+                    <div class="output-box output-normal" id="aiOutput">
+                        <strong>Current Output:</strong><br>
+                        "Here is the button style. Color: <span style="color:#FF0000; font-weight:bold;">#FF0000</span> (Red)"
+                    </div>
+                    <p id="rotFeedback" style="margin-top:1rem; font-size: 0.9rem; color: var(--accent-orange); display: none;">
+                        <strong>CRITICAL FAILURE:</strong> The compaction process blurred the history. The specific "Red" rule was lost in summarization.
+                    </p>
+                </div>
+            </div>
+        </section>
+
+        <!-- Section 2: The Solution Concept -->
+        <section>
+            <h2>2. The Ralph Loop Solution</h2>
+            <p>The <strong>Ralph Loop</strong> solves this by treating the AI as ephemeral (temporary) and the File System as the permanent memory. Instead of one long chat, we run a Bash loop that spawns a <em>new</em> AI agent for every single task.</p>
+            
+            <div class="card">
+                <pre><code class="language-bash">while [ task != "DONE" ]; do
+   cat prompt.md | ai_agent
+done</code></pre>
+                
+                <div class="diagram-container">
+                    <!-- Left: Ephemeral -->
+                    <div class="diagram-box">
+                        <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10" stroke="currentColor" fill="none" stroke-width="2"/></svg>
+                        <strong>AI Agent</strong>
+                        <div class="tooltip">Ephemeral: Lives for 30 seconds, then dies. Has 0 context at birth.</div>
+                    </div>
+
+                    <div class="diagram-arrow">⇄</div>
+
+                    <!-- Right: Persistent -->
+                    <div class="diagram-box">
+                        <svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" stroke="currentColor" fill="none" stroke-width="2"/><polyline points="14 2 14 8 20 8" stroke="currentColor" fill="none" stroke-width="2"/></svg>
+                        <strong>File System</strong>
+                        <div class="tooltip">Permanent: PRD.json, progress.txt, and the actual code.</div>
+                    </div>
+                </div>
+                <p style="text-align: center; font-size: 0.9rem; color: var(--text-muted);">Hover over the boxes to see their roles.</p>
+            </div>
+        </section>
+
+        <!-- Section 3: Guided Simulation -->
+        <section>
+            <h2>3. The Loop in Action</h2>
+            <p>Let's step through the mechanism. Notice that the "Agent" is destroyed after every step, but the project moves forward.</p>
+
+            <div class="card sim-dashboard">
+                <!-- Top -->
+                <div>
+                    <div style="display:flex; justify-content:space-between; margin-bottom:5px; font-size:0.8rem;">
+                        <span>Project Completion</span>
+                        <span id="simPercent">0%</span>
+                    </div>
+                    <div class="sim-progress">
+                        <div class="sim-progress-fill" id="simBar"></div>
+                    </div>
+                </div>
+
+                <!-- Stage -->
+                <div class="sim-stage">
+                    <div class="connector conn-left" id="connRead"></div> <!-- File to Agent -->
+                    <div class="connector conn-right" id="connWrite"></div> <!-- Agent to File -->
+                    
+                    <div class="sim-agent" id="simAgent">
+                        <svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="#000" stroke-width="2"><path d="M12 2a2 2 0 0 1 2 2v2a2 2 0 0 1-2 2 2 2 0 0 1-2-2V4a2 2 0 0 1 2-2z"/><rect x="5" y="9" width="14" height="10" rx="2"/><line x1="12" y1="13" x2="12" y2="13"/><line x1="9" y1="13" x2="9" y2="13"/><line x1="15" y1="13" x2="15" y2="13"/></svg>
+                    </div>
+                </div>
+
+                <!-- Files -->
+                <div class="sim-files">
+                    <div class="sim-file" id="filePRD">
+                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/></svg>
+                        <br>PRD / Plan
+                    </div>
+                    <div class="sim-file" id="fileProgress">
+                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 11 12 14 22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
+                        <br>progress.txt
+                    </div>
+                </div>
+
+                <!-- Controls -->
+                <div style="display:flex; justify-content: space-between; align-items: center;">
+                    <div class="sim-log" id="simLog">Waiting to start project...</div>
+                    <button class="btn" onclick="nextSimStep()">
+                        Step Next Iteration &rarr;
+                    </button>
+                </div>
+            </div>
+        </section>
+
+        <!-- Section 4: The Algorithm -->
+        <section>
+            <h2>4. The Configuration</h2>
+            <p>This isn't magic; it's a script. You can tune the loop variables.</p>
+            
+            <div class="card algo-grid">
+                <div>
+                    <pre><code class="language-bash">
+# loop_config.sh
+
+MAX_ITERATIONS = <span id="codeIter">10</span>
+STOP_CONDITION = <span class="var-highlight" title="The string the AI must output to break the loop">"promise-COMPLETE"</span>
+CONTEXT_SOURCE = "prompt.md + progress.txt"
+                    </code></pre>
+                </div>
+                <div>
+                    <div class="slider-container">
+                        <label>MAX_ITERATIONS: <span id="sliderVal">10</span></label>
+                        <input type="range" min="1" max="50" value="10" id="iterSlider">
+                    </div>
+                    <p id="sliderFeedback" style="font-size: 0.9rem; margin-top: 1rem; color: var(--text-muted);">
+                        Standard setting. The agent has 10 attempts to finish the feature.
+                    </p>
+                </div>
+            </div>
+        </section>
+
+        <!-- Section 5: Why Not Parallel? -->
+        <section>
+            <h2>5. Why Not Parallel?</h2>
+            <p>Why do we loop serially instead of spawning 10 agents at once? Because without shared memory synchronization, they step on each other's toes.</p>
+
+            <div class="card">
+                <div class="parallel-arena" id="pArena">
+                    <div class="p-file"></div>
+                    <div class="p-agent left"></div>
+                    <div class="p-agent right"></div>
+                    <div class="collision-boom" id="pBoom">MERGE<br>CONFLICT</div>
+                </div>
+                <div style="margin-top: 1rem; text-align: center;">
+                    <button class="btn" onclick="runParallel()">Run Parallel Agents</button>
+                    <p id="pText" style="margin-top: 0.5rem; font-size: 0.9rem; color: var(--text-muted);">Click to see what happens when two agents edit the same file.</p>
+                </div>
+            </div>
+        </section>
+
+        <footer>
+            <p>Concept based on the "Ralph Loop" by Jeff Huntley and Aider workflows.</p>
+            <p>Visual Essay Design &copy; 2023</p>
+        </footer>
+    </div>
+
+    <script>
+        /* --- Section 1: Context Rot Logic --- */
+        let contextCount = 0;
+        const maxContext = 5;
+        const memBar = document.getElementById('memoryBar');
+        const loadPercent = document.getElementById('loadPercent');
+        const pinnedRule = document.getElementById('pinnedRule');
+        const aiOutput = document.getElementById('aiOutput');
+        const rotFeedback = document.getElementById('rotFeedback');
+
+        function addContext() {
+            if (contextCount > maxContext) return; // Cap it
+
+            contextCount++;
+            
+            // Create new block
+            const block = document.createElement('div');
+            block.className = 'memory-block';
+            block.innerText = `Iteration #${contextCount}: Added Code...`;
+            block.style.height = '0px';
+            
+            // Insert after the pinned rule (technically append because of flex-reverse)
+            memBar.appendChild(block);
+            
+            // Animate height
+            setTimeout(() => {
+                block.style.height = '50px';
+                updateGauge();
+            }, 10);
+        }
+
+        function updateGauge() {
+            let pct = (contextCount / maxContext) * 100;
+            if (pct > 100) pct = 100;
+            loadPercent.innerText = pct + "%";
+
+            // Trigger Rot
+            if (contextCount >= maxContext) {
+                triggerCompaction();
+            }
+        }
+
+        function triggerCompaction() {
+            // Visual Compaction
+            const blocks = document.querySelectorAll('.memory-block:not(.pinned)');
+            blocks.forEach(b => b.classList.add('fuzzy'));
+            
+            // Kill the rule
+            pinnedRule.style.background = '#b91c1c';
+            pinnedRule.innerText = "ERROR: CONTEXT LIMIT REACHED";
+            pinnedRule.classList.add('fuzzy');
+
+            // Update Output
+            aiOutput.classList.remove('output-normal');
+            aiOutput.classList.add('output-fail');
+            aiOutput.innerHTML = `<strong>Current Output:</strong><br>"Here is the button style. Color: <span style="color:#0000FF; font-weight:bold;">#0000FF</span> (Blue)"`;
+            
+            rotFeedback.style.display = 'block';
+            
+            // Disable button
+            document.getElementById('btnAddCode').disabled = true;
+            document.getElementById('btnAddCode').innerText = "Context Full";
+        }
+
+        /* --- Section 3: Simulation Logic --- */
+        let simStep = 0;
+        const simLog = document.getElementById('simLog');
+        const simAgent = document.getElementById('simAgent');
+        const filePRD = document.getElementById('filePRD');
+        const fileProg = document.getElementById('fileProgress');
+        const connRead = document.getElementById('connRead'); // Left
+        const connWrite = document.getElementById('connWrite'); // Right
+        const simBar = document.getElementById('simBar');
+        const simPercent = document.getElementById('simPercent');
+
+        const steps = [
+            { // 0
+                action: () => {
+                    simAgent.className = 'sim-agent active';
+                    simLog.innerText = "1. Spawn New Agent (Empty Context)";
+                    filePRD.classList.remove('highlight');
+                    fileProg.classList.remove('highlight');
+                }
+            },
+            { // 1
+                action: () => {
+                    filePRD.classList.add('highlight');
+                    connRead.style.height = '100px';
+                    connRead.style.opacity = '1';
+                    simLog.innerText = "2. Agent reads PRD (The Plan)";
+                }
+            },
+            { // 2
+                action: () => {
+                    connRead.style.opacity = '0';
+                    filePRD.classList.remove('highlight');
+                    
+                    connWrite.style.height = '100px';
+                    connWrite.style.opacity = '1';
+                    fileProg.classList.add('highlight');
+                    simLog.innerText = "3. Agent writes code & updates progress.txt";
+                    
+                    // Update progress bar
+                    simBar.style.width = '33%';
+                    simPercent.innerText = "33%";
+                }
+            },
+            { // 3
+                action: () => {
+                    connWrite.style.opacity = '0';
+                    simAgent.className = 'sim-agent dead';
+                    simLog.innerText = "4. Agent is KILLED. Context is wiped.";
+                }
+            },
+            { // 4
+                action: () => {
+                    simAgent.className = 'sim-agent active'; // New agent
+                    simLog.innerText = "5. Spawn BRAND NEW Agent.";
+                }
+            },
+            { // 5
+                action: () => {
+                    fileProg.classList.add('highlight');
+                    connRead.style.left = '75%'; // Hack to visualize reading progress from right side logic visually
+                    connRead.style.height = '100px';
+                    connRead.style.opacity = '1';
+                    simLog.innerText = "6. Agent reads progress.txt to know where to start.";
+                }
+            },
+            { // 6
+                action: () => {
+                    connRead.style.opacity = '0';
+                    connRead.style.left = '25%'; // Reset
+                    
+                    simBar.style.width = '66%';
+                    simPercent.innerText = "66%";
+                    simLog.innerText = "Loop continues until done...";
+                    
+                    // Soft reset for demo
+                    setTimeout(() => { simStep = -1; }, 1000);
+                }
+            }
+        ];
+
+        function nextSimStep() {
+            if(simStep >= steps.length) simStep = 0;
+            steps[simStep].action();
+            simStep++;
+        }
+
+        /* --- Section 4: Slider Logic --- */
+        const slider = document.getElementById('iterSlider');
+        const sliderVal = document.getElementById('sliderVal');
+        const codeIter = document.getElementById('codeIter');
+        const sliderFeedback = document.getElementById('sliderFeedback');
+
+        slider.addEventListener('input', (e) => {
+            const val = e.target.value;
+            sliderVal.innerText = val;
+            codeIter.innerText = val;
+
+            if (val < 5) {
+                sliderFeedback.innerText = "Warning: Too low. The agent might stop before the feature is complete.";
+                sliderFeedback.style.color = "var(--accent-orange)";
+            } else if (val > 30) {
+                sliderFeedback.innerText = "Warning: High cost. This will run for a long time if not stopped.";
+                sliderFeedback.style.color = "var(--accent-orange)";
+            } else {
+                sliderFeedback.innerText = "Standard setting. Balanced for most features.";
+                sliderFeedback.style.color = "var(--text-muted)";
+            }
+        });
+
+        /* --- Section 5: Parallel Logic --- */
+        function runParallel() {
+            const arena = document.getElementById('pArena');
+            const boom = document.getElementById('pBoom');
+            const pText = document.getElementById('pText');
+            
+            // Reset
+            arena.classList.remove('move-in');
+            boom.classList.remove('boom');
+            
+            // Force reflow
+            void arena.offsetWidth;
+
+            // Start animation
+            arena.classList.add('move-in');
+            pText.innerText = "Agents are rushing to edit the file...";
+
+            // Collision
+            setTimeout(() => {
+                boom.classList.add('boom');
+                pText.innerText = "CRASH! Merge conflict. Both agents tried to write line 10.";
+                pText.style.color = "var(--accent-red)";
+            }, 800);
+        }
+
+    </script>
+</body>
+</html>

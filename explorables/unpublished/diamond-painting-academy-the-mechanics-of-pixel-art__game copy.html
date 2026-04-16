@@ -1,0 +1,792 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Diamond Painting Academy: The Mechanics of Pixel Art</title>
+    <style>
+        :root {
+            --primary: #FF6B6B;     /* Pastel Red/Pink */
+            --secondary: #4ECDC4;   /* Teal */
+            --accent: #FFE66D;      /* Yellow */
+            --dark: #292f36;        /* Dark Slate */
+            --light: #F7FFF7;       /* Off White */
+            --wax: #FF9FF3;         /* Wax Pink */
+            --tray-green: #00b894;
+            --font-main: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+        }
+
+        * { box-sizing: border-box; }
+
+        body {
+            margin: 0;
+            padding: 0;
+            background-color: var(--light);
+            font-family: var(--font-main);
+            color: var(--dark);
+            overflow-x: hidden;
+            padding-bottom: 100px; /* Space for scrolling past end */
+        }
+
+        /* --- UI: Progress Bar --- */
+        #ui-header {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            background: white;
+            z-index: 1000;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            padding: 10px 0;
+        }
+
+        .progress-track {
+            width: 90%;
+            max-width: 600px;
+            height: 12px;
+            background: #eee;
+            margin: 0 auto;
+            border-radius: 10px;
+            overflow: hidden;
+            position: relative;
+        }
+
+        #progress-fill {
+            height: 100%;
+            width: 0%;
+            background: linear-gradient(90deg, var(--secondary), var(--primary));
+            transition: width 0.6s cubic-bezier(0.25, 1, 0.5, 1);
+        }
+
+        .progress-label {
+            text-align: center;
+            font-size: 0.8rem;
+            font-weight: bold;
+            color: #888;
+            margin-top: 5px;
+        }
+
+        /* --- Typography & Layout --- */
+        .container {
+            max-width: 600px;
+            margin: 0 auto;
+            padding: 80px 20px 20px 20px;
+        }
+
+        section {
+            margin-bottom: 80px;
+            opacity: 0.9;
+            transition: opacity 0.5s;
+        }
+
+        h1 {
+            text-align: center;
+            color: var(--primary);
+            font-size: 2.5rem;
+            margin-bottom: 10px;
+            line-height: 1.2;
+        }
+
+        h2 {
+            color: var(--secondary);
+            border-bottom: 3px solid var(--accent);
+            display: inline-block;
+            margin-top: 0;
+        }
+
+        p {
+            line-height: 1.6;
+            font-size: 1.1rem;
+            color: #555;
+        }
+
+        .narrative-box {
+            background: white;
+            padding: 20px;
+            border-radius: 15px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.05);
+            margin-bottom: 20px;
+        }
+
+        /* --- Gamified Interaction Containers --- */
+        .game-stage {
+            background: #fff;
+            border: 4px solid var(--secondary);
+            border-radius: 20px;
+            padding: 20px;
+            position: relative;
+            overflow: hidden;
+            text-align: center;
+            user-select: none;
+        }
+
+        .instruction {
+            background: var(--accent);
+            color: var(--dark);
+            padding: 8px 15px;
+            border-radius: 20px;
+            font-weight: bold;
+            display: inline-block;
+            margin-bottom: 15px;
+            font-size: 0.9rem;
+            box-shadow: 0 2px 0 rgba(0,0,0,0.1);
+        }
+
+        /* --- XP Floater Animation --- */
+        .xp-float {
+            position: absolute;
+            color: var(--primary);
+            font-weight: 900;
+            font-size: 1.2rem;
+            pointer-events: none;
+            animation: floatUp 1s ease-out forwards;
+            z-index: 2000;
+            text-shadow: 1px 1px 0 #fff;
+        }
+
+        @keyframes floatUp {
+            0% { transform: translateY(0) scale(1); opacity: 1; }
+            100% { transform: translateY(-50px) scale(1.2); opacity: 0; }
+        }
+
+        /* --- SECTION 1: DECODER --- */
+        .legend-display {
+            display: flex;
+            justify-content: center;
+            gap: 15px;
+            margin-bottom: 20px;
+            background: #f4f4f4;
+            padding: 10px;
+            border-radius: 10px;
+        }
+        .legend-item { font-weight: bold; font-family: monospace; font-size: 1.1rem; }
+        
+        .decoder-strip {
+            background: #333;
+            color: white;
+            padding: 15px;
+            font-size: 2rem;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .target-symbol {
+            color: var(--accent);
+            transform: scale(1.2);
+            display: inline-block;
+            animation: pulse 1s infinite;
+        }
+
+        .bags-container {
+            display: flex;
+            justify-content: space-around;
+        }
+        
+        .gem-bag {
+            width: 80px;
+            height: 90px;
+            background: #eee;
+            border: 3px solid #ccc;
+            border-radius: 10px 10px 5px 5px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            font-size: 1.2rem;
+            cursor: pointer;
+            transition: transform 0.1s, background 0.2s;
+            position: relative;
+        }
+        .gem-bag::before {
+            content: ''; position: absolute; top: -10px; width: 60%; height: 10px; background: #ccc;
+        }
+        .gem-bag:active { transform: scale(0.95); }
+        .gem-bag.correct { background: var(--secondary); border-color: #2ecc71; color: white; }
+        .gem-bag.wrong { background: var(--primary); border-color: #e74c3c; color: white; animation: shake 0.4s; }
+
+        /* --- SECTION 2: TRAY PHYSICS --- */
+        #tray-container {
+            width: 100%;
+            height: 220px;
+            background: var(--tray-green);
+            border-radius: 10px 10px 40px 40px;
+            position: relative;
+            margin: 0 auto;
+            overflow: hidden;
+            border-bottom: 8px solid rgba(0,0,0,0.1);
+        }
+
+        .tray-groove {
+            position: absolute;
+            width: 100%;
+            height: 2px;
+            background: rgba(0,0,0,0.15);
+            left: 0;
+        }
+
+        .sim-gem {
+            width: 16px;
+            height: 16px;
+            background: var(--primary);
+            position: absolute;
+            border-radius: 50%; /* Starts messy/roundish */
+            box-shadow: 1px 1px 3px rgba(0,0,0,0.3);
+            transition: all 0.8s cubic-bezier(0.34, 1.56, 0.64, 1);
+        }
+        .sim-gem.aligned {
+            border-radius: 2px; /* Becomes square */
+            background: linear-gradient(135deg, var(--primary), #d63031);
+            box-shadow: inset 1px 1px 2px rgba(255,255,255,0.5);
+        }
+
+        .btn-main {
+            background: var(--dark);
+            color: white;
+            border: none;
+            padding: 12px 30px;
+            font-size: 1.2rem;
+            border-radius: 50px;
+            margin-top: 20px;
+            cursor: pointer;
+            box-shadow: 0 4px 0 #000;
+            transition: transform 0.1s;
+        }
+        .btn-main:active { transform: translateY(4px); box-shadow: none; }
+
+        /* --- SECTION 3: WAX TOOL --- */
+        #wax-stage-area {
+            height: 200px;
+            background: #f9f9f9;
+            position: relative;
+            border-radius: 10px;
+            touch-action: none; /* Prevents scrolling while dragging */
+        }
+
+        #wax-pot {
+            width: 70px;
+            height: 70px;
+            background: var(--wax);
+            border: 5px solid #e0e0e0;
+            border-radius: 50%;
+            position: absolute;
+            bottom: 20px;
+            left: 20px;
+            box-shadow: inset 0 0 15px rgba(0,0,0,0.1);
+        }
+
+        #pen-tool {
+            width: 20px;
+            height: 120px;
+            background: linear-gradient(90deg, #fdcb6e, #e17055);
+            position: absolute;
+            top: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            border-radius: 10px 10px 4px 4px;
+            cursor: grab;
+            z-index: 10;
+            box-shadow: 5px 5px 15px rgba(0,0,0,0.2);
+        }
+        #pen-tool:active { cursor: grabbing; }
+
+        #pen-tip {
+            width: 12px;
+            height: 15px;
+            border: 2px solid #b2bec3;
+            background: transparent; /* Empty initially */
+            position: absolute;
+            bottom: -15px;
+            left: 50%;
+            transform: translateX(-50%);
+            border-radius: 0 0 2px 2px;
+            transition: background 0.3s;
+        }
+        #pen-tip.loaded { background: var(--wax); }
+
+        /* --- SECTION 4: PAINTING --- */
+        .paint-workspace {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+            align-items: center;
+        }
+
+        .palette {
+            display: flex;
+            gap: 10px;
+            background: #eee;
+            padding: 10px;
+            border-radius: 50px;
+        }
+        
+        .palette-gem {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            cursor: pointer;
+            border: 3px solid transparent;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 0.8rem;
+            font-weight: bold;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+        }
+        .palette-gem.selected {
+            border-color: var(--dark);
+            transform: scale(1.1);
+        }
+
+        .canvas-grid {
+            display: grid;
+            grid-template-columns: repeat(5, 1fr);
+            gap: 2px;
+            background: #ddd;
+            padding: 5px;
+            border: 1px solid #ccc;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+        }
+
+        .grid-cell {
+            width: 50px;
+            height: 50px;
+            background: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.2rem;
+            color: #bbb;
+            cursor: pointer;
+            position: relative;
+        }
+        
+        .placed-gem {
+            width: 90%;
+            height: 90%;
+            border-radius: 3px;
+            box-shadow: inset 1px 1px 3px rgba(255,255,255,0.6), 1px 1px 2px rgba(0,0,0,0.3);
+            animation: popIn 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+
+        /* Animations */
+        @keyframes shake {
+            0%, 100% { transform: translateX(0); }
+            25% { transform: translateX(-5px); }
+            75% { transform: translateX(5px); }
+        }
+        @keyframes pulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.2); }
+            100% { transform: scale(1); }
+        }
+        @keyframes popIn {
+            0% { transform: scale(0); }
+            100% { transform: scale(1); }
+        }
+        @keyframes celebrate {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+    </style>
+</head>
+<body>
+
+    <!-- UI HEADER -->
+    <div id="ui-header">
+        <div class="progress-track">
+            <div id="progress-fill"></div>
+        </div>
+        <div class="progress-label">ACADEMY PROGRESS</div>
+    </div>
+
+    <!-- TITLE -->
+    <div class="container">
+        <header>
+            <h1>💎 Diamond Painting Academy</h1>
+            <p style="text-align: center;">Transform chaos into order. Learn the physics and logic behind the "Pixel Art" hobby in 4 interactive levels.</p>
+        </header>
+
+        <!-- LEVEL 1: DECODING -->
+        <section id="level-1">
+            <div class="narrative-box">
+                <h2>Level 1: The Logic of the Legend</h2>
+                <p>Diamond painting is essentially "Paint by Numbers" with physics. But before we touch a gem, we must decode the map. A canvas is covered in symbols, each mapping to a specific DMC color code.</p>
+            </div>
+
+            <div class="game-stage">
+                <div class="instruction">TASK: Tap the bag that matches the highlighted symbol.</div>
+                
+                <div class="legend-display">
+                    <span class="legend-item">★ = 310</span>
+                    <span class="legend-item">● = 666</span>
+                    <span class="legend-item">▲ = 820</span>
+                </div>
+
+                <div class="decoder-strip">
+                    <span>Canvas:</span>
+                    <span id="target-symbol" class="target-symbol">★</span>
+                </div>
+
+                <div class="bags-container">
+                    <div class="gem-bag" onclick="checkMatch('310', this)">310</div>
+                    <div class="gem-bag" onclick="checkMatch('666', this)">666</div>
+                    <div class="gem-bag" onclick="checkMatch('820', this)">820</div>
+                </div>
+                <p id="decoder-status" style="margin-top:15px; font-weight:bold; color:#888;">Matches: 0/5</p>
+            </div>
+        </section>
+
+        <!-- LEVEL 2: PHYSICS -->
+        <section id="level-2">
+            <div class="narrative-box">
+                <h2>Level 2: The Physics of the Tray</h2>
+                <p>Gems are poured chaotically. To pick them up, they must be faceted-side up. We use a <strong>grooved tray</strong> and mechanical agitation to exploit the gem's geometry.</p>
+                <p><em>Why it works:</em> The V-shape of the groove forces the gem to flip flat-side down when agitated laterally.</p>
+            </div>
+
+            <div class="game-stage">
+                <div class="instruction">TASK: Shake the tray to align the gems.</div>
+                
+                <div id="tray-container">
+                    <!-- Grooves -->
+                    <div class="tray-groove" style="top:40px;"></div>
+                    <div class="tray-groove" style="top:80px;"></div>
+                    <div class="tray-groove" style="top:120px;"></div>
+                    <div class="tray-groove" style="top:160px;"></div>
+                    <div class="tray-groove" style="top:200px;"></div>
+                    <!-- Gems injected via JS -->
+                </div>
+
+                <button class="btn-main" onclick="shakeTray(this)">SHAKE TRAY</button>
+            </div>
+        </section>
+
+        <!-- LEVEL 3: ADHESION -->
+        <section id="level-3">
+            <div class="narrative-box">
+                <h2>Level 3: Adhesion vs. Friction</h2>
+                <p>Plastic gems are non-magnetic. To lift them, we use a hollow brass tip and pink wax. This relies on adhesion overcoming gravity.</p>
+            </div>
+
+            <div class="game-stage">
+                <div class="instruction">TASK: Drag the pen into the wax pot to load it.</div>
+                
+                <div id="wax-stage-area">
+                    <div id="wax-pot"></div>
+                    <div id="pen-tool">
+                        <div id="pen-tip"></div>
+                    </div>
+                </div>
+                <p id="wax-feedback" style="margin-top:10px; color:#888;">Status: Empty Tip</p>
+            </div>
+        </section>
+
+        <!-- LEVEL 4: FLOW STATE -->
+        <section id="level-4">
+            <div class="narrative-box">
+                <h2>Level 4: The Flow State</h2>
+                <p>Now we combine everything. Select a gem from your aligned tray, find the matching symbol on the grid, and place it. Listen for the snap.</p>
+            </div>
+
+            <div class="game-stage">
+                <div class="instruction">TASK: Paint the heart. Select color -> Click Grid.</div>
+
+                <div class="paint-workspace">
+                    <div class="palette">
+                        <div class="palette-gem" style="background:#2d3436" onclick="selectColor('310', this)">310</div>
+                        <div class="palette-gem" style="background:#ff7675" onclick="selectColor('666', this)">666</div>
+                        <div class="palette-gem" style="background:#0984e3" onclick="selectColor('820', this)">820</div>
+                    </div>
+
+                    <div class="canvas-grid" id="pixel-grid">
+                        <!-- Grid injected via JS -->
+                    </div>
+                </div>
+            </div>
+        </section>
+
+    </div>
+
+    <script>
+        // --- GLOBAL STATE ---
+        let xp = 0;
+        const totalXP = 2000; // Arbitrary goal
+        
+        function updateProgress(amount, element) {
+            xp += amount;
+            let percent = Math.min((xp / totalXP) * 100, 100);
+            document.getElementById('progress-fill').style.width = percent + "%";
+
+            // Float XP Text
+            if(element) {
+                const rect = element.getBoundingClientRect();
+                const float = document.createElement('div');
+                float.className = 'xp-float';
+                float.innerText = `+${amount} XP`;
+                float.style.left = (rect.left + rect.width/2 - 20) + 'px';
+                float.style.top = (rect.top + window.scrollY) + 'px';
+                document.body.appendChild(float);
+                
+                setTimeout(() => { float.remove(); }, 1000);
+            }
+        }
+
+        /* --- LEVEL 1: DECODER LOGIC --- */
+        const symbols = ['★', '●', '▲'];
+        const legend = { '★': '310', '●': '666', '▲': '820' };
+        let currentSymbol = '★';
+        let matches = 0;
+        const maxMatches = 5;
+
+        function nextSymbol() {
+            currentSymbol = symbols[Math.floor(Math.random() * symbols.length)];
+            document.getElementById('target-symbol').innerText = currentSymbol;
+        }
+
+        function checkMatch(code, el) {
+            if(matches >= maxMatches) return; // Level done
+
+            if(legend[currentSymbol] === code) {
+                // Correct
+                el.classList.add('correct');
+                setTimeout(() => el.classList.remove('correct'), 300);
+                matches++;
+                updateProgress(100, el);
+                document.getElementById('decoder-status').innerText = `Matches: ${matches}/${maxMatches}`;
+                
+                if(matches === maxMatches) {
+                    document.getElementById('decoder-status').innerText = "LEVEL COMPLETE! Scroll Down ↓";
+                    document.getElementById('decoder-status').style.color = "var(--secondary)";
+                } else {
+                    nextSymbol();
+                }
+            } else {
+                // Wrong
+                el.classList.add('wrong');
+                setTimeout(() => el.classList.remove('wrong'), 500);
+            }
+        }
+
+        /* --- LEVEL 2: TRAY PHYSICS --- */
+        const trayContainer = document.getElementById('tray-container');
+        const gems = [];
+        let isAligned = false;
+
+        // Initialize messy gems
+        for(let i=0; i<30; i++) {
+            let gem = document.createElement('div');
+            gem.className = 'sim-gem';
+            // Random positions
+            gem.style.left = (Math.random() * 80 + 10) + '%';
+            gem.style.top = (Math.random() * 180) + 'px';
+            gem.style.transform = `rotate(${Math.random() * 360}deg)`;
+            trayContainer.appendChild(gem);
+            gems.push(gem);
+        }
+
+        function shakeTray(btn) {
+            if(isAligned) return;
+
+            // Physics Logic: Snap Y to grooves (40px intervals + offset), Randomize X slightly
+            gems.forEach((gem, index) => {
+                // Get current rough Y
+                let currentTop = parseFloat(gem.style.top) || 0;
+                
+                // Snap to nearest groove (40, 80, 120, 160, 200)
+                // Let's create rows at 30, 70, 110, 150, 190 roughly centered on grooves
+                let row = Math.floor(Math.random() * 5); 
+                let targetY = (row * 40) + 32; 
+
+                // Align
+                gem.style.top = targetY + 'px';
+                // Spread X evenlyish
+                gem.style.left = (Math.random() * 90 + 2) + '%';
+                // Rotate to diamond
+                gem.style.transform = `rotate(45deg)`;
+                
+                // Visual Change
+                gem.classList.add('aligned');
+            });
+
+            updateProgress(500, btn);
+            btn.innerText = "ALIGNED!";
+            btn.style.background = "#2ecc71";
+            isAligned = true;
+        }
+
+        /* --- LEVEL 3: WAX DRAG --- */
+        const pen = document.getElementById('pen-tool');
+        const tip = document.getElementById('pen-tip');
+        const pot = document.getElementById('wax-pot');
+        const stage = document.getElementById('wax-stage-area');
+        let isDragging = false;
+        let startX, startY, initialLeft, initialTop;
+        let waxLoaded = false;
+
+        // Mouse Events
+        pen.addEventListener('mousedown', dragStart);
+        window.addEventListener('mousemove', dragMove);
+        window.addEventListener('mouseup', dragEnd);
+
+        // Touch Events
+        pen.addEventListener('touchstart', dragStart, {passive: false});
+        window.addEventListener('touchmove', dragMove, {passive: false});
+        window.addEventListener('touchend', dragEnd);
+
+        function dragStart(e) {
+            if(waxLoaded) return;
+            e.preventDefault(); // Stop scroll
+            isDragging = true;
+            
+            let clientX = e.type.includes('touch') ? e.touches[0].clientX : e.clientX;
+            let clientY = e.type.includes('touch') ? e.touches[0].clientY : e.clientY;
+
+            startX = clientX;
+            startY = clientY;
+            
+            // Get current CSS position
+            const style = window.getComputedStyle(pen);
+            // We need to parse matrix or just use offsetLeft/Top if positioned absolutely
+            initialLeft = pen.offsetLeft;
+            initialTop = pen.offsetTop;
+            
+            pen.style.transition = 'none';
+        }
+
+        function dragMove(e) {
+            if(!isDragging) return;
+            e.preventDefault();
+
+            let clientX = e.type.includes('touch') ? e.touches[0].clientX : e.clientX;
+            let clientY = e.type.includes('touch') ? e.touches[0].clientY : e.clientY;
+
+            let dx = clientX - startX;
+            let dy = clientY - startY;
+
+            pen.style.left = (initialLeft + dx) + 'px';
+            pen.style.top = (initialTop + dy) + 'px';
+
+            checkCollision();
+        }
+
+        function dragEnd() {
+            if(!isDragging) return;
+            isDragging = false;
+            
+            if(!waxLoaded) {
+                // Reset position if not loaded
+                pen.style.transition = 'all 0.5s';
+                pen.style.left = '50%';
+                pen.style.top = '20px';
+                pen.style.transform = 'translateX(-50%)';
+            }
+        }
+
+        function checkCollision() {
+            const tipRect = tip.getBoundingClientRect();
+            const potRect = pot.getBoundingClientRect();
+
+            // Simple AABB collision
+            if (tipRect.left < potRect.right &&
+                tipRect.right > potRect.left &&
+                tipRect.top < potRect.bottom &&
+                tipRect.bottom > potRect.top) {
+                
+                if(!waxLoaded) {
+                    waxLoaded = true;
+                    isDragging = false;
+                    tip.classList.add('loaded');
+                    document.getElementById('wax-feedback').innerText = "Status: LOADED! (Proceed to Paint)";
+                    document.getElementById('wax-feedback').style.color = "var(--primary)";
+                    document.getElementById('wax-feedback').style.fontWeight = "bold";
+                    updateProgress(400, pot);
+                    
+                    // Return Pen
+                    pen.style.transition = 'all 0.5s';
+                    pen.style.left = '50%';
+                    pen.style.top = '20px';
+                }
+            }
+        }
+
+        /* --- LEVEL 4: PAINTING --- */
+        // 5x5 Grid Heart Pattern
+        // ★=Black(310), ●=Red(666), ▲=Blue(820)
+        const gridData = [
+            '▲','★','▲','★','▲',
+            '★','●','★','●','★',
+            '★','●','●','●','★',
+            '▲','★','●','★','▲',
+            '▲','▲','★','▲','▲'
+        ];
+        
+        const gridEl = document.getElementById('pixel-grid');
+        let selectedPaletteColor = null;
+
+        // Build Grid
+        gridData.forEach((symbol, index) => {
+            let cell = document.createElement('div');
+            cell.className = 'grid-cell';
+            cell.innerText = symbol;
+            cell.dataset.symbol = symbol;
+            cell.onclick = () => paintCell(cell);
+            gridEl.appendChild(cell);
+        });
+
+        function selectColor(code, el) {
+            selectedPaletteColor = code;
+            document.querySelectorAll('.palette-gem').forEach(g => g.classList.remove('selected'));
+            el.classList.add('selected');
+        }
+
+        function paintCell(cell) {
+            if(cell.querySelector('.placed-gem')) return; // Already filled
+
+            if(!selectedPaletteColor) {
+                alert("Please select a color from the palette first!");
+                return;
+            }
+
+            const requiredCode = legend[cell.dataset.symbol];
+
+            if(selectedPaletteColor === requiredCode) {
+                // Success
+                cell.innerHTML = ''; // Remove symbol
+                let gem = document.createElement('div');
+                gem.className = 'placed-gem';
+                
+                // Color mapping
+                if(requiredCode === '310') gem.style.background = '#2d3436';
+                if(requiredCode === '666') gem.style.background = '#ff7675';
+                if(requiredCode === '820') gem.style.background = '#0984e3';
+                
+                cell.appendChild(gem);
+                updateProgress(40, cell); // 25 cells * 40 = 1000xp roughly
+                
+                checkWin();
+
+            } else {
+                // Error
+                cell.style.background = "#fab1a0";
+                setTimeout(() => cell.style.background = "white", 200);
+            }
+        }
+
+        function checkWin() {
+            const filled = document.querySelectorAll('.placed-gem').length;
+            if(filled === 25) {
+                alert("MASTERPIECE COMPLETE! You have graduated from the Diamond Painting Academy.");
+                // Ensure bar is 100%
+                document.getElementById('progress-fill').style.width = "100%";
+            }
+        }
+
+    </script>
+</body>
+</html>

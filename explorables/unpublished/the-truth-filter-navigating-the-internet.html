@@ -1,0 +1,569 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>The Truth Filter: Navigating the Internet</title>
+    <style>
+        /* Modern, clean CSS Reset and Variables */
+        :root {
+            --bg-color: #fdfcf9;
+            --text-main: #334155;
+            --text-muted: #64748b;
+            --accent-blue: #3b82f6;
+            --yellow-bg: #fef3c7;
+            --yellow-border: #fde68a;
+            --yellow-text: #b45309;
+            --red-bg: #fee2e2;
+            --red-border: #fecaca;
+            --red-text: #b91c1c;
+            --green-bg: #d1fae5;
+            --green-border: #a7f3d0;
+            --green-text: #047857;
+            --font-main: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+        }
+
+        body {
+            font-family: var(--font-main);
+            line-height: 1.7;
+            color: var(--text-main);
+            background-color: var(--bg-color);
+            margin: 0;
+            padding: 0;
+            -webkit-font-smoothing: antialiased;
+        }
+
+        header {
+            background-color: #0f172a;
+            color: white;
+            padding: 5rem 2rem;
+            text-align: center;
+        }
+
+        header h1 {
+            margin: 0;
+            font-size: 2.75rem;
+            letter-spacing: -0.02em;
+            line-height: 1.2;
+        }
+
+        header p {
+            color: #94a3b8;
+            font-size: 1.2rem;
+            max-width: 600px;
+            margin: 1.5rem auto 0;
+            line-height: 1.6;
+        }
+
+        article {
+            max-width: 720px;
+            margin: 0 auto;
+            padding: 4rem 2rem;
+        }
+
+        h2 {
+            font-size: 1.8rem;
+            color: #0f172a;
+            margin-top: 3.5rem;
+            border-bottom: 2px solid #e2e8f0;
+            padding-bottom: 0.75rem;
+            line-height: 1.3;
+        }
+
+        p {
+            font-size: 1.125rem;
+            margin-bottom: 1.5rem;
+        }
+
+        strong {
+            color: #0f172a;
+        }
+
+        /* Interactive Elements Styling */
+        .interactive-box {
+            background: white;
+            border: 1px solid #e2e8f0;
+            border-radius: 12px;
+            padding: 2.5rem;
+            margin: 2.5rem 0;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03);
+        }
+
+        .interactive-title {
+            font-weight: 700;
+            text-transform: uppercase;
+            font-size: 0.85rem;
+            color: var(--accent-blue);
+            margin-bottom: 1.5rem;
+            letter-spacing: 0.05em;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .interactive-title::before {
+            content: "⚗️";
+            font-size: 1.1rem;
+        }
+
+        /* Flags */
+        .flag {
+            display: flex;
+            align-items: flex-start;
+            gap: 16px;
+            padding: 16px 20px;
+            border-radius: 8px;
+            margin-top: 24px;
+            font-weight: 500;
+            opacity: 0;
+            transform: translateY(-10px);
+            transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+            display: none; /* Hidden by default */
+            font-size: 1rem;
+            line-height: 1.5;
+        }
+
+        .flag.visible {
+            opacity: 1;
+            transform: translateY(0);
+            display: flex;
+        }
+
+        .flag-icon {
+            font-size: 1.5rem;
+            line-height: 1.2;
+            flex-shrink: 0;
+        }
+
+        .flag-yellow { background: var(--yellow-bg); border: 1px solid var(--yellow-border); color: var(--yellow-text); }
+        .flag-red { background: var(--red-bg); border: 1px solid var(--red-border); color: var(--red-text); }
+        .flag-green { background: var(--green-bg); border: 1px solid var(--green-border); color: var(--green-text); }
+
+        /* Specific Interactives */
+        input[type="text"] {
+            width: 100%;
+            padding: 14px;
+            font-size: 1.1rem;
+            border: 2px solid #cbd5e1;
+            border-radius: 8px;
+            box-sizing: border-box;
+            font-family: monospace;
+            transition: border-color 0.2s;
+        }
+        
+        input[type="text"]:focus { 
+            outline: none; 
+            border-color: var(--accent-blue); 
+            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+        }
+
+        .slider-container { 
+            margin: 2rem 0; 
+            background: #f8fafc;
+            padding: 1.5rem;
+            border-radius: 8px;
+            border: 1px solid #e2e8f0;
+        }
+        
+        input[type="range"] { 
+            width: 100%; 
+            cursor: pointer; 
+            margin-top: 1rem;
+            accent-color: var(--accent-blue);
+        }
+        
+        .dynamic-value { 
+            font-weight: 700; 
+            color: var(--accent-blue); 
+            font-size: 1.2rem;
+        }
+
+        .quote-box {
+            font-size: 1.25rem;
+            font-style: italic;
+            border-left: 4px solid #cbd5e1;
+            padding-left: 1.25rem;
+            margin: 1.5rem 0 2rem 0;
+            transition: all 0.3s ease;
+            line-height: 1.6;
+        }
+        
+        .quote-hidden {
+            opacity: 0.25;
+            filter: blur(3px);
+            background: #f1f5f9;
+            text-decoration: line-through;
+            transition: all 0.4s ease;
+        }
+
+        .btn {
+            background: #f1f5f9;
+            border: 1px solid #cbd5e1;
+            padding: 10px 20px;
+            border-radius: 8px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+            font-family: var(--font-main);
+            color: #334155;
+            display: inline-block;
+            text-align: center;
+        }
+        
+        .btn:hover { 
+            background: #e2e8f0; 
+            transform: translateY(-1px);
+        }
+        
+        .btn:active {
+            transform: translateY(0);
+        }
+        
+        .btn-primary { 
+            background: var(--accent-blue); 
+            color: white; 
+            border: none; 
+            box-shadow: 0 2px 4px rgba(59, 130, 246, 0.3);
+        }
+        
+        .btn-primary:hover { 
+            background: #2563eb; 
+        }
+
+        .btn-group {
+            display: flex;
+            gap: 12px;
+            margin-top: 20px;
+        }
+
+        .btn-group .btn {
+            flex: 1;
+        }
+
+        .grid-container {
+            display: grid;
+            grid-template-columns: repeat(10, 1fr);
+            gap: 6px;
+            margin: 2rem 0;
+        }
+        
+        .dot {
+            aspect-ratio: 1;
+            border-radius: 50%;
+            background: #93c5fd;
+            cursor: pointer;
+            transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+            box-shadow: inset 0 -2px 0 rgba(0,0,0,0.1);
+        }
+        
+        .dot:hover { 
+            transform: scale(1.25); 
+            background: #60a5fa;
+        }
+        
+        .dot.outlier { 
+            background: #fb923c; 
+        }
+        
+        .dot.outlier:hover {
+            background: #f97316;
+        }
+        
+        .dot.hidden { 
+            opacity: 0.15; 
+            transform: scale(0.6); 
+            pointer-events: none;
+        }
+        
+        .dot.focused { 
+            transform: scale(2.5); 
+            background: #ea580c; 
+            z-index: 10; 
+            box-shadow: 0 4px 12px rgba(234, 88, 12, 0.4);
+            position: relative;
+        }
+
+        /* Responsive adjustments */
+        @media (max-width: 600px) {
+            header {
+                padding: 4rem 1.5rem;
+            }
+            header h1 {
+                font-size: 2.25rem;
+            }
+            article {
+                padding: 2rem 1.5rem;
+            }
+            .interactive-box {
+                padding: 1.5rem;
+                margin: 2rem 0;
+            }
+            .btn-group {
+                flex-direction: column;
+            }
+            .grid-container {
+                gap: 4px;
+            }
+            .flag {
+                flex-direction: column;
+                align-items: center;
+                text-align: center;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <header>
+        <h1>The Truth Filter</h1>
+        <p>A guided interactive essay on navigating the internet's sea of information, based on the principles of scientific skepticism.</p>
+    </header>
+
+    <article>
+        <p>In the modern age, searching the internet yields millions of answers in milliseconds. We even have Artificial Intelligence assembling words to answer our questions directly. But as astrophysicist and science communicator Neil deGrasse Tyson asks: <strong>How do you know what to trust?</strong></p>
+        
+        <p>Information algorithms and Large Language Models don't inherently "think"—they optimize for engagement or assemble words based on statistical probability. When you search for the truth, you need a personal filtering mechanism. Tyson proposes a system of <strong>Flags</strong>. Let's build that filter together.</p>
+
+        <!-- SECTION 1 -->
+        <h2>1. The Domain Baseline</h2>
+        <p>When you are looking for objective, verifiable truth, the source matters. Where is the information hosted? The URL itself is your first clue.</p>
+
+        <div class="interactive-box">
+            <div class="interactive-title">Experiment: Domain Parser</div>
+            <p>Try typing a website domain below to see how the filter reacts to its origin.</p>
+            <input type="text" id="domain-input" placeholder="e.g., harvard.edu, cdc.gov, or myblog.com">
+            
+            <div id="flag-domain-green" class="flag flag-green">
+                <div class="flag-icon">✅</div>
+                <div><strong>Verified Institutional Source.</strong> Domains ending in <code>.edu</code> or <code>.gov</code> generally have rigorous institutional oversight, peer review, or legal accountability. You are highly likely to find correct, objective information here.</div>
+            </div>
+            
+            <div id="flag-domain-yellow" class="flag flag-yellow">
+                <div class="flag-icon">🟡</div>
+                <div><strong>Yellow Flag: Proceed with Caution.</strong> A <code>.com</code>, <code>.net</code>, or <code>.org</code> doesn't mean the site is lying! It simply means there is no guaranteed institutional oversight to publish there. You must evaluate the specific claims yourself.</div>
+            </div>
+        </div>
+
+        <!-- SECTION 2 -->
+        <h2>2. Vested Interests</h2>
+        <p>If a source isn't an educational or government institution, you must look at the speaker. Are they independent, or do they have a vested financial interest in the outcome of their claims?</p>
+        
+        <p>Let's look at a hypothetical scenario. A researcher publishes a paper stating that a new commercial compound is completely harmless.</p>
+
+        <div class="interactive-box">
+            <div class="interactive-title">Simulation: The Bias Slider</div>
+            <p><strong>Claim:</strong> "Chemical X is perfectly safe."</p>
+            <div class="slider-container">
+                <label>Percentage of researcher's funding coming from the Chemical X manufacturer: <br><span class="dynamic-value" id="funding-val">0%</span></label>
+                <input type="range" id="funding-slider" min="0" max="100" value="0">
+            </div>
+
+            <div id="flag-funding" class="flag flag-yellow">
+                <div class="flag-icon">🟡</div>
+                <div><strong>Yellow Flag: Vested Interest.</strong> The speaker's financial livelihood is tied to the industry they are defending. They <em>could</em> be telling the truth, but their bias means you cannot take their word at face value. You must seek independent verification.</div>
+            </div>
+        </div>
+
+        <!-- SECTION 3 -->
+        <h2>3. The Context Trap</h2>
+        <p>The internet runs on engagement, and nothing drives engagement like outrage. A common tactic is to lift a snippet of video or text out of its original source and strip away the surrounding context to completely invert its meaning.</p>
+
+        <div class="interactive-box">
+            <div class="interactive-title">Interactive: The Quote Cropper</div>
+            <p>You see a viral post on social media claiming a prominent scientist made a terrible admission. Toggle the context below to see how the meaning changes.</p>
+            
+            <div class="quote-box">
+                <span id="q-pre" class="quote-hidden">"It is completely false when critics say that </span>
+                <span id="q-core" style="font-weight:bold; color:var(--text-main);">we have no evidence that the vaccine works</span>
+                <span id="q-post" class="quote-hidden">; in fact, our data is overwhelming."</span>
+            </div>
+
+            <button id="btn-context" class="btn btn-primary">Show Full Original Context</button>
+
+            <div id="flag-context" class="flag flag-yellow visible">
+                <div class="flag-icon">🟡</div>
+                <div><strong>Yellow Flag: Out of Context.</strong> If content is reposted, clipped, or shortened from its original length, a yellow flag must go up. You do not know what preceded or followed the statement. Always find the original source before reacting.</div>
+            </div>
+        </div>
+
+        <!-- SECTION 4 -->
+        <h2>4. Crossing into Red Flags: Conspiracies</h2>
+        <p>Yellow flags mean "caution"—pause and verify. But when does a claim cross the line into a <strong>Red Flag</strong>? A red flag means the methodology behind the claim is fundamentally, irreparably flawed.</p>
+        
+        <p>In science, when new data contradicts a hypothesis, the scientist changes the hypothesis. But what happens when someone refuses to let their hypothesis go?</p>
+
+        <div class="interactive-box">
+            <div class="interactive-title">Logic Gate: Resolving Contradictions</div>
+            <p><strong>Your Hypothesis:</strong> The Earth is flat.<br>
+            <strong>The Data:</strong> Satellite imagery, orbital physics, and centuries of navigation prove it is a sphere.</p>
+            
+            <p>How do you resolve this conflict?</p>
+            <div class="btn-group">
+                <button class="btn" onclick="checkConspiracy(false)">A) "I guess my hypothesis was wrong."</button>
+                <button class="btn" onclick="checkConspiracy(true)">B) "NASA is faking the data to hide the truth!"</button>
+            </div>
+
+            <div id="flag-conspiracy-green" class="flag flag-green">
+                <div class="flag-icon">✅</div>
+                <div><strong>Healthy Skepticism.</strong> Adjusting your worldview when presented with verifiable, objective data is how science progresses. You survived the filter.</div>
+            </div>
+
+            <div id="flag-conspiracy-red" class="flag flag-red">
+                <div class="flag-icon">🚩</div>
+                <div><strong>Red Flag: The Conspiracy Crutch.</strong> If a claim <em>requires</em> a massive, flawlessly executed global conspiracy for it to be true, the likelihood of it being true approaches zero. This is a definitive red flag.</div>
+            </div>
+        </div>
+
+        <!-- SECTION 5 -->
+        <h2>5. The Consensus & Cherry-Picking</h2>
+        <p>The frontier of science is messy. Studies are published all the time, and occasionally, an unverified outlier will suggest something completely new. Eventually, repeated testing by independent researchers builds a <strong>scientific consensus</strong>.</p>
+        <p>Below are 50 studies on a topic. 49 of them found no link between a standard medical treatment and a specific illness. 1 early, unverified study claimed it found a link.</p>
+
+        <div class="interactive-box">
+            <div class="interactive-title">Interactive: The Cherry Picker</div>
+            <p>Click on the data point you want to use to form your worldview.</p>
+            
+            <div class="grid-container" id="study-grid">
+                <!-- Populated by JS -->
+            </div>
+
+            <div id="flag-cherry-red" class="flag flag-red">
+                <div class="flag-icon">🚩</div>
+                <div><strong>Red Flag: Cherry-Picking.</strong> You have ignored the massive scientific consensus to select the single, unverified outlier that aligns with what you <em>want</em> to believe. This is not finding the truth; this is confirming your bias.</div>
+            </div>
+            <div id="flag-cherry-green" class="flag flag-green">
+                <div class="flag-icon">✅</div>
+                <div><strong>Following the Consensus.</strong> You are aligning your views with the weight of verified, repeated scientific evidence. While science is always updating, the consensus is the most reliable path to objective truth.</div>
+            </div>
+        </div>
+
+        <h2>Conclusion</h2>
+        <p>The goal of these flags is not to make you a cynic who trusts nothing. The goal is to make you an active, critical consumer of information in a world designed to overwhelm you.</p>
+        <p>When you encounter a new claim, check the domain. Look for vested interests. Ensure it's not taken out of context. And if the claim requires a global conspiracy or ignores overwhelming consensus, raise the red flag and walk away.</p>
+        
+    </article>
+
+    <script>
+        // --- Section 1: Domain Logic ---
+        const domainInput = document.getElementById('domain-input');
+        const flagDomainGreen = document.getElementById('flag-domain-green');
+        const flagDomainYellow = document.getElementById('flag-domain-yellow');
+
+        domainInput.addEventListener('input', (e) => {
+            const val = e.target.value.toLowerCase().trim();
+            flagDomainGreen.classList.remove('visible');
+            flagDomainYellow.classList.remove('visible');
+
+            if (val.length < 4) return;
+
+            if (val.endsWith('.edu') || val.endsWith('.gov')) {
+                flagDomainGreen.classList.add('visible');
+            } else if (val.includes('.')) {
+                flagDomainYellow.classList.add('visible');
+            }
+        });
+
+        // --- Section 2: Bias Slider Logic ---
+        const fundingSlider = document.getElementById('funding-slider');
+        const fundingVal = document.getElementById('funding-val');
+        const flagFunding = document.getElementById('flag-funding');
+
+        fundingSlider.addEventListener('input', (e) => {
+            const val = e.target.value;
+            fundingVal.innerText = val + '%';
+            
+            // If funding is above 10%, show the yellow flag
+            if (val > 10) {
+                flagFunding.classList.add('visible');
+            } else {
+                flagFunding.classList.remove('visible');
+            }
+        });
+
+        // --- Section 3: Context Crop Logic ---
+        const btnContext = document.getElementById('btn-context');
+        const qPre = document.getElementById('q-pre');
+        const qPost = document.getElementById('q-post');
+        const flagContext = document.getElementById('flag-context');
+        let isCropped = true;
+
+        btnContext.addEventListener('click', () => {
+            isCropped = !isCropped;
+            if (isCropped) {
+                qPre.classList.add('quote-hidden');
+                qPost.classList.add('quote-hidden');
+                btnContext.innerText = "Show Full Original Context";
+                btnContext.classList.add('btn-primary');
+                flagContext.classList.add('visible');
+            } else {
+                qPre.classList.remove('quote-hidden');
+                qPost.classList.remove('quote-hidden');
+                btnContext.innerText = "Hide Context (Simulate Viral Clip)";
+                btnContext.classList.remove('btn-primary');
+                flagContext.classList.remove('visible');
+            }
+        });
+
+        // --- Section 4: Conspiracy Logic ---
+        function checkConspiracy(isConspiracy) {
+            const greenFlag = document.getElementById('flag-conspiracy-green');
+            const redFlag = document.getElementById('flag-conspiracy-red');
+            
+            greenFlag.classList.remove('visible');
+            redFlag.classList.remove('visible');
+
+            // Small delay for visual feedback
+            setTimeout(() => {
+                if (isConspiracy) {
+                    redFlag.classList.add('visible');
+                } else {
+                    greenFlag.classList.add('visible');
+                }
+            }, 50);
+        }
+
+        // --- Section 5: Cherry Picker Logic ---
+        const grid = document.getElementById('study-grid');
+        const flagCherryRed = document.getElementById('flag-cherry-red');
+        const flagCherryGreen = document.getElementById('flag-cherry-green');
+        const totalDots = 50;
+        const outlierIndex = 27; // Position for the orange outlier
+
+        for (let i = 0; i < totalDots; i++) {
+            const dot = document.createElement('div');
+            dot.className = 'dot';
+            dot.setAttribute('title', i === outlierIndex ? 'Unverified Outlier Study' : 'Consensus Study');
+            
+            if (i === outlierIndex) {
+                dot.classList.add('outlier');
+            }
+            
+            dot.addEventListener('click', () => {
+                // Reset flags
+                flagCherryRed.classList.remove('visible');
+                flagCherryGreen.classList.remove('visible');
+                
+                // Reset dots
+                document.querySelectorAll('.dot').forEach(d => {
+                    d.classList.remove('hidden');
+                    d.classList.remove('focused');
+                });
+
+                if (i === outlierIndex) {
+                    // Clicked the outlier
+                    document.querySelectorAll('.dot').forEach(d => {
+                        if (d !== dot) d.classList.add('hidden');
+                    });
+                    dot.classList.add('focused');
+                    flagCherryRed.classList.add('visible');
+                } else {
+                    // Clicked the consensus
+                    flagCherryGreen.classList.add('visible');
+                }
+            });
+            grid.appendChild(dot);
+        }
+    </script>
+</body>
+</html>

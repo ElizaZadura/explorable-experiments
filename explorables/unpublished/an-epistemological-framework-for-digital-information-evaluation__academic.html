@@ -1,0 +1,518 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>An Epistemological Framework for Digital Information Evaluation</title>
+    <style>
+        /* Base & Reset */
+        *, *::before, *::after {
+            box-sizing: border-box;
+        }
+
+        :root {
+            --bg-color: #fffff8;
+            --text-color: #111;
+            --link-color: #0000EE;
+            --yellow-flag: #eab308;
+            --red-flag: #ef4444;
+            --border-color: #ccc;
+            --success-color: #22c55e;
+        }
+
+        body {
+            font-family: "et-book", Palatino, "Palatino Linotype", "Palatino LT STD", "Book Antiqua", Georgia, serif;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            max-width: 850px;
+            margin: 0 auto;
+            padding: 2rem 2rem;
+            line-height: 1.7;
+            font-size: 18px;
+            counter-reset: sidenote-counter;
+        }
+
+        /* Typography */
+        h1 { font-size: 2.2rem; font-weight: normal; margin-bottom: 0.5rem; line-height: 1.2; }
+        h2 { font-size: 1.5rem; font-weight: normal; margin-top: 2.5rem; border-bottom: 1px solid var(--border-color); padding-bottom: 0.5rem; }
+        h3 { font-weight: normal; font-style: italic; font-size: 1.3rem; margin-bottom: 1rem; }
+        p { margin-bottom: 1.5rem; }
+        strong { font-weight: 600; }
+        em { font-style: italic; }
+
+        .subtitle { font-size: 1.2rem; font-style: italic; color: #555; margin-top: 0; }
+        
+        /* Tufte-inspired Sidenotes */
+        .sidenote-number {
+            counter-increment: sidenote-counter;
+        }
+        .sidenote-number::after, .sidenote::before {
+            position: relative;
+            vertical-align: baseline;
+        }
+        .sidenote-number::after {
+            content: counter(sidenote-counter);
+            font-size: 0.75rem;
+            top: -0.5rem;
+            left: 0.1rem;
+        }
+        .sidenote {
+            float: right;
+            clear: right;
+            margin-right: -45%;
+            width: 40%;
+            margin-top: 0;
+            margin-bottom: 0;
+            font-size: 0.9rem;
+            line-height: 1.4;
+            opacity: 0.85;
+        }
+        .sidenote::before {
+            content: counter(sidenote-counter) " ";
+            font-size: 0.75rem;
+            top: -0.5rem;
+        }
+
+        /* Interactive Elements */
+        .interactive-figure {
+            background: #fff;
+            border: 1px solid var(--border-color);
+            padding: 1.5rem;
+            margin: 2rem 0;
+            border-radius: 6px;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+        }
+
+        .interactive-figure caption {
+            display: block;
+            font-size: 0.9rem;
+            text-align: left;
+            margin-top: 1.5rem;
+            font-style: italic;
+            color: #666;
+            line-height: 1.4;
+        }
+
+        /* Math Styling */
+        .math {
+            font-family: "Latin Modern Math", "Cambria Math", serif;
+            font-style: italic;
+        }
+        .equation-block {
+            display: block;
+            text-align: center;
+            font-size: 1.2rem;
+            margin: 1.5rem 0;
+            padding: 1rem;
+            background: #f9f9f9;
+            border-left: 4px solid #333;
+            overflow-x: auto; /* Prevent overflow on small screens */
+            white-space: nowrap;
+        }
+        .var-y { color: var(--yellow-flag); font-weight: bold; }
+        .var-r { color: var(--red-flag); font-weight: bold; }
+        .var-c { font-weight: bold; }
+
+        /* Controls */
+        .control-group {
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+            margin-top: 1rem;
+        }
+        .toggle-label {
+            display: flex;
+            align-items: center;
+            flex-wrap: wrap;
+            cursor: pointer;
+            font-size: 0.95rem;
+            padding: 0.6rem;
+            background: #fafafa;
+            border: 1px solid #eee;
+            border-radius: 4px;
+            transition: background 0.2s;
+        }
+        .toggle-label:hover { background: #f0f0f0; }
+        .toggle-label input { margin-right: 12px; flex-shrink: 0; width: 16px; height: 16px; }
+        .toggle-text { flex: 1 1 auto; margin-right: 10px; }
+        
+        .badge {
+            display: inline-block;
+            padding: 3px 8px;
+            border-radius: 4px;
+            font-size: 0.75rem;
+            font-weight: bold;
+            margin-left: auto;
+            text-transform: uppercase;
+            flex-shrink: 0;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+        }
+        .badge.yellow { background: var(--yellow-flag); color: #000; }
+        .badge.red { background: var(--red-flag); color: #fff; }
+
+        /* Visualizations */
+        .gauge-container {
+            width: 100%;
+            height: 24px;
+            background: #eee;
+            border-radius: 12px;
+            overflow: hidden;
+            margin-bottom: 0.75rem;
+            position: relative;
+            box-shadow: inset 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .gauge-fill {
+            height: 100%;
+            background: var(--success-color);
+            width: 100%;
+            transition: width 0.5s cubic-bezier(0.4, 0, 0.2, 1), background-color 0.5s;
+        }
+        .score-display {
+            font-size: 2.2rem;
+            font-family: monospace;
+            text-align: center;
+            font-weight: bold;
+            margin-bottom: 1rem;
+        }
+
+        /* Simulation Section */
+        .article-mockup {
+            border: 1px solid #aaa;
+            padding: 1.5rem;
+            background: #fff;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            border-radius: 4px;
+        }
+        .article-mockup h4 { margin: 0 0 0.5rem 0; font-size: 1.4rem; font-family: Georgia, serif;}
+        .article-mockup .meta { font-size: 0.85rem; color: #888; margin-bottom: 1rem; }
+        .article-mockup p { font-size: 0.95rem; line-height: 1.6; margin-bottom: 0;}
+        
+        .analysis-panel {
+            background: #1e1e1e;
+            color: #d4d4d4;
+            padding: 1.2rem;
+            font-family: monospace;
+            font-size: 0.85rem;
+            border-radius: 6px;
+            margin-top: 1rem;
+            display: none;
+            box-shadow: inset 0 2px 8px rgba(0,0,0,0.5);
+        }
+        .analysis-panel.visible { display: block; }
+        .log-entry { margin-bottom: 6px; }
+        .log-entry.penalty { color: #f87171; }
+
+        button.outline {
+            background: transparent;
+            border: 1px solid #333;
+            padding: 0.6rem 1.2rem;
+            cursor: pointer;
+            font-family: inherit;
+            font-size: 0.95rem;
+            border-radius: 4px;
+            margin-top: 1.5rem;
+            transition: all 0.2s;
+        }
+        button.outline:hover { background: #eee; }
+
+        /* Responsive Design */
+        @media (max-width: 1200px) {
+            .sidenote {
+                float: none;
+                display: block;
+                width: 100%;
+                margin: 1.5rem 0;
+                padding-left: 1rem;
+                border-left: 3px solid var(--border-color);
+                opacity: 1;
+            }
+            .sidenote::before { display: none; }
+        }
+
+        @media (max-width: 600px) {
+            body { font-size: 16px; padding: 1.5rem 1rem; }
+            h1 { font-size: 1.8rem; }
+            h2 { font-size: 1.3rem; }
+            .interactive-figure { padding: 1rem; margin: 1.5rem 0; }
+            .equation-block { font-size: 1rem; padding: 0.75rem; }
+            .score-display { font-size: 1.8rem; }
+            .article-mockup { padding: 1rem; }
+            .badge { margin-left: 0; margin-top: 0.5rem; width: fit-content; }
+        }
+    </style>
+</head>
+<body>
+
+    <article>
+        <h1>An Epistemological Framework for Digital Information Evaluation</h1>
+        <p class="subtitle">Formalizing heuristic models to discern objective truth in an unverified landscape.</p>
+
+        <section id="intro">
+            <h2>I. The Problem of Epistemic Decay</h2>
+            <p>
+                In the contemporary digital landscape, particularly with the advent of Large Language Models (LLMs), the acquisition of knowledge has been decoupled from the verification of truth.<span class="sidenote-number"></span>
+                <span class="sidenote">LLMs function by assembling statistically probable sequences of words, not by referencing objective reality. They are engines of syntax, not epistemology.</span>
+                When a user queries the internet for information, they are no longer navigating a curated library, but rather a chaotic marketplace of assertions.
+            </p>
+            <p>
+                How, then, does one establish trust in a source? We cannot individually verify every claim through primary scientific research. Instead, we must rely on a <em>heuristic evaluation</em> of the source itself. By identifying specific markers of bias, logical fallacy, or epistemic closure, we can calculate a probabilistic measure of a source's reliability.
+            </p>
+
+            <div class="interactive-figure">
+                <div class="gauge-container">
+                    <div class="gauge-fill" id="intro-gauge"></div>
+                </div>
+                <div class="score-display"><span id="intro-score">100</span>% Credibility</div>
+                
+                <p>Consider a baseline where an unknown source is granted provisional trust. Now, apply a single heuristic filter. <strong>Toggle the condition below.</strong></p>
+                
+                <label class="toggle-label">
+                    <input type="checkbox" id="intro-toggle-industry" onchange="updateIntro()">
+                    <span class="toggle-text">The author is defending the actions of an industry in which they are financially invested.</span>
+                </label>
+                
+                <caption><strong>Figure 1.</strong> The introduction of a conflict of interest immediately degrades the probabilistic truth value of the source. This is not a definitive proof of falsehood, but a signal for mandatory skepticism.</caption>
+            </div>
+            <p>
+                This degradation is not arbitrary. We can formalize these markers into two distinct categories: <strong>Yellow Flags</strong> (indicators requiring secondary verification) and <strong>Red Flags</strong> (indicators of fundamental epistemic compromise).
+            </p>
+        </section>
+
+        <section id="model">
+            <h2>II. The Heuristic Penalty Model</h2>
+            <p>
+                Let us construct a formal model to quantify this evaluation. We define the <strong>Credibility Index (<span class="math">C</span>)</strong> of a given source <span class="math">S</span>. We assume a baseline credibility <span class="math">C<sub>0</sub> = 100</span>.
+            </p>
+            <p>
+                We define a set of Yellow Flags <span class="math">Y = {y<sub>1</sub>, y<sub>2</sub>, ... y<sub>n</sub>}</span>, where each <span class="math">y<sub>i</sub> &isin; {0,1}</span> represents the presence or absence of a specific warning sign. Each flag carries a specific penalty weight <span class="math">&alpha;<sub>i</sub></span>. Similarly, we define a set of Red Flags <span class="math">R</span> with weights <span class="math">&beta;<sub>j</sub></span>.
+            </p>
+            
+            <div class="equation-block">
+                <span class="math">C(S) = max(0, C<sub>0</sub> - &Sigma;(&alpha;<sub>i</sub> &middot; <span class="var-y">y<sub>i</sub></span>) - &Sigma;(&beta;<sub>j</sub> &middot; <span class="var-r">r<sub>j</sub></span>))</span>
+            </div>
+
+            <p>
+                Unlike a physical constant, these weights are empirical heuristics. A Yellow Flag (e.g., citing unverified research) subtracts a moderate amount of credibility. A Red Flag (e.g., claiming a global conspiracy) applies a catastrophic penalty, driving the index near zero.<span class="sidenote-number"></span>
+                <span class="sidenote">A Red Flag indicates that the source's methodology is fundamentally incompatible with the scientific method. If a source claims to defy the laws of physics, the probability of the claim being true is infinitesimally smaller than the probability that the source is mistaken or deceitful.</span>
+            </p>
+
+            <div class="interactive-figure" id="model-sandbox">
+                <h3>The Dynamic Equation</h3>
+                <p>Observe how the mathematical evaluation changes as different epistemic flags are observed in a source. <strong>Interact with the variables below to update the equation in real-time.</strong></p>
+
+                <div class="equation-block" style="font-size: 1.5rem; border-left-color: var(--success-color);" id="eq-container">
+                    <span class="math var-c" id="eq-result" style="color: var(--success-color);">100</span> = 100 
+                    <span id="eq-yellow-terms"></span>
+                    <span id="eq-red-terms"></span>
+                </div>
+
+                <div class="control-group" id="flag-controls">
+                    <!-- Checkboxes injected via JS -->
+                </div>
+                
+                <caption><strong>Figure 2.</strong> The live computation of the Credibility Index. Note that while Yellow Flags degrade trust linearly, Red Flags represent severe epistemic violations that almost immediately invalidate the source.</caption>
+            </div>
+        </section>
+
+        <section id="simulation">
+            <h2>III. Applied Epistemology: Simulation</h2>
+            <p>
+                To demonstrate the utility of this framework, we must apply it to the wild data structures found on the internet. Below is a simulated article. Read the text critically. As you identify heuristic markers, apply the corresponding flags.
+            </p>
+
+            <div class="interactive-figure">
+                <div class="article-mockup">
+                    <h4>The Quantum Truth About Your Pineal Gland</h4>
+                    <div class="meta">Published on TruthAwakening.net | Author: Dr. Orion (Holistic Practitioner)</div>
+                    <p>
+                        Mainstream science and the medical establishment have been lying to you for decades. They want you to think your pineal gland is just a minor endocrine organ. But ancient texts and my independent research prove it is a quantum receiver. 
+                        <br><br>
+                        The recent study from the <em>Journal of Alternative Frequencies</em> (which the mainstream media ignores) clearly shows that our new Quantum-Resonance Supplements defy the known laws of thermodynamics to reverse aging. 
+                        <br><br>
+                        Big Pharma is actively trying to suppress this information. You must act fast and purchase your supply today before our servers are shut down by the government!
+                    </p>
+                </div>
+
+                <div style="margin-top: 1.5rem;">
+                    <strong>Identify the Flags present in the text above:</strong>
+                    <div class="control-group" id="sim-controls">
+                        <label class="toggle-label">
+                            <input type="checkbox" data-weight="15" data-type="yellow" data-desc="Non-.edu / Unverified Domain" onchange="updateSim()"> 
+                            <span class="toggle-text">Non-Academic Domain</span>
+                            <span class="badge yellow">Yellow (&alpha;=15)</span>
+                        </label>
+                        <label class="toggle-label">
+                            <input type="checkbox" data-weight="30" data-type="yellow" data-desc="Cites unverified/fringe journal" onchange="updateSim()"> 
+                            <span class="toggle-text">Cites Unverified Research</span>
+                            <span class="badge yellow">Yellow (&alpha;=30)</span>
+                        </label>
+                        <label class="toggle-label">
+                            <input type="checkbox" data-weight="80" data-type="red" data-desc="Claims a cover-up by 'Big Pharma'" onchange="updateSim()"> 
+                            <span class="toggle-text">Claims a Conspiracy</span>
+                            <span class="badge red">Red (&beta;=80)</span>
+                        </label>
+                        <label class="toggle-label">
+                            <input type="checkbox" data-weight="90" data-type="red" data-desc="Claims to defy thermodynamics" onchange="updateSim()"> 
+                            <span class="toggle-text">Defies Laws of Physics</span>
+                            <span class="badge red">Red (&beta;=90)</span>
+                        </label>
+                        <label class="toggle-label">
+                            <input type="checkbox" data-weight="75" data-type="red" data-desc="Creates false urgency to sell a product" onchange="updateSim()"> 
+                            <span class="toggle-text">'Act Fast Before Suppressed'</span>
+                            <span class="badge red">Red (&beta;=75)</span>
+                        </label>
+                    </div>
+                </div>
+
+                <button class="outline" onclick="toggleAnalysis()">Toggle "Under the Hood" Data Log</button>
+
+                <div class="analysis-panel" id="analysis-log">
+                    <div style="color: #888; border-bottom: 1px solid #444; padding-bottom: 5px; margin-bottom: 5px;">> INITIALIZING EVALUATION ENGINE...</div>
+                    <div id="log-output">
+                        <div class="log-entry">> BASE_CREDIBILITY = 100.0</div>
+                        <div class="log-entry">> AWAITING_OBSERVATIONS...</div>
+                    </div>
+                    <div style="border-top: 1px solid #444; margin-top: 10px; padding-top: 5px; font-weight: bold;">
+                        > FINAL_C_INDEX: <span id="sim-final-score">100</span>
+                    </div>
+                </div>
+            </div>
+            
+            <p>
+                By systematically applying this heuristic model, we remove the emotional manipulation intended by the author. We do not need to be experts in quantum physics or endocrinology to recognize the structural markers of deceit. The presence of multiple red flags—conspiratorial framing, defiance of physics, and manufactured urgency—renders the truth probability of the article statistically negligible.
+            </p>
+            <p>
+                Finding the truth is difficult. But identifying the mechanisms of falsehood is a computable skill.
+            </p>
+        </section>
+
+    </article>
+
+    <script>
+        // --- Section 1: Intro Logic ---
+        function updateIntro() {
+            const isChecked = document.getElementById('intro-toggle-industry').checked;
+            const gauge = document.getElementById('intro-gauge');
+            const scoreText = document.getElementById('intro-score');
+            
+            if (isChecked) {
+                gauge.style.width = '70%';
+                gauge.style.backgroundColor = 'var(--yellow-flag)';
+                scoreText.innerText = '70';
+            } else {
+                gauge.style.width = '100%';
+                gauge.style.backgroundColor = 'var(--success-color)';
+                scoreText.innerText = '100';
+            }
+        }
+
+        // --- Section 2: Model Logic ---
+        const modelFlags = [
+            { id: 'y1', name: 'Domain is not .edu / Academic', weight: 15, type: 'yellow' },
+            { id: 'y2', name: 'Author is handing you an opinion (telling you how to feel)', weight: 20, type: 'yellow' },
+            { id: 'y3', name: 'Content is clipped out of its original context', weight: 25, type: 'yellow' },
+            { id: 'r1', name: 'Claims the mainstream is suppressing a "Conspiracy"', weight: 80, type: 'red' },
+            { id: 'r2', name: 'Indicts an entire demographic of people', weight: 90, type: 'red' }
+        ];
+
+        document.addEventListener('DOMContentLoaded', () => {
+            const controlsContainer = document.getElementById('flag-controls');
+            
+            // Render controls dynamically
+            modelFlags.forEach(flag => {
+                const label = document.createElement('label');
+                label.className = 'toggle-label';
+                const badgeClass = flag.type === 'yellow' ? 'yellow' : 'red';
+                const symbol = flag.type === 'yellow' ? '&alpha;' : '&beta;';
+                
+                label.innerHTML = `
+                    <input type="checkbox" id="${flag.id}" onchange="updateEquation()">
+                    <span class="toggle-text">${flag.name}</span>
+                    <span class="badge ${badgeClass}">${flag.type} (${symbol}=${flag.weight})</span>
+                `;
+                controlsContainer.appendChild(label);
+            });
+
+            // Initialize equation
+            updateEquation();
+        });
+
+        function updateEquation() {
+            let currentScore = 100;
+            let yellowHtml = '';
+            let redHtml = '';
+
+            modelFlags.forEach(flag => {
+                const checkbox = document.getElementById(flag.id);
+                if (checkbox && checkbox.checked) {
+                    currentScore -= flag.weight;
+                    if (flag.type === 'yellow') {
+                        yellowHtml += ` <span style="color: var(--yellow-flag);">- ${flag.weight}</span>`;
+                    } else {
+                        redHtml += ` <span style="color: var(--red-flag);">- ${flag.weight}</span>`;
+                    }
+                }
+            });
+
+            currentScore = Math.max(0, currentScore); // Floor at 0
+
+            const resultEl = document.getElementById('eq-result');
+            const containerEl = document.getElementById('eq-container');
+            
+            resultEl.innerText = currentScore;
+            document.getElementById('eq-yellow-terms').innerHTML = yellowHtml;
+            document.getElementById('eq-red-terms').innerHTML = redHtml;
+
+            // Color code the result
+            if (currentScore > 75) {
+                resultEl.style.color = 'var(--success-color)';
+                containerEl.style.borderLeftColor = 'var(--success-color)';
+            } else if (currentScore > 30) {
+                resultEl.style.color = 'var(--yellow-flag)';
+                containerEl.style.borderLeftColor = 'var(--yellow-flag)';
+            } else {
+                resultEl.style.color = 'var(--red-flag)';
+                containerEl.style.borderLeftColor = 'var(--red-flag)';
+            }
+        }
+
+        // --- Section 3: Simulation Logic ---
+        function toggleAnalysis() {
+            document.getElementById('analysis-log').classList.toggle('visible');
+        }
+
+        function updateSim() {
+            const checkboxes = document.querySelectorAll('#sim-controls input[type="checkbox"]');
+            const logOutput = document.getElementById('log-output');
+            const finalScoreEl = document.getElementById('sim-final-score');
+            
+            let score = 100;
+            let logHtml = `<div class="log-entry">> BASE_CREDIBILITY = 100.0</div>`;
+
+            checkboxes.forEach(cb => {
+                if (cb.checked) {
+                    const weight = parseInt(cb.getAttribute('data-weight'));
+                    const type = cb.getAttribute('data-type');
+                    const desc = cb.getAttribute('data-desc');
+                    
+                    score -= weight;
+                    logHtml += `<div class="log-entry penalty">> OBSERVED [${type.toUpperCase()}_FLAG]: ${desc}</div>`;
+                    logHtml += `<div class="log-entry penalty">> APPLYING PENALTY: -${weight}. CURRENT_C = ${Math.max(0, score)}</div>`;
+                }
+            });
+
+            if (score === 100) {
+                logHtml += `<div class="log-entry">> AWAITING_OBSERVATIONS...</div>`;
+            }
+
+            score = Math.max(0, score);
+            logOutput.innerHTML = logHtml;
+            finalScoreEl.innerText = score;
+            
+            if (score > 75) finalScoreEl.style.color = 'var(--success-color)';
+            else if (score > 30) finalScoreEl.style.color = 'var(--yellow-flag)';
+            else finalScoreEl.style.color = 'var(--red-flag)';
+        }
+    </script>
+</body>
+</html>

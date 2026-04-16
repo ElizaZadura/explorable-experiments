@@ -1,0 +1,559 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>The Non-Computable Mind</title>
+    <style>
+        :root {
+            --bg-color: #fdfdfc;
+            --text-color: #1d1d1f;
+            --accent-color: #e30b5d;
+            --interactive-bg: #ffffff;
+            --border-color: #e5e5ea;
+            --font-main: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            --font-serif: "Georgia", "Times New Roman", serif;
+        }
+
+        *, *::before, *::after {
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: var(--font-main);
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            line-height: 1.6;
+            margin: 0;
+            padding: 0;
+            font-size: 18px;
+            overflow-x: hidden;
+        }
+
+        header {
+            background-color: #000022;
+            color: white;
+            padding: 4rem 2rem;
+            text-align: center;
+        }
+
+        header h1 {
+            font-size: 3rem;
+            margin: 0 0 1rem 0;
+            font-family: var(--font-serif);
+            color: #ff3366;
+            line-height: 1.2;
+        }
+
+        header p {
+            font-size: 1.2rem;
+            max-width: 600px;
+            margin: 0 auto;
+            color: #a0a0b0;
+        }
+
+        article {
+            max-width: 740px;
+            margin: 0 auto;
+            padding: 2rem;
+        }
+
+        h2 {
+            font-family: var(--font-serif);
+            font-size: 2rem;
+            margin-top: 3rem;
+            border-bottom: 1px solid var(--border-color);
+            padding-bottom: 0.5rem;
+            line-height: 1.3;
+        }
+
+        p {
+            margin-bottom: 1.5rem;
+        }
+
+        .interactive-panel {
+            background: var(--interactive-bg);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            padding: 2rem;
+            margin: 2rem 0;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+            border-left: 6px solid var(--accent-color);
+        }
+
+        .interactive-panel h3 {
+            margin-top: 0;
+            font-size: 1.3rem;
+            color: var(--accent-color);
+        }
+
+        button {
+            background-color: var(--accent-color);
+            color: white;
+            border: none;
+            padding: 0.75rem 1.5rem;
+            font-size: 1rem;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: background-color 0.2s, transform 0.1s;
+            text-align: center;
+        }
+
+        button:hover:not(:disabled) {
+            background-color: #c00a4e;
+        }
+        
+        button:active:not(:disabled) {
+            transform: scale(0.98);
+        }
+
+        button:disabled {
+            background-color: #ccc;
+            cursor: not-allowed;
+        }
+
+        /* Gödel Machine Styles */
+        .machine-box {
+            background: #f4f4f5;
+            padding: 1rem;
+            border-radius: 8px;
+            font-family: monospace;
+            margin-bottom: 1rem;
+            word-wrap: break-word;
+            font-size: 0.9rem;
+        }
+        
+        .machine-output {
+            min-height: 1.5rem;
+            color: #d9534f;
+            font-weight: bold;
+            margin-top: 1rem;
+        }
+
+        /* Quantum Wave Styles */
+        canvas {
+            width: 100%;
+            height: 200px;
+            background: #000;
+            border-radius: 8px;
+            margin-bottom: 1rem;
+            display: block;
+        }
+
+        .control-row {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            margin-bottom: 1rem;
+            flex-wrap: wrap;
+        }
+
+        input[type="range"] {
+            flex-grow: 1;
+            min-width: 150px;
+            cursor: pointer;
+        }
+
+        /* EPR Styles */
+        .epr-container {
+            display: flex;
+            justify-content: space-around;
+            margin-bottom: 2rem;
+            gap: 1rem;
+        }
+
+        .particle-box {
+            text-align: center;
+            padding: 1rem;
+            border: 2px dashed #ccc;
+            border-radius: 8px;
+            width: 45%;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .particle {
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            background: linear-gradient(45deg, #007bff, #ff3366);
+            margin: 1rem auto;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: bold;
+            font-size: 1.5rem;
+        }
+
+        .superposition {
+            animation: wobble 0.5s infinite alternate;
+            filter: blur(2px);
+        }
+
+        .measured-up {
+            background: #007bff;
+            filter: none;
+        }
+
+        .measured-down {
+            background: #ff3366;
+            filter: none;
+        }
+
+        @keyframes wobble {
+            0% { transform: rotate(-15deg) scale(1); }
+            100% { transform: rotate(15deg) scale(1.1); }
+        }
+
+        .explanation-text {
+            font-size: 0.95rem;
+            color: #555;
+            background: #f8f9fa;
+            padding: 1rem;
+            border-radius: 6px;
+            margin-top: 1rem;
+            line-height: 1.5;
+        }
+
+        /* Responsive Design */
+        @media (max-width: 768px) {
+            header {
+                padding: 3rem 1.5rem;
+            }
+            header h1 {
+                font-size: 2.2rem;
+            }
+            header p {
+                font-size: 1.1rem;
+            }
+            h2 {
+                font-size: 1.7rem;
+            }
+            article {
+                padding: 1.5rem;
+            }
+            .interactive-panel {
+                padding: 1.5rem;
+            }
+        }
+
+        @media (max-width: 500px) {
+            body {
+                font-size: 16px;
+            }
+            header h1 {
+                font-size: 1.8rem;
+            }
+            article {
+                padding: 1rem;
+            }
+            .interactive-panel {
+                padding: 1.25rem;
+                margin: 1.5rem 0;
+            }
+            .control-row {
+                flex-direction: column;
+                align-items: stretch;
+                gap: 0.75rem;
+            }
+            .control-row button {
+                width: 100%;
+            }
+            .control-row label {
+                margin-bottom: -0.25rem;
+            }
+            .epr-container {
+                flex-direction: column;
+                align-items: center;
+            }
+            .particle-box {
+                width: 100%;
+                max-width: 320px;
+            }
+            .particle-box button {
+                width: 100%;
+            }
+        }
+    </style>
+</head>
+<body>
+
+<header>
+    <h1>The Non-Computable Mind</h1>
+    <p>An interactive exploration of Sir Roger Penrose's argument against artificial consciousness, based on the physics of the quantum world.</p>
+</header>
+
+<article>
+    <p>If you build a computer powerful enough, will it eventually become conscious? Most computer scientists believe the answer is yes. They view the brain as a complex machine, and consciousness as merely the result of executing a highly complicated algorithm.</p>
+    
+    <p>Physicist and mathematician Sir Roger Penrose strongly disagrees. He argues that human intelligence is fundamentally <strong>not a computational process</strong>. To understand why, we must first look at the limits of mathematics, and then dive into the strange reality of quantum mechanics.</p>
+
+    <h2>1. The Limits of Rules</h2>
+    <p>Computers operate on formal systems. You give them a set of axioms (starting facts) and rules of procedure. If you follow the rules correctly, you get a proof. For a long time, mathematicians thought <em>all</em> truths could be proven this way.</p>
+    
+    <p>But in 1931, Kurt Gödel shattered this idea. He proved that in any sufficiently complex formal system, there are statements that are undeniably true, but <strong>cannot be proven</strong> by the rules of the system itself.</p>
+
+    <div class="interactive-panel">
+        <h3>Interactive: The Gödel Machine</h3>
+        <p>Imagine a computer strictly bound by formal rules. We ask it to evaluate a specific self-referential statement.</p>
+        
+        <div class="machine-box">
+            <strong>System Rules:</strong><br>
+            1. If True -> Output "Proven"<br>
+            2. If False -> Output "Rejected"<br>
+            <hr>
+            <strong>Input Statement:</strong> "I am not provable by these System Rules."
+        </div>
+        
+        <div class="control-row">
+            <button id="btn-machine-prove">Ask Machine to Prove It</button>
+            <button id="btn-human-understand" style="display:none; background-color: #007bff;">As a human, do you see it's true?</button>
+        </div>
+        
+        <div id="machine-output" class="machine-output"></div>
+
+        <div id="godel-explanation" class="explanation-text" style="display:none;">
+            <strong>Why did the machine fail?</strong> If the machine proves the statement, the statement becomes false (a contradiction). If the machine rejects it, the statement is true, but the machine missed it. <br><br>
+            <strong>Penrose's Insight:</strong> <em>You</em> just understood the statement is true, simply by thinking about what the rules mean. Your understanding stepped outside the algorithm. Therefore, human understanding cannot be just an algorithm.
+        </div>
+    </div>
+
+    <h2>2. Where is the Non-Computability?</h2>
+    <p>If our minds are doing something non-computable, where in the physical universe does non-computable physics exist? Penrose argues it isn't in classical mechanics. Newtonian physics, and even Einstein's Relativity, are deterministic. You can put them on a computer and simulate them perfectly.</p>
+
+    <p>To find non-computability, we must look to <strong>Quantum Mechanics</strong>. Quantum mechanics actually has two separate parts:</p>
+    <ol>
+        <li><strong>The Schrödinger Equation:</strong> This describes how a quantum state (a wave function) evolves over time. It is smooth, continuous, and completely computable.</li>
+        <li><strong>The Collapse of the Wave Function:</strong> When you actually <em>measure</em> the system, the smooth wave instantly collapses into a single point. This process is sudden, random, and <strong>non-computable</strong>.</li>
+    </ol>
+
+    <div class="interactive-panel">
+        <h3>Interactive: The Quantum Collapse</h3>
+        <p>Use the slider to evolve the wave function over time (The computable Schrödinger part). Then, click "Make Measurement" to force the system to pick a state.</p>
+        
+        <canvas id="quantum-canvas"></canvas>
+        
+        <div class="control-row">
+            <label for="time-slider">Time (t):</label>
+            <input type="range" id="time-slider" min="0" max="100" value="0">
+        </div>
+        
+        <div class="control-row">
+            <button id="btn-measure">Make Measurement (Collapse)</button>
+            <button id="btn-reset-wave" style="background-color: #666;">Reset</button>
+        </div>
+
+        <div id="wave-explanation" class="explanation-text">
+            Notice how you can smoothly scrub time back and forth while the wave is evolving? That is computation. But the moment you measured it, the math "broke" and collapsed to a single point. Penrose hypothesizes that consciousness is deeply linked to this non-computable collapse.
+        </div>
+    </div>
+
+    <h2>3. A Different Kind of Reality</h2>
+    <p>Classical reality is straightforward. A stick has a shape, whether you look at it or not. You can ascertain its state without disturbing it.</p>
+    
+    <p>Quantum reality is entirely different. You cannot ask a quantum system a question without fundamentally changing its state. Furthermore, this collapse doesn't just happen locally; it ignores our classical concepts of space and time.</p>
+
+    <div class="interactive-panel">
+        <h3>Interactive: Quantum Entanglement (EPR)</h3>
+        <p>Here are two entangled particles, Alice and Bob. They share a single wave function, even if they are light-years apart. They are currently in a blurry "superposition" of spinning Up and Down.</p>
+        
+        <div class="epr-container">
+            <div class="particle-box">
+                <strong>Alice's Particle</strong>
+                <div id="particle-alice" class="particle superposition">?</div>
+                <button id="btn-measure-alice">Measure Alice</button>
+            </div>
+            <div class="particle-box">
+                <strong>Bob's Particle</strong>
+                <div id="particle-bob" class="particle superposition">?</div>
+                <button id="btn-measure-bob" disabled>Waiting...</button>
+            </div>
+        </div>
+
+        <div id="epr-explanation" class="explanation-text" style="display:none;">
+            <strong>Instantaneous Collapse:</strong> The moment you measured Alice, Bob's state was instantly determined, faster than the speed of light. Penrose points out that this collapse mechanism behaves very peculiarly with regard to time—sometimes even appearing to act retroactively.
+        </div>
+    </div>
+
+    <h2>Conclusion: The Biology of the Quantum Mind</h2>
+    <p>If computation cannot explain understanding, and quantum collapse is the only non-computable process in physics, Penrose concludes that our brains must be utilizing this quantum collapse to generate conscious thought.</p>
+
+    <p>While modern computers process bits (0s and 1s) through classical logic gates, Penrose (along with Stuart Hameroff) suggests that biological structures inside our neurons—called microtubules—might be capable of sustaining quantum superpositions. When these superpositions reach a critical threshold, they self-collapse. It is in this non-computable, non-local collapse that a moment of conscious understanding is born.</p>
+
+    <p>Therefore, until we build machines that operate not on classical algorithms, but on the very fabric of quantum wave function collapse, we will not build a machine that truly <em>understands</em>.</p>
+</article>
+
+<script>
+    // --- Interaction 1: Godel Machine ---
+    const btnMachineProve = document.getElementById('btn-machine-prove');
+    const btnHumanUnderstand = document.getElementById('btn-human-understand');
+    const machineOutput = document.getElementById('machine-output');
+    const godelExplanation = document.getElementById('godel-explanation');
+
+    btnMachineProve.addEventListener('click', () => {
+        btnMachineProve.disabled = true;
+        machineOutput.style.color = '#555';
+        machineOutput.innerText = "Processing rules...";
+        
+        let dots = 0;
+        const interval = setInterval(() => {
+            dots++;
+            machineOutput.innerText = "Processing rules" + ".".repeat(dots % 4);
+            if (dots > 12) {
+                clearInterval(interval);
+                machineOutput.style.color = '#d9534f';
+                machineOutput.innerText = "ERROR: Infinite logical loop detected. Cannot prove or reject.";
+                btnHumanUnderstand.style.display = 'inline-block';
+            }
+        }, 150);
+    });
+
+    btnHumanUnderstand.addEventListener('click', () => {
+        btnHumanUnderstand.disabled = true;
+        godelExplanation.style.display = 'block';
+    });
+
+    // --- Interaction 2: Quantum Wave ---
+    const canvas = document.getElementById('quantum-canvas');
+    const ctx = canvas.getContext('2d');
+    const timeSlider = document.getElementById('time-slider');
+    const btnMeasure = document.getElementById('btn-measure');
+    const btnResetWave = document.getElementById('btn-reset-wave');
+    
+    let isCollapsed = false;
+    let collapseX = 0;
+    let collapseRatio = 0.5; // Used to maintain relative position on resize
+
+    function resizeCanvas() {
+        // Set actual size in memory (scaled to account for extra pixel density if needed, 
+        // but standard 1:1 is fine for this simple demo)
+        canvas.width = canvas.offsetWidth;
+        canvas.height = canvas.offsetHeight;
+        
+        // Adjust collapse position if it was already collapsed
+        if (isCollapsed) {
+            collapseX = collapseRatio * canvas.width;
+        }
+        
+        drawWave(timeSlider.value);
+    }
+
+    // Initialize canvas size and bind resize event
+    window.addEventListener('resize', resizeCanvas);
+
+    function drawWave(t) {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        
+        if (isCollapsed) {
+            // Draw collapsed spike
+            ctx.beginPath();
+            ctx.moveTo(collapseX, canvas.height);
+            ctx.lineTo(collapseX, 20);
+            ctx.strokeStyle = '#e30b5d';
+            ctx.lineWidth = 4;
+            ctx.stroke();
+            
+            ctx.beginPath();
+            ctx.arc(collapseX, 20, 8, 0, Math.PI * 2);
+            ctx.fillStyle = '#e30b5d';
+            ctx.fill();
+            return;
+        }
+
+        // Draw Schrodinger Evolution (moving wave packet)
+        const center = canvas.width / 2 + Math.sin(t * 0.05) * (canvas.width / 3);
+        
+        ctx.beginPath();
+        ctx.moveTo(0, canvas.height / 2);
+        
+        for (let x = 0; x < canvas.width; x++) {
+            // Gaussian envelope * sine wave
+            const distance = x - center;
+            const envelope = Math.exp(-(distance * distance) / 2000);
+            const oscillation = Math.cos(distance * 0.2 - t * 0.1);
+            const y = canvas.height / 2 - (envelope * oscillation * 60);
+            ctx.lineTo(x, y);
+        }
+        
+        ctx.strokeStyle = '#007bff';
+        ctx.lineWidth = 2;
+        ctx.stroke();
+
+        // Draw probability envelope
+        ctx.beginPath();
+        for (let x = 0; x < canvas.width; x++) {
+            const distance = x - center;
+            const envelope = Math.exp(-(distance * distance) / 2000);
+            const y = canvas.height / 2 - (envelope * 60);
+            ctx.lineTo(x, y);
+        }
+        ctx.strokeStyle = 'rgba(0, 123, 255, 0.3)';
+        ctx.stroke();
+    }
+
+    // Initial setup
+    resizeCanvas();
+
+    timeSlider.addEventListener('input', (e) => {
+        if (!isCollapsed) {
+            drawWave(e.target.value);
+        }
+    });
+
+    btnMeasure.addEventListener('click', () => {
+        if (isCollapsed) return;
+        isCollapsed = true;
+        timeSlider.disabled = true;
+        btnMeasure.disabled = true;
+        
+        // Pick a random spot weighted loosely by the current center
+        const t = timeSlider.value;
+        const center = canvas.width / 2 + Math.sin(t * 0.05) * (canvas.width / 3);
+        
+        // Add random spread
+        collapseX = center + (Math.random() - 0.5) * 80;
+        
+        // Keep in bounds
+        collapseX = Math.max(20, Math.min(canvas.width - 20, collapseX));
+        
+        // Save ratio for resizing
+        collapseRatio = collapseX / canvas.width;
+        
+        drawWave(t);
+    });
+
+    btnResetWave.addEventListener('click', () => {
+        isCollapsed = false;
+        timeSlider.disabled = false;
+        btnMeasure.disabled = false;
+        drawWave(timeSlider.value);
+    });
+
+    // --- Interaction 3: EPR Entanglement ---
+    const btnMeasureAlice = document.getElementById('btn-measure-alice');
+    const particleAlice = document.getElementById('particle-alice');
+    const particleBob = document.getElementById('particle-bob');
+    const eprExplanation = document.getElementById('epr-explanation');
+
+    btnMeasureAlice.addEventListener('click', () => {
+        btnMeasureAlice.disabled = true;
+        
+        // Collapse Alice
+        particleAlice.classList.remove('superposition');
+        particleAlice.classList.add('measured-up');
+        particleAlice.innerText = "UP";
+
+        // Instantly collapse Bob
+        particleBob.classList.remove('superposition');
+        particleBob.classList.add('measured-down');
+        particleBob.innerText = "DWN";
+
+        eprExplanation.style.display = 'block';
+    });
+
+</script>
+</body>
+</html>

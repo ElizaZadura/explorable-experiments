@@ -1,0 +1,879 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>The Immune System: An Interactive Battle</title>
+    <style>
+        :root {
+            --bg-color: #f8f9fa;
+            --text-main: #2d3436;
+            --text-light: #636e72;
+            --accent-blue: #0984e3;
+            --accent-blue-hover: #74b9ff;
+            --healthy-pink: #ffb6c1;
+            --dead-grey: #dfe6e9;
+            --bacteria-green: #00b894;
+            --macrophage-blue: #0984e3;
+            --neutrophil-orange: #e17055;
+            --antibody-yellow: #fdcb6e;
+            --panel-bg: #ffffff;
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-main);
+            line-height: 1.6;
+            overflow-x: hidden;
+        }
+
+        header {
+            text-align: center;
+            padding: 4rem 1rem;
+            background: linear-gradient(135deg, var(--healthy-pink), var(--bg-color));
+        }
+
+        h1 { font-size: 2.5rem; margin-bottom: 1rem; color: #d63031; }
+        h2 { font-size: 1.8rem; margin-bottom: 1rem; border-bottom: 2px solid var(--dead-grey); padding-bottom: 0.5rem; }
+        p { margin-bottom: 1rem; font-size: 1.1rem; }
+
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 2rem 1rem;
+        }
+
+        section {
+            margin-bottom: 4rem;
+            background: var(--panel-bg);
+            border-radius: 12px;
+            padding: 2rem;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+        }
+
+        .interactive-container {
+            width: 100%;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            margin: 1.5rem 0;
+            background: #fdfdfd;
+            border: 1px solid var(--dead-grey);
+            border-radius: 8px;
+            overflow: hidden;
+        }
+
+        canvas {
+            width: 100%;
+            max-width: 800px;
+            height: 400px;
+            background-color: var(--panel-bg);
+            display: block;
+            cursor: crosshair;
+        }
+
+        .controls {
+            width: 100%;
+            padding: 1rem;
+            background: #f1f2f6;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 1rem;
+            align-items: center;
+            justify-content: center;
+            border-top: 1px solid var(--dead-grey);
+        }
+
+        .control-group {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        button {
+            background: var(--accent-blue);
+            color: white;
+            border: none;
+            padding: 0.6rem 1.2rem;
+            border-radius: 6px;
+            font-size: 1rem;
+            cursor: pointer;
+            transition: background 0.2s;
+            font-weight: bold;
+        }
+
+        button:hover { background: var(--accent-blue-hover); }
+        button:disabled { background: var(--dead-grey); cursor: not-allowed; }
+
+        input[type=range] {
+            width: 150px;
+            margin-top: 0.5rem;
+        }
+
+        .status-bar {
+            width: 100%;
+            text-align: center;
+            padding: 0.5rem;
+            font-family: monospace;
+            background: #2d3436;
+            color: #55efc4;
+            font-size: 1rem;
+        }
+
+        .mechanism-box {
+            background: #e8f4f8;
+            border-left: 4px solid var(--accent-blue);
+            padding: 1rem;
+            margin: 1rem 0;
+            border-radius: 0 8px 8px 0;
+        }
+
+        .pedagogy-box {
+            background: #fff3e0;
+            border-left: 4px solid var(--neutrophil-orange);
+            padding: 1rem;
+            margin: 1rem 0;
+            border-radius: 0 8px 8px 0;
+            font-style: italic;
+        }
+
+        /* Toggle Switch */
+        .switch { position: relative; display: inline-block; width: 60px; height: 34px; }
+        .switch input { opacity: 0; width: 0; height: 0; }
+        .slider { position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background-color: #ccc; transition: .4s; border-radius: 34px; }
+        .slider:before { position: absolute; content: ""; height: 26px; width: 26px; left: 4px; bottom: 4px; background-color: white; transition: .4s; border-radius: 50%; }
+        input:checked + .slider { background-color: var(--accent-blue); }
+        input:checked + .slider:before { transform: translateX(26px); }
+
+        @media (max-width: 600px) {
+            canvas { height: 300px; }
+            .controls { flex-direction: column; }
+            section { padding: 1rem; }
+        }
+    </style>
+</head>
+<body>
+
+    <header>
+        <h1>The Immune System: An Interactive Battle</h1>
+        <p>Explore the microscopic war happening inside you right now.</p>
+    </header>
+
+    <div class="container">
+
+        <!-- SECTION 1: EXPONENTIAL GROWTH -->
+        <section id="sec1">
+            <h2>1. The Breach & Exponential Growth</h2>
+            <p>The human body is a fortress, but a simple scratch from a rusty nail can breach the walls. Once inside, bacteria waste no time.</p>
+            
+            <div class="interactive-container">
+                <div class="status-bar" id="s1-status">Bacterial Population: 0 (Click tissue to infect)</div>
+                <canvas id="canvas1"></canvas>
+                <div class="controls">
+                    <div class="control-group">
+                        <label for="s1-speed">Time Speed (1x to 100x)</label>
+                        <input type="range" id="s1-speed" min="1" max="100" value="1">
+                    </div>
+                    <button id="s1-clear">Clear Infection</button>
+                </div>
+            </div>
+
+            <div class="mechanism-box">
+                <strong>Mechanism:</strong> Bacteria reproduce through binary fission. As time speeds up, watch them duplicate.
+            </div>
+            <div class="pedagogy-box">
+                "Watch how quickly a minor intrusion becomes a swarm. This is exponential growth. If left unchecked, they will consume the surrounding resources."
+            </div>
+        </section>
+
+        <!-- SECTION 2: BRUTE FORCE -->
+        <section id="sec2">
+            <h2>2. The Brute Force Problem</h2>
+            <p>The body’s first responders are <strong>Macrophages</strong>—giant guard cells that swallow enemies whole. But they can get overwhelmed. When they do, they call in the <strong>Neutrophils</strong>: fierce, suicidal fighters.</p>
+            
+            <div class="interactive-container">
+                <canvas id="canvas2"></canvas>
+                <div class="controls">
+                    <button id="s2-macro">Deploy Macrophage</button>
+                    <div class="control-group" style="margin-left: 1rem;">
+                        <label for="s2-inflam">Release Messenger Proteins (Inflammation)</label>
+                        <input type="range" id="s2-inflam" min="0" max="100" value="0">
+                    </div>
+                </div>
+            </div>
+
+            <div class="mechanism-box">
+                <strong>Mechanism:</strong> Neutrophils are highly effective but messy. For every 3 bacteria a Neutrophil kills, it accidentally destroys 1 healthy tissue cell (turning it grey).
+            </div>
+            <div class="pedagogy-box">
+                "Why doesn't the body just use Neutrophils all the time? Crank the inflammation slider all the way up. Notice the grey, dead tissue? This collateral damage is what you experience as swelling and pus. The body needs a smarter approach."
+            </div>
+        </section>
+
+        <!-- SECTION 3: INTELLIGENCE NETWORK -->
+        <section id="sec3">
+            <h2>3. The Intelligence Network (Lock & Key)</h2>
+            <p>To stop the invasion without destroying the body, we need targeted weapons. Dendritic cells collect fragments of dead bacteria (Antigens) and travel to the lymph nodes to find a T-Cell with a specific, matching receptor.</p>
+            
+            <div class="interactive-container">
+                <div class="status-bar" id="s3-status">Search for the matching T-Cell Receptor...</div>
+                <canvas id="canvas3" style="height: 250px; background: #e8f4f8;"></canvas>
+                <div class="controls">
+                    <div class="control-group">
+                        <label for="s3-mutate">Mutate T-Cell Receptor</label>
+                        <input type="range" id="s3-mutate" min="0" max="100" value="10">
+                    </div>
+                </div>
+            </div>
+
+            <div class="mechanism-box" id="s3-mech">
+                <strong>Mechanism:</strong> Slide to mutate. <br> <em>Antigen Shape + Matching Receptor = Cellular Activation</em>
+            </div>
+            <div class="pedagogy-box">
+                "The adaptive immune system doesn't know what to fight until it is told. It relies on a literal lock-and-key mechanism, searching through billions of randomly generated T-Cells to find the exact one needed."
+            </div>
+        </section>
+
+        <!-- SECTION 4: WEAPONS FACTORY -->
+        <section id="sec4">
+            <h2>4. The Weapons Factory (Antibodies)</h2>
+            <p>Activated T-Cells wake up B-Cells, turning them into factories that pump out millions of Antibodies.</p>
+            
+            <div class="interactive-container">
+                <canvas id="canvas4"></canvas>
+                <div class="controls">
+                    <span style="font-weight: bold; margin-right: 10px;">Release Antibodies:</span>
+                    <label class="switch">
+                        <input type="checkbox" id="s4-toggle">
+                        <span class="slider"></span>
+                    </label>
+                </div>
+            </div>
+
+            <div class="mechanism-box">
+                <strong>Mechanism:</strong> Antibodies do not kill. They stick to bacteria, dropping their movement speed to zero. Macrophages are programmed to instantly prioritize and consume tagged bacteria.
+            </div>
+            <div class="pedagogy-box">
+                "Toggle the antibodies on and off. Notice that antibodies aren't killers—they are tags. They disable the enemy's mobility and paint a bright target on them, making the cleanup crew's job incredibly easy."
+            </div>
+        </section>
+
+        <!-- SECTION 5: MEMORY -->
+        <section id="sec5">
+            <h2>5. Memory (The Real Power of Immunity)</h2>
+            <p>The battle is won. Most of the cellular army commits suicide to save energy, but a few remain as "Memory Cells". Let's look at the data if you step on that rusty nail again.</p>
+            
+            <div class="interactive-container">
+                <canvas id="canvas5" style="height: 300px;"></canvas>
+                <div class="controls">
+                    <button id="s5-primary">Simulate Primary Infection</button>
+                    <button id="s5-secondary">Simulate Secondary Infection</button>
+                </div>
+            </div>
+
+            <div class="pedagogy-box">
+                "This graph is the foundation of human survival. Vaccines work by safely simulating the 'Primary Infection', giving you Memory Cells so that when the real disease arrives, your body instantly triggers the overwhelming 'Secondary Infection' response."
+            </div>
+        </section>
+
+    </div>
+
+<script>
+    // --- UTILS & SHARED LOGIC ---
+    const TWO_PI = Math.PI * 2;
+    function rand(min, max) { return Math.random() * (max - min) + min; }
+    function dist(x1, y1, x2, y2) { return Math.hypot(x2 - x1, y2 - y1); }
+
+    // Hexagon Grid Generator
+    function createHexGrid(width, height, radius) {
+        const hexWidth = Math.sqrt(3) * radius;
+        const hexHeight = 2 * radius;
+        const xOffset = hexWidth;
+        const yOffset = hexHeight * 0.75;
+        const cols = Math.ceil(width / hexWidth) + 1;
+        const rows = Math.ceil(height / yOffset) + 1;
+        
+        let grid = [];
+        for (let row = 0; row < rows; row++) {
+            for (let col = 0; col < cols; col++) {
+                let x = col * xOffset;
+                let y = row * yOffset;
+                if (row % 2 !== 0) x += hexWidth / 2;
+                grid.push({ x, y, dead: false });
+            }
+        }
+        return { grid, radius };
+    }
+
+    function drawHex(ctx, x, y, r, color) {
+        ctx.beginPath();
+        for (let i = 0; i < 6; i++) {
+            const angle = TWO_PI / 6 * i - Math.PI / 6;
+            const hx = x + r * Math.cos(angle);
+            const hy = y + r * Math.sin(angle);
+            if (i === 0) ctx.moveTo(hx, hy);
+            else ctx.lineTo(hx, hy);
+        }
+        ctx.closePath();
+        ctx.fillStyle = color;
+        ctx.fill();
+        ctx.strokeStyle = 'rgba(255,255,255,0.3)';
+        ctx.stroke();
+    }
+
+    function drawTissue(ctx, hexData) {
+        hexData.grid.forEach(h => {
+            drawHex(ctx, h.x, h.y, hexData.radius, h.dead ? '#dfe6e9' : '#ffb6c1');
+        });
+    }
+
+    // Entity Classes
+    class Bacteria {
+        constructor(x, y) {
+            this.x = x; this.y = y;
+            this.vx = rand(-1, 1); this.vy = rand(-1, 1);
+            this.age = 0;
+            this.tagged = false;
+        }
+        update(speedMult, width, height) {
+            if (!this.tagged) {
+                this.x += this.vx * (speedMult > 1 ? 0.5 : 1); // move slightly slower at high sim speeds to stay visible
+                this.y += this.vy * (speedMult > 1 ? 0.5 : 1);
+                if (this.x < 0 || this.x > width) this.vx *= -1;
+                if (this.y < 0 || this.y > height) this.vy *= -1;
+                if (Math.random() < 0.05) {
+                    this.vx += rand(-0.5, 0.5); this.vy += rand(-0.5, 0.5);
+                    let mag = Math.hypot(this.vx, this.vy);
+                    this.vx = (this.vx / mag) * 0.5; this.vy = (this.vy / mag) * 0.5;
+                }
+            }
+            this.age += speedMult;
+        }
+        draw(ctx) {
+            ctx.fillStyle = this.tagged ? '#555' : '#00b894';
+            ctx.beginPath();
+            ctx.roundRect(this.x - 4, this.y - 8, 8, 16, 4);
+            ctx.fill();
+            if(this.tagged) {
+                // Draw antibody on it
+                ctx.strokeStyle = '#fdcb6e'; ctx.lineWidth = 2;
+                ctx.beginPath(); ctx.moveTo(this.x, this.y); ctx.lineTo(this.x-6, this.y-6);
+                ctx.moveTo(this.x, this.y); ctx.lineTo(this.x+6, this.y-6); ctx.stroke();
+            }
+        }
+    }
+
+    class Macrophage {
+        constructor(x, y) {
+            this.x = x; this.y = y;
+            this.radius = 20;
+            this.wobble = rand(0, TWO_PI);
+        }
+        update(bacteriaList) {
+            if (bacteriaList.length === 0) return;
+            
+            // Prioritize tagged
+            let target = null;
+            let minDist = Infinity;
+            
+            let taggedList = bacteriaList.filter(b => b.tagged);
+            let searchList = taggedList.length > 0 ? taggedList : bacteriaList;
+
+            searchList.forEach(b => {
+                let d = dist(this.x, this.y, b.x, b.y);
+                if (d < minDist) { minDist = d; target = b; }
+            });
+
+            if (target) {
+                let dx = target.x - this.x; let dy = target.y - this.y;
+                let mag = Math.hypot(dx, dy);
+                this.x += (dx / mag) * 0.8; this.y += (dy / mag) * 0.8;
+                
+                if (minDist < this.radius) {
+                    bacteriaList.splice(bacteriaList.indexOf(target), 1);
+                }
+            }
+            this.wobble += 0.1;
+        }
+        draw(ctx) {
+            ctx.fillStyle = 'rgba(9, 132, 227, 0.8)';
+            ctx.beginPath();
+            for(let i=0; i<10; i++) {
+                let angle = (TWO_PI / 10) * i;
+                let r = this.radius + Math.sin(this.wobble + i) * 3;
+                let px = this.x + Math.cos(angle) * r;
+                let py = this.y + Math.sin(angle) * r;
+                if(i===0) ctx.moveTo(px,py); else ctx.lineTo(px,py);
+            }
+            ctx.closePath();
+            ctx.fill();
+        }
+    }
+
+    class Neutrophil {
+        constructor(x, y) {
+            this.x = x; this.y = y;
+            this.vx = rand(-2, 2); this.vy = rand(-2, 2);
+            this.kills = 0;
+        }
+        update(bacteriaList, hexGrid, width, height) {
+            this.x += this.vx; this.y += this.vy;
+            if (this.x < 0 || this.x > width) this.vx *= -1;
+            if (this.y < 0 || this.y > height) this.vy *= -1;
+
+            // Seek nearby bacteria aggressively
+            for (let i = bacteriaList.length - 1; i >= 0; i--) {
+                let b = bacteriaList[i];
+                if (dist(this.x, this.y, b.x, b.y) < 15) {
+                    bacteriaList.splice(i, 1);
+                    this.kills++;
+                    if (this.kills >= 3) {
+                        this.kills = 0;
+                        this.damageTissue(hexGrid);
+                    }
+                }
+            }
+        }
+        damageTissue(hexGrid) {
+            let closest = null; let minDist = Infinity;
+            hexGrid.forEach(h => {
+                if (!h.dead) {
+                    let d = dist(this.x, this.y, h.x, h.y);
+                    if (d < minDist) { minDist = d; closest = h; }
+                }
+            });
+            if (closest) closest.dead = true;
+        }
+        draw(ctx) {
+            ctx.fillStyle = '#e17055';
+            ctx.beginPath();
+            ctx.arc(this.x, this.y, 8, 0, TWO_PI);
+            ctx.fill();
+            // multi-lobed nucleus
+            ctx.fillStyle = '#2d3436';
+            ctx.beginPath(); ctx.arc(this.x-3, this.y-2, 2, 0, TWO_PI); ctx.fill();
+            ctx.beginPath(); ctx.arc(this.x+3, this.y-2, 2, 0, TWO_PI); ctx.fill();
+            ctx.beginPath(); ctx.arc(this.x, this.y+3, 2, 0, TWO_PI); ctx.fill();
+        }
+    }
+
+    class Antibody {
+        constructor(x, y) {
+            this.x = x; this.y = y;
+            this.target = null;
+        }
+        update(bacteriaList) {
+            if (!this.target || this.target.tagged) {
+                // Find new untagged target
+                let minDist = Infinity;
+                bacteriaList.forEach(b => {
+                    if (!b.tagged) {
+                        let d = dist(this.x, this.y, b.x, b.y);
+                        if (d < minDist) { minDist = d; this.target = b; }
+                    }
+                });
+            }
+
+            if (this.target) {
+                let dx = this.target.x - this.x; let dy = this.target.y - this.y;
+                let mag = Math.hypot(dx, dy);
+                this.x += (dx / mag) * 4; this.y += (dy / mag) * 4;
+                if (mag < 10) {
+                    this.target.tagged = true;
+                    return true; // hit
+                }
+            } else {
+                this.y += 2; // drift
+            }
+            return false;
+        }
+        draw(ctx) {
+            ctx.strokeStyle = '#fdcb6e'; ctx.lineWidth = 2;
+            ctx.beginPath();
+            ctx.moveTo(this.x, this.y); ctx.lineTo(this.x, this.y+6);
+            ctx.moveTo(this.x, this.y); ctx.lineTo(this.x-4, this.y-4);
+            ctx.moveTo(this.x, this.y); ctx.lineTo(this.x+4, this.y-4);
+            ctx.stroke();
+        }
+    }
+
+    // --- SECTION 1 LOGIC ---
+    const sec1 = {
+        canvas: document.getElementById('canvas1'),
+        ctx: document.getElementById('canvas1').getContext('2d'),
+        bacteria: [],
+        hexGrid: null,
+        active: false,
+        init() {
+            this.resize();
+            this.hexGrid = createHexGrid(this.canvas.width, this.canvas.height, 20);
+            this.canvas.addEventListener('pointerdown', (e) => {
+                const rect = this.canvas.getBoundingClientRect();
+                const x = e.clientX - rect.left;
+                const y = e.clientY - rect.top;
+                for(let i=0; i<5; i++) this.bacteria.push(new Bacteria(x + rand(-10,10), y + rand(-10,10)));
+            });
+            document.getElementById('s1-clear').addEventListener('click', () => this.bacteria = []);
+        },
+        resize() {
+            this.canvas.width = this.canvas.offsetWidth;
+            this.canvas.height = this.canvas.offsetHeight;
+        },
+        loop() {
+            if(!this.active) return;
+            const speed = parseInt(document.getElementById('s1-speed').value);
+            
+            // Duplication logic
+            if (this.bacteria.length > 0 && this.bacteria.length < 500) {
+                for (let i = this.bacteria.length - 1; i >= 0; i--) {
+                    if (this.bacteria[i].age > 100) {
+                        this.bacteria[i].age = 0;
+                        this.bacteria.push(new Bacteria(this.bacteria[i].x + rand(-5,5), this.bacteria[i].y + rand(-5,5)));
+                    }
+                }
+            }
+
+            this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
+            drawTissue(this.ctx, this.hexGrid);
+            
+            this.bacteria.forEach(b => { b.update(speed, this.canvas.width, this.canvas.height); b.draw(this.ctx); });
+            
+            document.getElementById('s1-status').innerText = `Bacterial Population: ${this.bacteria.length} (Doubling speed: ${speed}x)`;
+        }
+    };
+
+    // --- SECTION 2 LOGIC ---
+    const sec2 = {
+        canvas: document.getElementById('canvas2'),
+        ctx: document.getElementById('canvas2').getContext('2d'),
+        bacteria: [],
+        macrophages: [],
+        neutrophils: [],
+        hexGrid: null,
+        active: false,
+        spawnTimer: 0,
+        init() {
+            this.resize();
+            this.hexGrid = createHexGrid(this.canvas.width, this.canvas.height, 20);
+            // Pre-infect
+            for(let i=0; i<30; i++) this.bacteria.push(new Bacteria(this.canvas.width/2 + rand(-50,50), this.canvas.height/2 + rand(-50,50)));
+            
+            document.getElementById('s2-macro').addEventListener('click', () => {
+                this.macrophages.push(new Macrophage(rand(0, this.canvas.width), rand(0, this.canvas.height)));
+            });
+        },
+        resize() {
+            this.canvas.width = this.canvas.offsetWidth;
+            this.canvas.height = this.canvas.offsetHeight;
+        },
+        loop() {
+            if(!this.active) return;
+            
+            // Constant low-level bacteria spawn to keep it going
+            if(Math.random() < 0.05 && this.bacteria.length < 200) {
+                this.bacteria.push(new Bacteria(rand(0, this.canvas.width), rand(0, this.canvas.height)));
+            }
+            // Bacteria duplicate
+            for (let i = this.bacteria.length - 1; i >= 0; i--) {
+                this.bacteria[i].update(1, this.canvas.width, this.canvas.height);
+                if (this.bacteria[i].age > 150 && this.bacteria.length < 300) {
+                    this.bacteria[i].age = 0;
+                    this.bacteria.push(new Bacteria(this.bacteria[i].x + rand(-5,5), this.bacteria[i].y + rand(-5,5)));
+                }
+            }
+
+            const inflam = parseInt(document.getElementById('s2-inflam').value);
+            if (inflam > 0) {
+                this.spawnTimer += inflam;
+                if (this.spawnTimer > 1000) {
+                    this.neutrophils.push(new Neutrophil(rand(0, this.canvas.width), 0));
+                    this.spawnTimer = 0;
+                }
+            }
+
+            // Neutrophil lifespan
+            if (this.neutrophils.length > inflam / 5) this.neutrophils.shift();
+
+            this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
+            drawTissue(this.ctx, this.hexGrid);
+            
+            this.bacteria.forEach(b => b.draw(this.ctx));
+            this.macrophages.forEach(m => { m.update(this.bacteria); m.draw(this.ctx); });
+            this.neutrophils.forEach(n => { n.update(this.bacteria, this.hexGrid.grid, this.canvas.width, this.canvas.height); n.draw(this.ctx); });
+        }
+    };
+
+    // --- SECTION 3 LOGIC ---
+    const sec3 = {
+        canvas: document.getElementById('canvas3'),
+        ctx: document.getElementById('canvas3').getContext('2d'),
+        active: false,
+        matched: false,
+        particles: [],
+        init() {
+            this.resize();
+            const slider = document.getElementById('s3-mutate');
+            slider.addEventListener('input', () => {
+                if(this.matched) return;
+                const val = parseInt(slider.value);
+                if (val > 85 && val < 95) { // Triangle match zone
+                    this.matched = true;
+                    slider.disabled = true;
+                    document.getElementById('s3-status').innerHTML = "<span style='color:#ffd700'>MATCH FOUND! Cellular Activation Triggered!</span>";
+                    document.getElementById('s3-mech').innerHTML = "<strong>Mechanism:</strong> Antigen Shape (A) + Matching Receptor (A') = Cellular Activation & Multiplication.";
+                    document.getElementById('s3-mech').style.background = "#e8f8e8";
+                    document.getElementById('s3-mech').style.borderColor = "#00b894";
+                    // Spawn particles
+                    for(let i=0; i<30; i++) {
+                        this.particles.push({
+                            x: this.canvas.width/2 + 100, y: this.canvas.height/2,
+                            vx: rand(-3,3), vy: rand(-3,3), life: 1.0
+                        });
+                    }
+                }
+            });
+        },
+        resize() {
+            this.canvas.width = this.canvas.offsetWidth;
+            this.canvas.height = this.canvas.offsetHeight;
+        },
+        drawShape(ctx, type, x, y, size) {
+            ctx.beginPath();
+            if (type === 'square') {
+                ctx.rect(x - size, y - size, size*2, size*2);
+            } else if (type === 'circle') {
+                ctx.arc(x, y, size, 0, TWO_PI);
+            } else if (type === 'triangle') {
+                ctx.moveTo(x, y - size);
+                ctx.lineTo(x + size, y + size);
+                ctx.lineTo(x - size, y + size);
+                ctx.closePath();
+            } else if (type === 'mutating') {
+                // morph shape
+                for(let i=0; i<8; i++) {
+                    let a = (TWO_PI/8)*i;
+                    let r = size + rand(-5,5);
+                    if(i===0) ctx.moveTo(x+Math.cos(a)*r, y+Math.sin(a)*r);
+                    else ctx.lineTo(x+Math.cos(a)*r, y+Math.sin(a)*r);
+                }
+                ctx.closePath();
+            }
+            ctx.fill(); ctx.stroke();
+        },
+        loop() {
+            if(!this.active) return;
+            this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
+            
+            const cx = this.canvas.width / 2;
+            const cy = this.canvas.height / 2;
+
+            // Dendritic Cell (Left)
+            this.ctx.fillStyle = '#dfe6e9'; this.ctx.strokeStyle = '#b2bec3'; this.ctx.lineWidth = 2;
+            this.ctx.beginPath(); this.ctx.arc(cx - 100, cy, 40, 0, TWO_PI); this.ctx.fill(); this.ctx.stroke();
+            // Antigen (Triangle)
+            this.ctx.fillStyle = '#00b894'; this.ctx.strokeStyle = '#000';
+            this.drawShape(this.ctx, 'triangle', cx - 60, cy, 15);
+
+            // T-Cell (Right)
+            this.ctx.fillStyle = '#0984e3'; this.ctx.strokeStyle = '#000';
+            this.ctx.beginPath(); this.ctx.arc(cx + 100, cy, 30, 0, TWO_PI); this.ctx.fill(); this.ctx.stroke();
+            
+            // Receptor
+            const val = parseInt(document.getElementById('s3-mutate').value);
+            this.ctx.fillStyle = '#fdcb6e';
+            let rShape = 'square';
+            if (this.matched) rShape = 'triangle';
+            else if (val < 30) rShape = 'square';
+            else if (val < 60) rShape = 'circle';
+            else if (val < 85) rShape = 'mutating';
+            else rShape = 'triangle';
+
+            this.drawShape(this.ctx, rShape, cx + 60, cy, 15);
+
+            // Multiplication Animation
+            if (this.matched) {
+                this.ctx.fillStyle = '#0984e3';
+                for(let i = this.particles.length-1; i>=0; i--) {
+                    let p = this.particles[i];
+                    p.x += p.vx; p.y += p.vy; p.life -= 0.01;
+                    this.ctx.globalAlpha = Math.max(0, p.life);
+                    this.ctx.beginPath(); this.ctx.arc(p.x, p.y, 10, 0, TWO_PI); this.ctx.fill();
+                    if(p.life <= 0) this.particles.splice(i, 1);
+                }
+                this.ctx.globalAlpha = 1.0;
+            }
+        }
+    };
+
+    // --- SECTION 4 LOGIC ---
+    const sec4 = {
+        canvas: document.getElementById('canvas4'),
+        ctx: document.getElementById('canvas4').getContext('2d'),
+        bacteria: [],
+        macrophages: [],
+        antibodies: [],
+        hexGrid: null,
+        active: false,
+        init() {
+            this.resize();
+            this.hexGrid = createHexGrid(this.canvas.width, this.canvas.height, 20);
+            for(let i=0; i<40; i++) this.bacteria.push(new Bacteria(rand(0, this.canvas.width), rand(0, this.canvas.height)));
+            for(let i=0; i<3; i++) this.macrophages.push(new Macrophage(rand(0, this.canvas.width), rand(0, this.canvas.height)));
+        },
+        resize() {
+            this.canvas.width = this.canvas.offsetWidth;
+            this.canvas.height = this.canvas.offsetHeight;
+        },
+        loop() {
+            if(!this.active) return;
+            
+            // Replenish bacteria slowly
+            if(Math.random() < 0.02 && this.bacteria.length < 100) {
+                this.bacteria.push(new Bacteria(rand(0, this.canvas.width), rand(0, this.canvas.height)));
+            }
+
+            const release = document.getElementById('s4-toggle').checked;
+            if (release && Math.random() < 0.2) {
+                this.antibodies.push(new Antibody(rand(0, this.canvas.width), 0));
+            }
+
+            this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
+            drawTissue(this.ctx, this.hexGrid);
+            
+            this.bacteria.forEach(b => { b.update(1, this.canvas.width, this.canvas.height); b.draw(this.ctx); });
+            
+            for (let i = this.antibodies.length - 1; i >= 0; i--) {
+                let hit = this.antibodies[i].update(this.bacteria);
+                this.antibodies[i].draw(this.ctx);
+                if (hit || this.antibodies[i].y > this.canvas.height) this.antibodies.splice(i, 1);
+            }
+
+            this.macrophages.forEach(m => { m.update(this.bacteria); m.draw(this.ctx); });
+        }
+    };
+
+    // --- SECTION 5 LOGIC ---
+    const sec5 = {
+        canvas: document.getElementById('canvas5'),
+        ctx: document.getElementById('canvas5').getContext('2d'),
+        active: false,
+        time: 0,
+        mode: 'idle', // idle, primary, secondary
+        history: [],
+        init() {
+            this.resize();
+            document.getElementById('s5-primary').addEventListener('click', () => { this.mode = 'primary'; this.time = 0; this.history = []; });
+            document.getElementById('s5-secondary').addEventListener('click', () => { this.mode = 'secondary'; this.time = 0; this.history = []; });
+        },
+        resize() {
+            this.canvas.width = this.canvas.offsetWidth;
+            this.canvas.height = this.canvas.offsetHeight;
+        },
+        drawAxes() {
+            const ctx = this.ctx;
+            ctx.strokeStyle = '#2d3436'; ctx.lineWidth = 2;
+            ctx.beginPath();
+            ctx.moveTo(40, 20); ctx.lineTo(40, this.canvas.height - 30); ctx.lineTo(this.canvas.width - 20, this.canvas.height - 30);
+            ctx.stroke();
+            ctx.fillStyle = '#2d3436'; ctx.font = '12px sans-serif';
+            ctx.fillText('Population', 5, 15);
+            ctx.fillText('Time (Days) ->', this.canvas.width / 2, this.canvas.height - 10);
+            
+            // Legend
+            ctx.fillStyle = '#00b894'; ctx.fillRect(this.canvas.width - 150, 20, 15, 15); ctx.fillText('Pathogen', this.canvas.width - 130, 32);
+            ctx.fillStyle = '#fdcb6e'; ctx.fillRect(this.canvas.width - 150, 45, 15, 15); ctx.fillText('Antibodies', this.canvas.width - 130, 57);
+        },
+        loop() {
+            if(!this.active) return;
+            this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
+            this.drawAxes();
+
+            if (this.mode !== 'idle') {
+                this.time += 0.5;
+                const maxTime = 100;
+                
+                let pathogen = 0;
+                let antibody = 0;
+
+                if (this.mode === 'primary') {
+                    // Pathogen spikes at t=25, dies at t=60
+                    pathogen = Math.max(0, (this.time * this.time) * Math.exp(-this.time / 10) * 5);
+                    // Antibody starts t=20, plateaus
+                    antibody = this.time > 20 ? 100 / (1 + Math.exp(-0.2 * (this.time - 35))) : 0;
+                } else if (this.mode === 'secondary') {
+                    // Pathogen tiny bump
+                    pathogen = Math.max(0, (this.time) * Math.exp(-this.time / 2) * 5);
+                    // Antibody instant spike
+                    antibody = 20 + 130 / (1 + Math.exp(-0.5 * (this.time - 5)));
+                }
+
+                if (this.time <= maxTime) {
+                    this.history.push({ t: this.time, p: pathogen, a: antibody });
+                }
+
+                // Draw lines
+                const mapX = (t) => 40 + (t / maxTime) * (this.canvas.width - 60);
+                const mapY = (val) => (this.canvas.height - 30) - (val / 150) * (this.canvas.height - 50);
+
+                this.ctx.lineWidth = 3;
+                
+                // Draw Pathogen
+                this.ctx.strokeStyle = '#00b894';
+                this.ctx.beginPath();
+                this.history.forEach((pt, i) => {
+                    if (i === 0) this.ctx.moveTo(mapX(pt.t), mapY(pt.p));
+                    else this.ctx.lineTo(mapX(pt.t), mapY(pt.p));
+                });
+                this.ctx.stroke();
+
+                // Draw Antibody
+                this.ctx.strokeStyle = '#fdcb6e';
+                this.ctx.beginPath();
+                this.history.forEach((pt, i) => {
+                    if (i === 0) this.ctx.moveTo(mapX(pt.t), mapY(pt.a));
+                    else this.ctx.lineTo(mapX(pt.t), mapY(pt.a));
+                });
+                this.ctx.stroke();
+            }
+        }
+    };
+
+    // --- MAIN LOOP & OBSERVER ---
+    const sections = [sec1, sec2, sec3, sec4, sec5];
+
+    function initAll() {
+        sections.forEach(sec => sec.init());
+        requestAnimationFrame(mainLoop);
+    }
+
+    function mainLoop() {
+        sections.forEach(sec => sec.loop());
+        requestAnimationFrame(mainLoop);
+    }
+
+    // Use Intersection Observer to only run active sections
+    const observer = new IntersectionObserver((entries) => {
+        entries.forEach(entry => {
+            const id = entry.target.id;
+            const secIndex = parseInt(id.replace('sec', '')) - 1;
+            if (sections[secIndex]) {
+                sections[secIndex].active = entry.isIntersecting;
+            }
+        });
+    }, { threshold: 0.2 });
+
+    document.querySelectorAll('section').forEach(sec => observer.observe(sec));
+
+    window.addEventListener('resize', () => {
+        sections.forEach(sec => sec.resize());
+    });
+
+    // Start
+    initAll();
+
+</script>
+</body>
+</html>

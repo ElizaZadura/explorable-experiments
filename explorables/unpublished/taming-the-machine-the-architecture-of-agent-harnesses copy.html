@@ -1,0 +1,688 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Taming the Machine: The Architecture of Agent Harnesses</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg: #ffffff;
+            --text: #1a1a1a;
+            --text-light: #666;
+            --accent: #2563eb; /* Blue */
+            --accent-light: #eff6ff;
+            --danger: #dc2626; /* Red */
+            --success: #16a34a; /* Green */
+            --border: #e5e7eb;
+            --code-bg: #f3f4f6;
+            --font-main: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            --font-mono: 'JetBrains Mono', monospace;
+            --max-width: 650px;
+        }
+
+        body {
+            font-family: var(--font-main);
+            color: var(--text);
+            background: var(--bg);
+            line-height: 1.7;
+            margin: 0;
+            padding: 0;
+            -webkit-font-smoothing: antialiased;
+        }
+
+        h1, h2, h3 {
+            font-weight: 700;
+            letter-spacing: -0.02em;
+            margin-top: 2rem;
+            margin-bottom: 1rem;
+        }
+
+        h1 { font-size: 2.5rem; line-height: 1.1; margin-top: 4rem; }
+        h2 { font-size: 1.5rem; border-bottom: 1px solid var(--border); padding-bottom: 0.5rem; }
+        h3 { font-size: 1.2rem; margin-top: 1.5rem; }
+
+        p { margin-bottom: 1.5rem; color: #333; }
+        
+        strong { font-weight: 600; color: #000; }
+
+        header, footer {
+            max-width: var(--max-width);
+            margin: 0 auto;
+            padding: 0 1.5rem;
+        }
+
+        article {
+            max-width: var(--max-width);
+            margin: 0 auto;
+            padding: 0 1.5rem 4rem 1.5rem;
+        }
+
+        /* --- Interactive Figures Container --- */
+        figure {
+            margin: 2.5rem -1.5rem; /* Break out slightly on mobile */
+            background: #fafafa;
+            border-top: 1px solid var(--border);
+            border-bottom: 1px solid var(--border);
+            padding: 2rem 1.5rem;
+        }
+
+        @media (min-width: 700px) {
+            figure {
+                border: 1px solid var(--border);
+                border-radius: 8px;
+                margin: 3rem 0;
+            }
+        }
+
+        figcaption {
+            font-size: 0.85rem;
+            color: var(--text-light);
+            margin-top: 1rem;
+            text-align: center;
+            font-family: var(--font-mono);
+        }
+
+        /* --- UI Components --- */
+        button {
+            background: var(--text);
+            color: white;
+            border: none;
+            padding: 0.6rem 1.2rem;
+            border-radius: 6px;
+            font-family: var(--font-main);
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s;
+            font-size: 0.9rem;
+        }
+
+        button:hover { background: #000; transform: translateY(-1px); }
+        button:active { transform: translateY(0); }
+        button.secondary { background: white; border: 1px solid var(--border); color: var(--text); }
+        button.secondary:hover { background: var(--code-bg); }
+
+        .toggle-container {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            margin-top: 1rem;
+            font-size: 0.9rem;
+            cursor: pointer;
+        }
+
+        /* --- Section 1: Context Bucket --- */
+        .context-viz {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 1rem;
+        }
+        
+        .bucket-container {
+            width: 100%;
+            height: 80px;
+            border: 2px solid var(--text);
+            border-top: none;
+            border-radius: 0 0 8px 8px;
+            display: flex;
+            align-items: flex-end;
+            padding: 5px;
+            gap: 4px;
+            background: white;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .token-block {
+            flex: 1;
+            height: 0%;
+            background: var(--success);
+            border-radius: 2px;
+            transition: height 0.3s cubic-bezier(0.34, 1.56, 0.64, 1), background 0.3s;
+            animation: popIn 0.3s forwards;
+            opacity: 1;
+        }
+
+        .token-block.rotten {
+            background: var(--danger);
+            opacity: 0.3;
+        }
+
+        @keyframes popIn { from { height: 0; } to { height: 80%; } }
+
+        .status-display {
+            font-family: var(--font-mono);
+            font-size: 0.8rem;
+            color: var(--text-light);
+            background: var(--code-bg);
+            padding: 0.5rem;
+            border-radius: 4px;
+            width: 100%;
+            text-align: center;
+        }
+
+        /* --- Section 2: Harness Architecture --- */
+        .harness-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr 1fr;
+            gap: 1rem;
+            align-items: center;
+            margin-bottom: 1.5rem;
+            position: relative;
+        }
+
+        .agent-node {
+            background: white;
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 1rem;
+            text-align: center;
+            font-size: 0.8rem;
+            font-weight: 600;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+            z-index: 2;
+            transition: all 0.3s;
+        }
+
+        .agent-node.active {
+            border-color: var(--accent);
+            box-shadow: 0 0 0 2px var(--accent-light);
+        }
+
+        .state-node {
+            background: var(--code-bg);
+            border: 2px dashed var(--text-light);
+        }
+
+        .connector-svg {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 1;
+        }
+        
+        .connector-line {
+            stroke: var(--border);
+            stroke-width: 2;
+            fill: none;
+            transition: stroke 0.3s;
+        }
+        
+        .connector-line.active { stroke: var(--accent); }
+
+        .json-viewer {
+            background: #1e1e1e;
+            color: #d4d4d4;
+            padding: 1rem;
+            border-radius: 6px;
+            font-family: var(--font-mono);
+            font-size: 0.75rem;
+            overflow-x: auto;
+            display: none;
+            margin-top: 1rem;
+            white-space: pre;
+        }
+
+        .json-viewer.visible { display: block; }
+
+        /* --- Section 3 & 4: Reliability Math --- */
+        .math-controls {
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .slider-group {
+            display: flex;
+            flex-direction: column;
+            gap: 0.25rem;
+        }
+
+        .slider-group label {
+            font-size: 0.85rem;
+            font-weight: 500;
+            display: flex;
+            justify-content: space-between;
+        }
+
+        input[type="range"] {
+            width: 100%;
+            accent-color: var(--text);
+        }
+
+        .graph-container {
+            width: 100%;
+            height: 200px;
+            background: white;
+            border-bottom: 1px solid var(--border);
+            border-left: 1px solid var(--border);
+            position: relative;
+        }
+
+        .graph-svg {
+            width: 100%;
+            height: 100%;
+            overflow: visible;
+        }
+
+        .result-text {
+            font-size: 1.2rem;
+            font-weight: 700;
+            color: var(--text);
+            margin-top: 1rem;
+            text-align: center;
+        }
+
+        .math-equation {
+            font-family: 'Times New Roman', serif;
+            font-style: italic;
+            text-align: center;
+            font-size: 1.2rem;
+            margin: 1.5rem 0;
+            color: var(--text-light);
+        }
+
+        /* Utility */
+        .hidden { display: none; }
+        
+        @media (max-width: 500px) {
+            .harness-grid {
+                grid-template-columns: 1fr;
+                gap: 2rem;
+            }
+        }
+    </style>
+</head>
+<body>
+
+<header>
+    <h1>Taming the Machine</h1>
+    <p style="font-size: 1.1rem; color: var(--text-light);">The Architecture of Agent Harnesses</p>
+</header>
+
+<article>
+    <!-- SECTION 1 -->
+    <section>
+        <p>
+            Early attempts at AI coding were essentially "prompt and pray." We call this <strong>Vibe Coding</strong>. 
+            You open a chat window, paste a request, and hope the model understands. 
+            However, this approach hits a hard physical limit: <strong>Bounded Attention</strong>.
+        </p>
+        <p>
+            LLMs have a fixed context window. As a conversation grows, the model must "forget" the beginning 
+            to make room for new words, or it simply gets "lost in the middle."
+        </p>
+
+        <figure>
+            <div class="context-viz">
+                <div class="status-display" id="context-status">
+                    Context Load: [          ] (0/8)
+                </div>
+                <div class="bucket-container" id="context-bucket">
+                    <!-- Blocks go here -->
+                </div>
+                <button id="btn-add-context">Add Code Feature</button>
+            </div>
+            <figcaption>
+                The Context Bucket. When the container fills up, the oldest memories (left) 
+                rot and fade away to make room for new inputs.
+            </figcaption>
+        </figure>
+
+        <p>
+            When the bucket overflows, the model loses the initial system instructions. 
+            It starts hallucinating variables or reverting to generic coding styles because it literally 
+            cannot see the definitions you provided ten minutes ago.
+        </p>
+    </section>
+
+    <!-- SECTION 2 -->
+    <section>
+        <h2>The Harness Architecture</h2>
+        <p>
+            To solve this, we stop treating the LLM as a "Brain" and start treating it as a "Processor." 
+            We wrap the model in a <strong>Harness</strong>.
+        </p>
+        <p>
+            Instead of one long chat, we break the process into specialized agents and distinct sessions. 
+            Crucially, the "memory" isn't stored in the chat history; it is stored in <strong>Persistent State Files</strong>.
+        </p>
+
+        <figure>
+            <div class="harness-grid">
+                <svg class="connector-svg" viewBox="0 0 300 100" preserveAspectRatio="none">
+                    <!-- Lines drawn dynamically via JS or simpler CSS logic, using SVG for smoothness -->
+                    <path d="M 50 50 L 150 50" class="connector-line" id="line-1" stroke-dasharray="4"/>
+                    <path d="M 250 50 L 150 50" class="connector-line" id="line-2" stroke-dasharray="4"/>
+                </svg>
+                
+                <div class="agent-node" id="agent-init">Initializer<br>Agent</div>
+                <div class="agent-node state-node" id="node-state">
+                    📄 State<br>
+                    <span style="font-size:0.7em; font-weight:400">feature_list.json</span>
+                </div>
+                <div class="agent-node" id="agent-task">Task<br>Agent</div>
+            </div>
+
+            <div style="display:flex; justify-content:center; gap:10px; margin-bottom: 1rem;">
+                <button id="btn-harness-step">Step Simulation</button>
+                <button class="secondary" id="btn-harness-reset">Reset</button>
+            </div>
+
+            <div class="toggle-container" id="toggle-json">
+                <input type="checkbox" id="chk-json">
+                <label for="chk-json">Show Data Structure (State)</label>
+            </div>
+            <div class="json-viewer" id="json-display">
+// Waiting for simulation...
+            </div>
+
+            <figcaption id="harness-caption">
+                Step 0: System Idle.
+            </figcaption>
+        </figure>
+
+        <p>
+            In this architecture, agents are ephemeral. They wake up, read the State file, perform <strong>one</strong> task, 
+            update the State file, and then die. This ensures every step starts with a fresh, clean context window, 
+            eliminating Context Rot completely.
+        </p>
+    </section>
+
+    <!-- SECTION 3 & 4 -->
+    <section>
+        <h2>The Mathematics of Reliability</h2>
+        <p>
+            Even with perfect context management, we face a second problem: <strong>Compounding Errors</strong>. 
+            If an agent is 95% accurate, that sounds excellent. But in a multi-step workflow, probabilities multiply.
+        </p>
+        
+        <div class="math-equation">
+            P<sub>success</sub> = (P<sub>step</sub>)<sup>N</sup>
+        </div>
+
+        <p>
+            Where <em>P</em> is accuracy and <em>N</em> is the number of steps. Watch how quickly reliability collapses.
+        </p>
+
+        <figure>
+            <div class="math-controls">
+                <div class="slider-group">
+                    <label>Agent Accuracy: <span id="val-acc">95%</span></label>
+                    <input type="range" id="sl-acc" min="90" max="99.9" step="0.1" value="95">
+                </div>
+                <div class="slider-group">
+                    <label>Number of Steps: <span id="val-steps">20</span></label>
+                    <input type="range" id="sl-steps" min="1" max="100" step="1" value="20">
+                </div>
+            </div>
+
+            <div class="graph-container">
+                <svg class="graph-svg" id="graph-svg" viewBox="0 0 100 100" preserveAspectRatio="none">
+                    <!-- Path generated by JS -->
+                    <path id="graph-line" d="" fill="none" stroke="#2563eb" stroke-width="2" />
+                    <!-- Checkpoint markers -->
+                    <g id="checkpoint-markers"></g>
+                </svg>
+            </div>
+            
+            <div class="result-text" id="result-text">
+                Total System Reliability: 35.8%
+            </div>
+
+            <div class="toggle-container" style="justify-content: center; margin-top: 1.5rem; padding: 1rem; background: #f3f4f6; border-radius: 6px;">
+                <input type="checkbox" id="chk-hitl">
+                <label for="chk-hitl"><strong>Enable Human Checkpoints</strong> (Review every 5 steps)</label>
+            </div>
+
+            <figcaption>
+                Toggle checkpoints to see how Human-in-the-Loop resets the error curve.
+            </figcaption>
+        </figure>
+
+        <p>
+            With <strong>Checkpoints</strong>, we stop the machine periodically. A human reviews the code (or an automated test suite runs). 
+            If errors are found, they are fixed before proceeding. This effectively resets the probability curve back to 100% at every checkpoint.
+        </p>
+        <p>
+            The Harness doesn't make the AI smarter; it creates a safety net that allows us to trust the output of a probabilistic machine.
+        </p>
+    </section>
+</article>
+
+<footer>
+    <p style="font-size: 0.9rem; color: var(--text-light); border-top: 1px solid var(--border); padding-top: 2rem;">
+        Concept & Design: Interactive Essay Demo.<br>
+        Stack: HTML, CSS, Vanilla JS.
+    </p>
+</footer>
+
+<script>
+    // --- SECTION 1: CONTEXT ROT ---
+    const contextBucket = document.getElementById('context-bucket');
+    const btnAddContext = document.getElementById('btn-add-context');
+    const contextStatus = document.getElementById('context-status');
+    const MAX_CAPACITY = 8;
+    let contextItems = [];
+
+    btnAddContext.addEventListener('click', () => {
+        // Create new block
+        const block = document.createElement('div');
+        block.className = 'token-block';
+        contextBucket.appendChild(block);
+        contextItems.push(block);
+
+        // Handle Rot
+        if (contextItems.length > MAX_CAPACITY) {
+            const rottenBlock = contextItems[contextItems.length - MAX_CAPACITY - 1];
+            if (rottenBlock) {
+                rottenBlock.classList.add('rotten');
+            }
+            // Actually remove very old ones to keep DOM clean eventually, 
+            // but for viz, let's just keep fading them or remove the oldest of the old
+            if (contextItems.length > MAX_CAPACITY + 2) {
+                const toRemove = contextItems.shift();
+                toRemove.remove();
+            }
+        }
+
+        updateContextStatus();
+    });
+
+    function updateContextStatus() {
+        const count = Math.min(contextItems.length, MAX_CAPACITY);
+        const overflow = contextItems.length > MAX_CAPACITY;
+        
+        let bar = "";
+        for(let i=0; i<MAX_CAPACITY; i++) {
+            if(i < count) bar += "#";
+            else bar += ".";
+        }
+
+        if (overflow) {
+            contextStatus.innerHTML = `Context: [${bar}] <span style="color:var(--danger)"><strong>MEMORY FULL</strong> (Forgetting Start)</span>`;
+        } else {
+            contextStatus.textContent = `Context Load: [${bar}] (${count}/${MAX_CAPACITY})`;
+        }
+    }
+
+
+    // --- SECTION 2: HARNESS SIMULATION ---
+    const steps = [
+        { 
+            text: "Step 0: System Idle. Config loaded.", 
+            lines: [],
+            json: { status: "idle", files: [] }
+        },
+        { 
+            text: "Step 1: Initializer reads Spec -> Writes Feature List.", 
+            lines: ['line-1'],
+            active: 'agent-init',
+            json: { status: "planning", files: ["feature_list.json"] }
+        },
+        { 
+            text: "Step 2: Task Agent wakes -> Reads State -> Codes Feature 1.", 
+            lines: ['line-2'],
+            active: 'agent-task',
+            json: { status: "coding", current_task: "Login Form", files: ["feature_list.json", "login.js"] }
+        },
+        { 
+            text: "Step 3: Task Agent dies (Context Cleared). State persists.", 
+            lines: [],
+            active: 'node-state',
+            json: { status: "waiting", completed: ["Login Form"], files: ["feature_list.json", "login.js", "progress.txt"] }
+        },
+        { 
+            text: "Step 4: New Agent wakes -> Reads Progress -> Starts Feature 2.", 
+            lines: ['line-2'],
+            active: 'agent-task',
+            json: { status: "coding", current_task: "Database Schema", files: ["...all_prev_files"] }
+        }
+    ];
+
+    let currentStep = 0;
+    const btnStep = document.getElementById('btn-harness-step');
+    const btnReset = document.getElementById('btn-harness-reset');
+    const caption = document.getElementById('harness-caption');
+    const jsonDisplay = document.getElementById('json-display');
+    const chkJson = document.getElementById('chk-json');
+
+    chkJson.addEventListener('change', (e) => {
+        if(e.target.checked) jsonDisplay.classList.add('visible');
+        else jsonDisplay.classList.remove('visible');
+    });
+
+    btnStep.addEventListener('click', () => {
+        if (currentStep < steps.length - 1) {
+            currentStep++;
+            renderHarness();
+        } else {
+            // Loop back to step 2 to simulate continuous loop
+            currentStep = 2;
+            renderHarness();
+        }
+    });
+
+    btnReset.addEventListener('click', () => {
+        currentStep = 0;
+        renderHarness();
+    });
+
+    function renderHarness() {
+        const data = steps[currentStep];
+        
+        // Reset Visuals
+        document.querySelectorAll('.agent-node').forEach(el => el.classList.remove('active'));
+        document.querySelectorAll('.connector-line').forEach(el => {
+            el.classList.remove('active');
+            el.style.strokeDasharray = "4"; // Reset to dashed
+        });
+
+        // Activate Nodes
+        if (data.active) {
+            document.getElementById(data.active).classList.add('active');
+        }
+
+        // Activate Lines
+        data.lines.forEach(id => {
+            const line = document.getElementById(id);
+            line.classList.add('active');
+            line.style.strokeDasharray = "0"; // Solid line
+        });
+
+        // Update Text
+        caption.textContent = data.text;
+        jsonDisplay.textContent = JSON.stringify(data.json, null, 2);
+    }
+
+
+    // --- SECTION 3 & 4: MATH RELIABILITY ---
+    const slAcc = document.getElementById('sl-acc');
+    const slSteps = document.getElementById('sl-steps');
+    const valAcc = document.getElementById('val-acc');
+    const valSteps = document.getElementById('val-steps');
+    const resultText = document.getElementById('result-text');
+    const chkHitl = document.getElementById('chk-hitl');
+    const graphLine = document.getElementById('graph-line');
+
+    function calculateAndDraw() {
+        const accuracy = parseFloat(slAcc.value) / 100;
+        const numSteps = parseInt(slSteps.value);
+        const useCheckpoints = chkHitl.checked;
+        const checkpointInterval = 5;
+
+        // Update Labels
+        valAcc.textContent = slAcc.value + "%";
+        valSteps.textContent = numSteps;
+
+        // Calculate Result
+        let finalProb = 0;
+        if (useCheckpoints) {
+            // Logic: The prob resets to 1.0 every 5 steps. 
+            // The final prob is just the prob of the remaining steps after last checkpoint.
+            // Or, conceptually for the "System Reliability", it implies we caught errors. 
+            // Let's display the probability of the *current segment* succeeding.
+            const remainder = numSteps % checkpointInterval;
+            const effectiveSteps = remainder === 0 ? checkpointInterval : remainder;
+            finalProb = Math.pow(accuracy, effectiveSteps);
+        } else {
+            finalProb = Math.pow(accuracy, numSteps);
+        }
+
+        resultText.innerHTML = `Total System Reliability: ${(finalProb * 100).toFixed(1)}%`;
+        if (finalProb < 0.5) resultText.style.color = "var(--danger)";
+        else resultText.style.color = "var(--success)";
+
+        // Draw Graph
+        // X axis: 0 to 100 steps. Y axis: 0 to 1 (mapped to 100px height)
+        // SVG Viewbox 0 0 100 100. Y=0 is top. We need Y=100 to be 0 value.
+        
+        let pathD = "M 0 100 "; // Start at (0, 1.0 prob) -> y=0 in graph coords? No y=0 is top.
+        // Let's map Prob 1.0 -> Y=5 (padding). Prob 0.0 -> Y=95.
+        
+        const mapY = (p) => 95 - (p * 90);
+        const mapX = (s) => (s / 100) * 100;
+
+        pathD = `M 0 ${mapY(1)} `;
+
+        let currentP = 1.0;
+        
+        for (let i = 1; i <= 100; i++) {
+            if (useCheckpoints && i % checkpointInterval === 0 && i > 0) {
+                // Drop down to the calculated prob
+                currentP = currentP * accuracy;
+                pathD += `L ${mapX(i)} ${mapY(currentP)} `;
+                
+                // Jump back up (Checkpoint Reset)
+                currentP = 1.0; 
+                pathD += `L ${mapX(i)} ${mapY(currentP)} `;
+            } else {
+                currentP = currentP * accuracy;
+                pathD += `L ${mapX(i)} ${mapY(currentP)} `;
+            }
+        }
+
+        graphLine.setAttribute('d', pathD);
+        
+        // Visual indicator for "current step" on graph
+        // (Optional polish, skipping for code brevity)
+    }
+
+    slAcc.addEventListener('input', calculateAndDraw);
+    slSteps.addEventListener('input', calculateAndDraw);
+    chkHitl.addEventListener('change', calculateAndDraw);
+
+    // Initial Draw
+    calculateAndDraw();
+
+</script>
+
+</body>
+</html>

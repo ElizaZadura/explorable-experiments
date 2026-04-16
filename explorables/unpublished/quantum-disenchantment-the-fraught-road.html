@@ -1,0 +1,777 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Quantum Disenchantment: The Fraught Road</title>
+    <style>
+        :root {
+            --bg: #0a0a0a;
+            --text: #e0e0e0;
+            --cyan: #00f3ff;
+            --magenta: #ff00ff;
+            --gold: #ffd700;
+            --panel-bg: rgba(20, 20, 20, 0.85);
+            --font-serif: 'Georgia', serif;
+            --font-mono: 'Courier New', monospace;
+        }
+
+        * { box-sizing: border-box; }
+
+        body {
+            margin: 0;
+            padding: 0;
+            background-color: var(--bg);
+            color: var(--text);
+            font-family: var(--font-serif);
+            line-height: 1.6;
+            overflow-x: hidden;
+        }
+
+        /* Layout */
+        .container {
+            display: flex;
+            flex-direction: column-reverse;
+        }
+
+        @media (min-width: 900px) {
+            .container {
+                flex-direction: row;
+            }
+        }
+
+        /* Text Column */
+        .scrolly-text {
+            flex: 1;
+            position: relative;
+            z-index: 2;
+            padding-bottom: 50vh; /* Extra space at bottom */
+        }
+
+        .step {
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            padding: 2rem;
+            opacity: 0.3;
+            transition: opacity 0.5s;
+            border-left: 1px solid #333;
+        }
+
+        .step.active {
+            opacity: 1;
+        }
+
+        .step h2 {
+            font-family: var(--font-mono);
+            color: var(--cyan);
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            font-size: 1.5rem;
+            margin-bottom: 1rem;
+            border-bottom: 2px solid var(--magenta);
+            display: inline-block;
+        }
+
+        .step p {
+            font-size: 1.2rem;
+            max-width: 600px;
+            margin-bottom: 1.5rem;
+        }
+
+        .highlight { color: var(--magenta); font-weight: bold; }
+        .code-snippet { font-family: var(--font-mono); background: #222; padding: 4px; color: var(--gold); }
+
+        /* Graphic Column */
+        .sticky-graphic {
+            flex: 1;
+            position: sticky;
+            top: 0;
+            height: 100vh;
+            background: radial-gradient(circle at center, #1a1a1a 0%, #000 100%);
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+        }
+
+        canvas {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 1;
+            cursor: crosshair;
+        }
+
+        /* Interactive Controls Overlay */
+        .controls {
+            position: absolute;
+            bottom: 30px;
+            left: 50%;
+            transform: translateX(-50%);
+            z-index: 10;
+            background: var(--panel-bg);
+            border: 1px solid var(--cyan);
+            padding: 15px;
+            border-radius: 8px;
+            font-family: var(--font-mono);
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            width: 80%;
+            max-width: 400px;
+            box-shadow: 0 0 15px rgba(0, 243, 255, 0.2);
+            backdrop-filter: blur(5px);
+        }
+
+        .control-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 0.9rem;
+        }
+
+        button {
+            background: transparent;
+            border: 1px solid var(--magenta);
+            color: var(--magenta);
+            padding: 5px 15px;
+            cursor: pointer;
+            font-family: var(--font-mono);
+            transition: all 0.3s;
+        }
+
+        button:hover, button.active {
+            background: var(--magenta);
+            color: #000;
+            box-shadow: 0 0 10px var(--magenta);
+        }
+
+        input[type="range"] {
+            width: 60%;
+            accent-color: var(--cyan);
+        }
+
+        .stat-display {
+            font-size: 0.8rem;
+            color: var(--gold);
+            margin-top: 5px;
+            text-align: center;
+        }
+
+        /* Mobile Adjustments */
+        @media (max-width: 899px) {
+            .sticky-graphic {
+                position: sticky;
+                top: 0;
+                height: 50vh;
+                z-index: 0;
+            }
+            .scrolly-text {
+                margin-top: -10vh; /* Overlap slightly */
+                background: linear-gradient(to bottom, transparent, var(--bg) 10%);
+            }
+            .step {
+                min-height: 80vh;
+                padding-top: 5rem;
+                background: rgba(10,10,10,0.8);
+            }
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <!-- Left: Scrollable Text -->
+    <div class="scrolly-text">
+        
+        <!-- Intro -->
+        <div class="step" data-step="1">
+            <h2>1. The Magic Show</h2>
+            <p>The story of Quantum Computing is a magic show. First the rabbit disappears (use cases), then the hat disappears (hype), and eventually, the audience disappears.</p>
+            <p>They say Quantum Computers solve problems "too tough" for regular computers due to <span class="highlight">Entanglement</span>.</p>
+            <p><em>Interact: Toggle the switch to "Entangled" and drag the cyan particle. Notice how the magenta one reacts instantly. This correlation is the source of power, but keeping it alive is the nightmare.</em></p>
+        </div>
+
+        <!-- TSP -->
+        <div class="step" data-step="2">
+            <h2>2. The Salesman's Trap</h2>
+            <p>For 20 years, the "Traveling Salesman Problem" (finding the shortest route) was the sales pitch. Logistics! Finance! 3D Printing!</p>
+            <p>But a new review shows: Quantum has <span class="highlight">no advantage</span> here. Classical heuristics are simply too good.</p>
+            <p><em>Interact: Increase the City Count. While the Quantum path (Magenta) finds a route instantly, the noise jitters the result, often making it worse than the Classical (Cyan) approximation.</em></p>
+            <div class="code-snippet">Error: Quantum_Noise > Optimization_Margin</div>
+        </div>
+
+        <!-- Chemistry -->
+        <div class="step" data-step="3">
+            <h2>3. The FeMo-Cofactor</h2>
+            <p>What about Chemistry? Simulating the FeMo-cofactor to make better fertilizer? They said only a Quantum Computer could calculate its Ground State Energy.</p>
+            <p>They were wrong. A Caltech team just did it on a standard server cluster using Tensor Networks.</p>
+            <p><em>Interact: Slide towards "Modern Classical". We don't need perfect simulation (Left). We need "good enough" (Right), and classical computers are getting there faster.</em></p>
+        </div>
+
+        <!-- Cooling -->
+        <div class="step" data-step="4">
+            <h2>4. The Hidden Cost</h2>
+            <p>This is the "Transistor Moment" fallacy. Transistors got smaller and more efficient. Qubits get smaller, but the <span class="highlight">cooling</span> does not scale down.</p>
+            <p>You need the energy of a supercomputer cluster just to keep the fridge running.</p>
+            <p><em>Interact: Turn on "Realistic Overhead". To get 1 logical qubit, you need 1,000 physical ones. Watch the energy bill explode as you try to scale up.</em></p>
+        </div>
+
+        <!-- Conclusion -->
+        <div class="step" data-step="5">
+            <h2>5. The Scale</h2>
+            <p>It's not pessimism. It's error-corrected optimism. The road to advantage is fraught.</p>
+            <p>Quantum computers might find a niche. But they won't replace your laptop, or the server farm.</p>
+            <p><em>Interact: Try to balance the scale. The physics (right) is heavy. Drag the "Niche Use Case" block onto the left side to find equilibrium.</em></p>
+        </div>
+    </div>
+
+    <!-- Right: Sticky Graphic -->
+    <div class="sticky-graphic">
+        <canvas id="viz"></canvas>
+        <div id="ui-container" class="controls">
+            <!-- Controls injected via JS -->
+        </div>
+    </div>
+</div>
+
+<script>
+    // --- Global Setup ---
+    const canvas = document.getElementById('viz');
+    const ctx = canvas.getContext('2d');
+    const uiContainer = document.getElementById('ui-container');
+    let width, height;
+    
+    // State Management
+    const state = {
+        step: 1,
+        // Step 1: Entanglement
+        p1: { x: 0, y: 0, dragging: false },
+        p2: { x: 0, y: 0 },
+        entangled: false,
+        // Step 2: TSP
+        cities: [],
+        numCities: 10,
+        tspGenerated: false,
+        // Step 3: Chemistry
+        chemApprox: 0, // 0 = Quantum, 1 = Classical
+        chemAngle: 0,
+        // Step 4: Cooling
+        qubits: 100,
+        realisticError: false,
+        // Step 5: Scale
+        scaleAngle: 20, // tilted down to right
+        nicheWeight: { x: 0, y: 0, dragging: false, onScale: false }
+    };
+
+    function resize() {
+        width = canvas.width = canvas.parentElement.offsetWidth;
+        height = canvas.height = canvas.parentElement.offsetHeight;
+        // Reset positions on resize
+        state.p1 = { x: width * 0.3, y: height/2, dragging: false };
+        state.p2 = { x: width * 0.7, y: height/2 };
+        state.nicheWeight.x = width * 0.1;
+        state.nicheWeight.y = height * 0.8;
+    }
+    window.addEventListener('resize', resize);
+    resize();
+
+    // --- Interaction Handlers ---
+    function getMousePos(evt) {
+        const rect = canvas.getBoundingClientRect();
+        return {
+            x: evt.clientX - rect.left,
+            y: evt.clientY - rect.top
+        };
+    }
+
+    canvas.addEventListener('mousedown', (e) => {
+        const m = getMousePos(e);
+        
+        // Step 1 Logic
+        if (state.step === 1) {
+            const d = Math.hypot(m.x - state.p1.x, m.y - state.p1.y);
+            if (d < 30) state.p1.dragging = true;
+        }
+        
+        // Step 5 Logic
+        if (state.step === 5) {
+            const d = Math.hypot(m.x - state.nicheWeight.x, m.y - state.nicheWeight.y);
+            if (d < 30) state.nicheWeight.dragging = true;
+        }
+    });
+
+    window.addEventListener('mousemove', (e) => {
+        const m = getMousePos(e);
+        
+        // Step 1
+        if (state.step === 1 && state.p1.dragging) {
+            state.p1.x = m.x;
+            state.p1.y = m.y;
+            if (state.entangled) {
+                // Inverse correlation logic
+                const dx = m.x - (width * 0.3);
+                const dy = m.y - (height / 2);
+                state.p2.x = (width * 0.7) - dx;
+                state.p2.y = (height / 2) - dy;
+            }
+        }
+
+        // Step 5
+        if (state.step === 5 && state.nicheWeight.dragging) {
+            state.nicheWeight.x = m.x;
+            state.nicheWeight.y = m.y;
+        }
+    });
+
+    window.addEventListener('mouseup', () => {
+        state.p1.dragging = false;
+        
+        if (state.step === 5 && state.nicheWeight.dragging) {
+            state.nicheWeight.dragging = false;
+            // Check if dropped on left pan
+            const panX = width/2 - 100;
+            const panY = height/2 + 50 + (state.scaleAngle * 2);
+            if (Math.hypot(state.nicheWeight.x - panX, state.nicheWeight.y - panY) < 60) {
+                state.nicheWeight.onScale = true;
+            } else {
+                state.nicheWeight.onScale = false;
+            }
+        }
+    });
+
+    // --- Drawing Functions ---
+
+    function drawNeonCircle(x, y, r, color) {
+        ctx.beginPath();
+        ctx.arc(x, y, r, 0, Math.PI * 2);
+        ctx.fillStyle = color;
+        ctx.shadowBlur = 20;
+        ctx.shadowColor = color;
+        ctx.fill();
+        ctx.shadowBlur = 0;
+        ctx.closePath();
+    }
+
+    function drawLine(x1, y1, x2, y2, color, dash = []) {
+        ctx.beginPath();
+        ctx.moveTo(x1, y1);
+        ctx.lineTo(x2, y2);
+        ctx.strokeStyle = color;
+        ctx.lineWidth = 2;
+        ctx.setLineDash(dash);
+        ctx.shadowBlur = 10;
+        ctx.shadowColor = color;
+        ctx.stroke();
+        ctx.setLineDash([]);
+        ctx.shadowBlur = 0;
+        ctx.closePath();
+    }
+
+    // 1. Magic Show
+    function drawStep1() {
+        // Connection
+        if (state.entangled) {
+            drawLine(state.p1.x, state.p1.y, state.p2.x, state.p2.y, '#fff', [5, 5]);
+            ctx.fillStyle = "#fff";
+            ctx.font = "14px monospace";
+            ctx.fillText("CORRELATION ESTABLISHED", width/2 - 80, height/2 - 20);
+        }
+
+        drawNeonCircle(state.p1.x, state.p1.y, 20, '#00f3ff'); // Cyan
+        drawNeonCircle(state.p2.x, state.p2.y, 20, '#ff00ff'); // Magenta
+
+        // Labels
+        ctx.fillStyle = "#aaa";
+        ctx.font = "12px monospace";
+        ctx.fillText("Particle A (Drag Me)", state.p1.x - 60, state.p1.y + 40);
+        ctx.fillText("Particle B", state.p2.x - 30, state.p2.y + 40);
+    }
+
+    // 2. TSP
+    function generateCities(n) {
+        let arr = [];
+        for(let i=0; i<n; i++) {
+            arr.push({
+                x: Math.random() * (width * 0.8) + (width * 0.1),
+                y: Math.random() * (height * 0.6) + (height * 0.2)
+            });
+        }
+        return arr.sort((a,b) => a.x - b.x); // Simple sort to make drawing paths easier
+    }
+
+    function drawStep2() {
+        if (!state.tspGenerated || state.cities.length !== parseInt(state.numCities)) {
+            state.cities = generateCities(state.numCities);
+            state.tspGenerated = true;
+        }
+
+        // Draw Cities
+        state.cities.forEach(c => {
+            ctx.fillStyle = '#fff';
+            ctx.beginPath();
+            ctx.arc(c.x, c.y, 4, 0, Math.PI*2);
+            ctx.fill();
+        });
+
+        // Classical Path (Cyan) - Solid, Clean
+        ctx.beginPath();
+        ctx.strokeStyle = '#00f3ff';
+        ctx.lineWidth = 2;
+        state.cities.forEach((c, i) => {
+            if (i===0) ctx.moveTo(c.x, c.y);
+            else ctx.lineTo(c.x, c.y);
+        });
+        ctx.stroke();
+
+        // Quantum Path (Magenta) - Jittery
+        ctx.beginPath();
+        ctx.strokeStyle = '#ff00ff';
+        ctx.lineWidth = 2;
+        ctx.shadowBlur = 5;
+        ctx.shadowColor = '#ff00ff';
+        state.cities.forEach((c, i) => {
+            // Add noise based on time
+            let noiseX = (Math.random() - 0.5) * 20;
+            let noiseY = (Math.random() - 0.5) * 20;
+            if (i===0) ctx.moveTo(c.x + noiseX, c.y + noiseY);
+            else ctx.lineTo(c.x + noiseX, c.y + noiseY);
+        });
+        ctx.stroke();
+        ctx.shadowBlur = 0;
+
+        // Legend
+        ctx.fillStyle = "#00f3ff";
+        ctx.fillText("Classical (Heuristic)", 20, 30);
+        ctx.fillStyle = "#ff00ff";
+        ctx.fillText("Quantum (Annealing + Noise)", 20, 50);
+    }
+
+    // 3. Chemistry
+    function drawStep3() {
+        state.chemAngle += 0.01;
+        const centerX = width / 2;
+        const centerY = height / 2;
+        
+        // Molecule Definition (Simple Cube-like structure for FeMo)
+        const atoms = [
+            {x: -50, y: -50, z: -50}, {x: 50, y: -50, z: -50},
+            {x: -50, y: 50, z: -50}, {x: 50, y: 50, z: -50},
+            {x: -50, y: -50, z: 50}, {x: 50, y: -50, z: 50},
+            {x: -50, y: 50, z: 50}, {x: 50, y: 50, z: 50}
+        ];
+
+        // Is Classical selected? Simplify geometry visually
+        const isClassical = state.chemApprox > 0.5;
+        const scale = isClassical ? 0.8 : 1.0; 
+
+        // Project and Draw
+        atoms.forEach((atom, i) => {
+            // Rotate Y
+            let x = atom.x * Math.cos(state.chemAngle) - atom.z * Math.sin(state.chemAngle);
+            let z = atom.z * Math.cos(state.chemAngle) + atom.x * Math.sin(state.chemAngle);
+            let y = atom.y;
+
+            // Project
+            let px = centerX + x;
+            let py = centerY + y;
+
+            // Draw Bonds (simplified)
+            if (i < 4) {
+                 // Connect to bottom layer
+                 let bz = (atom.z + 100) * Math.cos(state.chemAngle) + atom.x * Math.sin(state.chemAngle); // Fake logic for visual
+                 // Just draw simple lines to center for abstract feel
+                 ctx.beginPath();
+                 ctx.moveTo(centerX, centerY);
+                 ctx.lineTo(px, py);
+                 ctx.strokeStyle = isClassical ? '#00f3ff' : '#ff00ff';
+                 ctx.globalAlpha = isClassical ? 0.5 : 0.8;
+                 ctx.stroke();
+                 ctx.globalAlpha = 1.0;
+            }
+
+            // Draw Atom
+            drawNeonCircle(px, py, isClassical ? 8 : 12, isClassical ? '#00f3ff' : '#ff00ff');
+        });
+
+        // Text Overlay
+        ctx.fillStyle = "#fff";
+        ctx.font = "20px monospace";
+        ctx.textAlign = "center";
+        
+        if (isClassical) {
+            ctx.fillText("Method: Tensor Networks", centerX, centerY - 150);
+            ctx.fillStyle = "#00f3ff";
+            ctx.fillText("Time: 2 Days", centerX, centerY + 150);
+            ctx.fillText("Accuracy: 99.9%", centerX, centerY + 180);
+        } else {
+            ctx.fillText("Method: Full Quantum", centerX, centerY - 150);
+            ctx.fillStyle = "#ff00ff";
+            ctx.fillText("Time: ~1,000 Years", centerX, centerY + 150);
+            ctx.fillText("Accuracy: 100%", centerX, centerY + 180);
+        }
+        ctx.textAlign = "left";
+    }
+
+    // 4. Cooling
+    function drawStep4() {
+        const cx = width / 2;
+        const cy = height * 0.2;
+        
+        // Calculate Logic
+        let logicalQubits = state.qubits;
+        let physicalQubits = state.realisticError ? logicalQubits * 1000 : logicalQubits;
+        let power = physicalQubits * 0.1; // Arbitrary unit
+        let cost = power * 15; // $
+
+        // Draw Fridge (Chandelier)
+        let levels = 5;
+        let maxW = 200;
+        
+        // Color based on heat/power
+        let heatRatio = Math.min(power / 50000, 1);
+        let r = Math.floor(255 * heatRatio);
+        let g = Math.floor(215 * (1 - heatRatio));
+        let color = `rgb(${r}, ${g}, 0)`; // Gold to Red
+
+        for(let i=0; i<levels; i++) {
+            let w = maxW - (i*30);
+            let h = 60;
+            let y = cy + (i*h);
+            
+            ctx.fillStyle = color;
+            ctx.fillRect(cx - w/2, y, w, h);
+            ctx.strokeStyle = "#111";
+            ctx.strokeRect(cx - w/2, y, w, h);
+            
+            // Pipes
+            if (i < levels-1) {
+                ctx.fillStyle = "#333";
+                ctx.fillRect(cx - 10, y+h, 20, 10);
+            }
+        }
+
+        // Stats
+        ctx.fillStyle = "#fff";
+        ctx.font = "16px monospace";
+        ctx.textAlign = "center";
+        ctx.fillText(`Logical Qubits: ${logicalQubits}`, cx, cy - 20);
+        
+        ctx.fillStyle = state.realisticError ? "#ff0055" : "#00f3ff";
+        ctx.fillText(`Physical Qubits: ${physicalQubits.toLocaleString()}`, cx, height - 120);
+        
+        ctx.font = "24px monospace";
+        ctx.fillStyle = "#ffd700";
+        ctx.fillText(`Energy Bill: $${Math.floor(cost).toLocaleString()}/mo`, cx, height - 80);
+        ctx.textAlign = "left";
+    }
+
+    // 5. Conclusion
+    function drawStep5() {
+        const cx = width / 2;
+        const cy = height * 0.6;
+        
+        // Calculate Balance
+        // Base: Physics (Right) is heavy. Hype (Left) is light.
+        let leftWeight = 20; // Hype
+        let rightWeight = 100; // Physics
+        
+        if (state.nicheWeight.onScale) {
+            leftWeight += 80; // Niche balances it out
+        }
+
+        let diff = rightWeight - leftWeight;
+        let targetAngle = diff * 0.3; // degrees
+        // Smooth lerp
+        state.scaleAngle += (targetAngle - state.scaleAngle) * 0.1;
+
+        // Draw Stand
+        ctx.beginPath();
+        ctx.moveTo(cx, cy);
+        ctx.lineTo(cx - 20, height - 50);
+        ctx.lineTo(cx + 20, height - 50);
+        ctx.fillStyle = "#444";
+        ctx.fill();
+
+        // Draw Beam
+        ctx.save();
+        ctx.translate(cx, cy);
+        ctx.rotate(state.scaleAngle * Math.PI / 180);
+        
+        ctx.fillStyle = "#888";
+        ctx.fillRect(-150, -5, 300, 10); // Beam
+
+        // Left Pan (Hype + Niche)
+        ctx.beginPath();
+        ctx.moveTo(-150, 0);
+        ctx.lineTo(-150, 50);
+        ctx.moveTo(-150, 50);
+        ctx.arc(-150, 50, 40, 0, Math.PI, false);
+        ctx.strokeStyle = "#fff";
+        ctx.stroke();
+
+        // Right Pan (Physics)
+        ctx.beginPath();
+        ctx.moveTo(150, 0);
+        ctx.lineTo(150, 50);
+        ctx.moveTo(150, 50);
+        ctx.arc(150, 50, 40, 0, Math.PI, false);
+        ctx.stroke();
+
+        // Draw "Hype" Box on Left
+        ctx.fillStyle = "#ff00ff";
+        ctx.fillRect(-170, 40, 40, 40);
+        ctx.fillStyle = "#000";
+        ctx.font = "10px monospace";
+        ctx.fillText("HYPE", -165, 65);
+
+        // Draw "Physics" Box on Right (Heavy)
+        ctx.fillStyle = "#333";
+        ctx.fillRect(130, 20, 40, 60);
+        ctx.fillStyle = "#fff";
+        ctx.fillText("PHYS", 135, 55);
+
+        ctx.restore();
+
+        // Draw Niche Weight (Draggable)
+        let nx = state.nicheWeight.onScale ? cx - 150 : state.nicheWeight.x;
+        let ny = state.nicheWeight.onScale ? cy + 50 + (state.scaleAngle * 2) : state.nicheWeight.y;
+        
+        // If on scale, rotate it with the pan
+        if(state.nicheWeight.onScale) {
+            let rad = state.scaleAngle * Math.PI / 180;
+            let cos = Math.cos(rad);
+            let sin = Math.sin(rad);
+            // Simple orbit offset calculation roughly
+            nx = cx + (-150 * cos);
+            ny = cy + (-150 * sin) + 40; 
+        }
+
+        drawNeonCircle(nx, ny, 15, "#00f3ff");
+        ctx.fillStyle = "#fff";
+        ctx.font = "12px monospace";
+        ctx.fillText("Niche", nx - 15, ny + 30);
+        
+        if(!state.nicheWeight.onScale) {
+            ctx.fillText("Drag me to scale ->", nx - 40, ny - 25);
+        }
+    }
+
+
+    function loop() {
+        ctx.clearRect(0, 0, width, height);
+        
+        switch(state.step) {
+            case 1: drawStep1(); break;
+            case 2: drawStep2(); break;
+            case 3: drawStep3(); break;
+            case 4: drawStep4(); break;
+            case 5: drawStep5(); break;
+        }
+        
+        requestAnimationFrame(loop);
+    }
+    loop();
+
+    // --- DOM UI Updates ---
+
+    function updateUI(step) {
+        state.step = parseInt(step);
+        uiContainer.innerHTML = ''; // Clear
+
+        if (state.step === 1) {
+            uiContainer.innerHTML = `
+                <div class="control-row">
+                    <span>State:</span>
+                    <button id="btn-entangle" class="${state.entangled ? 'active' : ''}">
+                        ${state.entangled ? 'Entangled' : 'Classical'}
+                    </button>
+                </div>
+            `;
+            document.getElementById('btn-entangle').onclick = (e) => {
+                state.entangled = !state.entangled;
+                e.target.innerText = state.entangled ? 'Entangled' : 'Classical';
+                e.target.classList.toggle('active');
+            };
+        }
+        else if (state.step === 2) {
+            uiContainer.innerHTML = `
+                <div class="control-row">
+                    <span>Cities (N):</span>
+                    <input type="range" min="5" max="50" value="${state.numCities}" id="range-cities">
+                </div>
+                <div class="stat-display" id="city-count">${state.numCities}</div>
+            `;
+            document.getElementById('range-cities').oninput = (e) => {
+                state.numCities = e.target.value;
+                document.getElementById('city-count').innerText = e.target.value;
+            };
+        }
+        else if (state.step === 3) {
+            uiContainer.innerHTML = `
+                <div class="control-row">
+                    <span>Quantum</span>
+                    <input type="range" min="0" max="1" step="0.1" value="${state.chemApprox}" id="range-chem">
+                    <span>Classical</span>
+                </div>
+            `;
+            document.getElementById('range-chem').oninput = (e) => {
+                state.chemApprox = parseFloat(e.target.value);
+            };
+        }
+        else if (state.step === 4) {
+            uiContainer.innerHTML = `
+                <div class="control-row">
+                    <span>Logical Qubits:</span>
+                    <input type="range" min="10" max="1000" value="${state.qubits}" id="range-qubits">
+                </div>
+                <div class="control-row" style="margin-top:10px;">
+                    <button id="btn-error" class="${state.realisticError ? 'active' : ''}">
+                        ${state.realisticError ? 'Realistic (Error Corrected)' : 'Ideal (Hype)'}
+                    </button>
+                </div>
+            `;
+            document.getElementById('range-qubits').oninput = (e) => {
+                state.qubits = parseInt(e.target.value);
+            };
+            document.getElementById('btn-error').onclick = (e) => {
+                state.realisticError = !state.realisticError;
+                e.target.innerText = state.realisticError ? 'Realistic (Error Corrected)' : 'Ideal (Hype)';
+                e.target.classList.toggle('active');
+            };
+        }
+        else if (state.step === 5) {
+            uiContainer.innerHTML = `<div class="stat-display">Drag the cyan weight to the scale.</div>`;
+        }
+    }
+
+    // --- Scroll Observer ---
+    const steps = document.querySelectorAll('.step');
+    const observer = new IntersectionObserver((entries) => {
+        entries.forEach(entry => {
+            if (entry.isIntersecting) {
+                // Remove active class from all
+                steps.forEach(s => s.classList.remove('active'));
+                // Add to current
+                entry.target.classList.add('active');
+                // Update State
+                updateUI(entry.target.dataset.step);
+            }
+        });
+    }, {
+        threshold: 0.5
+    });
+
+    steps.forEach(step => observer.observe(step));
+    
+    // Initial call
+    updateUI(1);
+
+</script>
+</body>
+</html>

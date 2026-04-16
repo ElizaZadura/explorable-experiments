@@ -1,0 +1,666 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>The Pilot & The Autopilot: Surviving the AI Code Era</title>
+    
+    <!-- Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;700&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
+
+    <style>
+        :root {
+            --bg-dark: #1a1a1a;
+            --bg-card: #252525;
+            --text-main: #e0e0e0;
+            --text-muted: #a0a0a0;
+            --accent-cyan: #00f3ff;
+            --accent-orange: #ff9100;
+            --accent-green: #00ff9d;
+            --accent-red: #ff0055;
+            --font-body: 'Inter', sans-serif;
+            --font-code: 'JetBrains Mono', monospace;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            background-color: var(--bg-dark);
+            color: var(--text-main);
+            font-family: var(--font-body);
+            line-height: 1.6;
+            overflow-x: hidden;
+            padding-bottom: 5rem;
+        }
+
+        /* --- Typography --- */
+        h1, h2, h3 {
+            font-family: var(--font-code);
+            font-weight: 700;
+            margin-bottom: 1rem;
+        }
+
+        h1 { font-size: 2rem; color: var(--accent-cyan); text-shadow: 0 0 10px rgba(0, 243, 255, 0.3); }
+        h2 { font-size: 1.5rem; color: var(--accent-orange); margin-top: 2rem; border-left: 4px solid var(--accent-orange); padding-left: 1rem; }
+        p { margin-bottom: 1rem; color: var(--text-muted); }
+        code { font-family: var(--font-code); background: #333; padding: 0.2rem 0.4rem; border-radius: 4px; color: var(--accent-cyan); font-size: 0.9em; }
+
+        /* --- Layout --- */
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 0 1.5rem;
+        }
+
+        .card {
+            background: var(--bg-card);
+            border-radius: 12px;
+            padding: 1.5rem;
+            margin: 2rem 0;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.5);
+            border: 1px solid #333;
+        }
+
+        /* --- UI Elements --- */
+        .xp-bar-container {
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            background: rgba(26, 26, 26, 0.95);
+            backdrop-filter: blur(5px);
+            padding: 1rem 0;
+            border-bottom: 1px solid #333;
+        }
+
+        .xp-bar-wrapper {
+            width: 100%;
+            height: 10px;
+            background: #333;
+            border-radius: 5px;
+            overflow: hidden;
+            margin-top: 0.5rem;
+        }
+
+        .xp-fill {
+            height: 100%;
+            width: 0%;
+            background: linear-gradient(90deg, var(--accent-cyan), var(--accent-green));
+            transition: width 0.5s ease-out;
+            box-shadow: 0 0 10px var(--accent-cyan);
+        }
+
+        .xp-text {
+            font-family: var(--font-code);
+            font-size: 0.9rem;
+            display: flex;
+            justify-content: space-between;
+        }
+
+        .btn {
+            background: transparent;
+            border: 2px solid var(--accent-cyan);
+            color: var(--accent-cyan);
+            padding: 0.8rem 1.5rem;
+            font-family: var(--font-code);
+            font-weight: bold;
+            cursor: pointer;
+            border-radius: 6px;
+            transition: all 0.2s;
+            margin-right: 0.5rem;
+            margin-bottom: 0.5rem;
+            text-transform: uppercase;
+            font-size: 0.8rem;
+        }
+
+        .btn:hover {
+            background: var(--accent-cyan);
+            color: var(--bg-dark);
+            box-shadow: 0 0 15px var(--accent-cyan);
+        }
+
+        .btn.secondary { border-color: var(--accent-orange); color: var(--accent-orange); }
+        .btn.secondary:hover { background: var(--accent-orange); color: var(--bg-dark); box-shadow: 0 0 15px var(--accent-orange); }
+
+        .slider-container {
+            margin: 1.5rem 0;
+        }
+
+        input[type=range] {
+            width: 100%;
+            background: transparent;
+            -webkit-appearance: none;
+        }
+        input[type=range]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            height: 20px;
+            width: 20px;
+            border-radius: 50%;
+            background: var(--accent-orange);
+            margin-top: -8px;
+            cursor: pointer;
+            box-shadow: 0 0 10px var(--accent-orange);
+        }
+        input[type=range]::-webkit-slider-runnable-track {
+            width: 100%;
+            height: 4px;
+            background: #444;
+            border-radius: 2px;
+        }
+
+        /* --- Section Specifics --- */
+        
+        /* Canvas */
+        #driftCanvas {
+            width: 100%;
+            height: 200px;
+            background: #000;
+            border-radius: 8px;
+            border: 1px solid #444;
+            margin-bottom: 1rem;
+        }
+
+        /* Shape Game */
+        .shape-arena {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            height: 200px;
+            background: #111;
+            border-radius: 8px;
+            margin-bottom: 1rem;
+            border: 1px dashed #444;
+            position: relative;
+        }
+        #targetShape {
+            width: 100px;
+            height: 100px;
+            background: #333;
+            transition: all 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            font-size: 0.8rem;
+            color: #777;
+        }
+
+        /* Refactor Split */
+        .split-view {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1rem;
+        }
+        @media (max-width: 600px) { .split-view { grid-template-columns: 1fr; } }
+        
+        .code-block {
+            background: #111;
+            padding: 1rem;
+            border-radius: 6px;
+            font-family: var(--font-code);
+            font-size: 0.8rem;
+            overflow-x: auto;
+            color: #ccc;
+            height: 200px;
+            border: 1px solid #333;
+        }
+        .ui-preview {
+            background: #eee;
+            color: #333;
+            border-radius: 6px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 1rem;
+            height: 200px;
+        }
+        .meter-container { margin: 1rem 0; }
+        .meter-label { display: flex; justify-content: space-between; font-size: 0.8rem; margin-bottom: 0.3rem; }
+        .meter-bar { height: 8px; background: #333; border-radius: 4px; overflow: hidden; }
+        .meter-fill { height: 100%; background: var(--accent-red); width: 100%; transition: all 0.5s; }
+
+        /* Terminal */
+        .terminal {
+            background: #0d0d0d;
+            border: 1px solid #333;
+            border-radius: 6px;
+            padding: 1rem;
+            font-family: var(--font-code);
+            font-size: 0.85rem;
+            height: 200px;
+            overflow-y: auto;
+            margin-bottom: 1rem;
+            color: #aaa;
+        }
+        .log-entry { margin-bottom: 0.2rem; }
+        .log-error { color: var(--accent-red); }
+        .log-success { color: var(--accent-green); }
+        .log-warn { color: var(--accent-orange); }
+
+        /* Feedback Boxes */
+        .feedback {
+            margin-top: 1rem;
+            padding: 1rem;
+            background: rgba(0, 243, 255, 0.1);
+            border-left: 3px solid var(--accent-cyan);
+            font-size: 0.9rem;
+            display: none;
+            animation: fadeIn 0.5s;
+        }
+        .feedback.visible { display: block; }
+        
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
+
+        .math-display {
+            font-family: var(--font-code);
+            color: var(--text-muted);
+            font-size: 0.8rem;
+            text-align: center;
+            margin-top: 0.5rem;
+        }
+        .variable { color: var(--accent-orange); }
+        .result { color: var(--accent-cyan); }
+
+    </style>
+</head>
+<body>
+
+    <!-- XP Bar -->
+    <div class="xp-bar-container">
+        <div class="container">
+            <div class="xp-text">
+                <span>ROLE: <span id="roleLabel" style="color: var(--accent-orange)">PASSENGER</span></span>
+                <span>XP: <span id="xpValue">0</span>/1000</span>
+            </div>
+            <div class="xp-bar-wrapper">
+                <div class="xp-fill" id="xpFill"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Header -->
+    <div class="container">
+        <div style="padding: 3rem 0; text-align: center;">
+            <h1>THE PILOT & THE AUTOPILOT</h1>
+            <p style="color: var(--accent-cyan); font-family: var(--font-code);">SURVIVING THE AI CODE ERA</p>
+            <p style="max-width: 600px; margin: 1rem auto;">
+                AI is a powerful engine, but it drifts. It hallucinates. It lacks soul. 
+                Based on the philosophy of <strong>The Primeagen</strong>, this simulation tests if you are a Passenger or a Pilot.
+            </p>
+        </div>
+
+        <!-- Section 1: Steering -->
+        <section class="card">
+            <h2>01. The Steering Problem</h2>
+            <p>
+                "Some say you don't need to learn to code anymore. But imagine a car moving at 200mph. 
+                If you don't know how the engine works, what happens when it starts to drift?"
+            </p>
+            <blockquote style="border-left: 2px solid #555; padding-left: 1rem; font-style: italic; color: #fff; margin-bottom: 1rem;">
+                "If you know the low-level abstractions, you can steer the high-level abstractions better."
+            </blockquote>
+
+            <div style="position: relative;">
+                <canvas id="driftCanvas"></canvas>
+                <div id="crashOverlay" style="position: absolute; top:0; left:0; width:100%; height:100%; display: flex; align-items: center; justify-content: center; pointer-events: none; opacity: 0; transition: opacity 0.2s;">
+                    <h3 style="color: var(--accent-red); background: rgba(0,0,0,0.8); padding: 1rem;">CRITICAL ERROR</h3>
+                </div>
+            </div>
+
+            <div class="slider-container">
+                <label style="font-family: var(--font-code); font-size: 0.9rem; display: block; margin-bottom: 0.5rem;">
+                    HARD SKILLS (TECHNICAL KNOWLEDGE): <span id="skillVal" style="color: var(--accent-cyan)">0</span>%
+                </label>
+                <input type="range" id="skillSlider" min="0" max="100" value="0">
+            </div>
+
+            <div class="math-display">
+                Error_Rate = AI_Noise / (<span class="variable" id="mathSkill">1</span>)
+            </div>
+
+            <div class="feedback" id="feedback1">
+                <strong>Insight:</strong> At 100% skill, you dampen the noise. You aren't writing every byte, but your knowledge acts as a stabilizer for the AI's output.
+            </div>
+        </section>
+
+        <!-- Section 2: Ambiguity -->
+        <section class="card">
+            <h2>02. The Ambiguity Trap</h2>
+            <p>
+                Why not just code in English? Because English is ambiguous. AI creates what it <em>thinks</em> you want.
+                <br><strong>Mission:</strong> Build a perfect Neon Circle.
+            </p>
+
+            <div class="shape-arena">
+                <div id="targetShape">?</div>
+            </div>
+
+            <div style="display: flex; gap: 0.5rem; flex-wrap: wrap;">
+                <button class="btn secondary" onclick="promptLevel1()">Prompt: "Make it cool"</button>
+                <button class="btn secondary" onclick="promptLevel1()">Prompt: "Roundish thing"</button>
+                <button class="btn" id="btnLogic" onclick="promptLevel2()" style="opacity: 0.5; cursor: not-allowed;">Prompt: `radius: 50%; color: cyan;`</button>
+            </div>
+
+            <div class="feedback" id="feedback2">
+                <strong>Entropy Reduced.</strong> Natural language has high entropy (uncertainty). Code has low entropy. 
+                We aren't moving away from code; we are moving toward hyper-precise instructions.
+            </div>
+        </section>
+
+        <!-- Section 3: Taste -->
+        <section class="card">
+            <h2>03. The Taste Test</h2>
+            <p>
+                AI generates code, but it has no "Taste." It optimizes for token completion, not maintainability.
+                An intern wants to impress you; an LLM just wants to finish.
+            </p>
+
+            <div class="split-view">
+                <div>
+                    <h4 style="font-family: var(--font-code); color: #777; margin-bottom: 0.5rem;">Source Code</h4>
+                    <div class="code-block" id="codeDisplay">
+// AI Generated
+if (user) {
+  if (user.hasAuth) {
+    if (data.isValid) {
+      doThing();
+    }
+  }
+}
+var x = 1; // what is x?
+                    </div>
+                </div>
+                <div>
+                    <h4 style="font-family: var(--font-code); color: #777; margin-bottom: 0.5rem;">Output</h4>
+                    <div class="ui-preview">
+                        <div style="width: 80%; height: 20px; background: #ccc; margin-bottom: 10px; border-radius: 4px;"></div>
+                        <div style="width: 60%; height: 20px; background: #ccc; border-radius: 4px;"></div>
+                        <button style="margin-top: 20px; padding: 5px 15px;">Submit</button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="meter-container">
+                <div class="meter-label">
+                    <span>Technical Debt</span>
+                    <span id="debtValue">HIGH</span>
+                </div>
+                <div class="meter-bar">
+                    <div class="meter-fill" id="debtFill"></div>
+                </div>
+            </div>
+
+            <button class="btn secondary" onclick="generateAI()">AI Generate (Fast)</button>
+            <button class="btn" onclick="humanRefactor()">Human Refactor (Taste)</button>
+
+            <div class="feedback" id="feedback3">
+                <strong>Taste Acquired.</strong> You flattened the logic and named variables explicitly. 
+                AI is for output; Humans are for outcome and future comprehension.
+            </div>
+        </section>
+
+        <!-- Section 4: Debugging -->
+        <section class="card">
+            <h2>04. The Debugging Fog</h2>
+            <p>
+                The AI wrote a function that works 99% of the time. But now production is down because of a leap year edge case.
+                If you didn't write it, how do you fix it?
+            </p>
+
+            <div class="terminal" id="terminalLog">
+                <div class="log-entry">> System starting...</div>
+                <div class="log-entry">> Running `dateCalc()`...</div>
+                <div class="log-entry log-success">Test Case 1: OK</div>
+                <div class="log-entry log-success">Test Case 2: OK</div>
+                <div class="log-entry log-error">ERROR: Invalid Date output for Feb 29. System Crash.</div>
+                <div class="log-entry">> Awaiting patch...</div>
+            </div>
+
+            <p style="font-size: 0.9rem; margin-bottom: 0.5rem;">Select the fix:</p>
+            <div style="display: flex; flex-direction: column; gap: 0.5rem;">
+                <button class="btn secondary" onclick="applyFix(1)">AI Suggestion A: `try { dateCalc() } catch (e) { return null }`</button>
+                <button class="btn secondary" onclick="applyFix(2)">AI Suggestion B: `if (month == 2) return 28;`</button>
+                <button class="btn" onclick="applyFix(3)">Root Cause: Implement proper Leap Year modulo logic</button>
+            </div>
+
+            <div class="feedback" id="feedback4">
+                <strong>Senior Architect Badge Unlocked.</strong> You ignored the band-aids and fixed the logic. 
+                Debugging generated code is harder than writing code.
+            </div>
+        </section>
+
+        <!-- Conclusion -->
+        <section class="card" style="text-align: center; border-color: var(--accent-green);">
+            <h2 style="color: var(--accent-green); border: none;">SIMULATION COMPLETE</h2>
+            <div style="font-size: 3rem; font-weight: bold; margin: 1rem 0; color: var(--text-main);" id="finalScore">
+                --
+            </div>
+            <p>
+                AI didn't replace you. It gave you a faster engine. But you are still the driver.
+            </p>
+            <button class="btn" onclick="window.location.reload()" style="border-color: var(--accent-green); color: var(--accent-green);">Restart Simulation</button>
+        </section>
+
+    </div>
+
+    <script>
+        /* --- State Management --- */
+        const state = {
+            xp: 0,
+            skill: 0,
+            hasRefactored: false,
+            hasDebugged: false,
+            unlockedLogic: false
+        };
+
+        const updateXP = (amount) => {
+            state.xp += amount;
+            if (state.xp > 1000) state.xp = 1000;
+            
+            // Visual Update
+            document.getElementById('xpValue').innerText = state.xp;
+            document.getElementById('xpFill').style.width = (state.xp / 1000 * 100) + '%';
+
+            // Role Update
+            const roleLabel = document.getElementById('roleLabel');
+            if (state.xp < 300) { roleLabel.innerText = "PASSENGER"; roleLabel.style.color = "var(--accent-orange)"; }
+            else if (state.xp < 800) { roleLabel.innerText = "CO-PILOT"; roleLabel.style.color = "var(--accent-cyan)"; }
+            else { roleLabel.innerText = "PILOT"; roleLabel.style.color = "var(--accent-green)"; }
+
+            // Unlock Logic Button in Section 2 if XP is sufficient
+            if (state.xp > 150 && !state.unlockedLogic) {
+                state.unlockedLogic = true;
+                const btn = document.getElementById('btnLogic');
+                btn.style.opacity = '1';
+                btn.style.cursor = 'pointer';
+                btn.innerText = "Prompt: `radius: 50%; color: cyan;` [UNLOCKED]";
+            }
+        };
+
+        /* --- Section 1: Canvas Simulation --- */
+        const canvas = document.getElementById('driftCanvas');
+        const ctx = canvas.getContext('2d');
+        const slider = document.getElementById('skillSlider');
+        const crashOverlay = document.getElementById('crashOverlay');
+        const skillVal = document.getElementById('skillVal');
+        const mathSkill = document.getElementById('mathSkill');
+        const feedback1 = document.getElementById('feedback1');
+
+        let time = 0;
+        let points = [];
+        
+        // Resize canvas
+        canvas.width = canvas.offsetWidth;
+        canvas.height = canvas.offsetHeight;
+
+        function animate() {
+            ctx.fillStyle = 'rgba(0, 0, 0, 0.2)'; // Trails
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+            const skill = parseInt(slider.value);
+            state.skill = skill;
+            skillVal.innerText = skill;
+            mathSkill.innerText = skill + 1; // Avoid divide by zero visual
+
+            // Math: Higher skill = Lower Amplitude & Noise
+            const stability = (skill + 1) / 100; 
+            const noise = (100 - skill) / 2; 
+            
+            const centerY = canvas.height / 2;
+            const newPoint = {
+                x: canvas.width,
+                y: centerY + (Math.sin(time * 0.1) * (noise * 2)) + ((Math.random() - 0.5) * noise * 3)
+            };
+
+            points.push(newPoint);
+
+            // Shift points left
+            for (let i = 0; i < points.length; i++) {
+                points[i].x -= 5;
+            }
+            // Remove off-screen points
+            if (points.length > 0 && points[0].x < 0) points.shift();
+
+            // Draw Line
+            ctx.beginPath();
+            ctx.moveTo(points[0].x, points[0].y);
+            for (let i = 1; i < points.length; i++) {
+                ctx.lineTo(points[i].x, points[i].y);
+            }
+            
+            // Color based on stability
+            ctx.strokeStyle = skill > 80 ? '#00ff9d' : (skill > 40 ? '#00f3ff' : '#ff9100');
+            ctx.lineWidth = 2;
+            ctx.shadowBlur = 10;
+            ctx.shadowColor = ctx.strokeStyle;
+            ctx.stroke();
+            ctx.shadowBlur = 0;
+
+            // Bug Walls Detection (Top and Bottom)
+            const currentY = points[points.length - 1].y;
+            if (currentY < 10 || currentY > canvas.height - 10) {
+                crashOverlay.style.opacity = 1;
+            } else {
+                crashOverlay.style.opacity = 0;
+            }
+
+            // XP Logic for Section 1
+            if (skill === 100 && !state.hasMasteredSteering) {
+                state.hasMasteredSteering = true;
+                updateXP(200);
+                feedback1.classList.add('visible');
+            }
+
+            time++;
+            requestAnimationFrame(animate);
+        }
+        animate();
+
+        /* --- Section 2: Ambiguity --- */
+        const target = document.getElementById('targetShape');
+        const feedback2 = document.getElementById('feedback2');
+
+        function promptLevel1() {
+            // Random chaotic styles
+            const r = Math.floor(Math.random() * 50);
+            const c = ['red', 'blue', 'purple', 'yellow'][Math.floor(Math.random() * 4)];
+            target.style.borderRadius = `${r}%`;
+            target.style.backgroundColor = c;
+            target.style.boxShadow = "none";
+            target.style.border = "none";
+            target.innerText = "???";
+            
+            // Slight XP for trying
+            updateXP(10);
+        }
+
+        function promptLevel2() {
+            if (!state.unlockedLogic) return; // Locked
+
+            // Precise Style
+            target.style.borderRadius = "50%";
+            target.style.backgroundColor = "transparent";
+            target.style.border = "4px solid var(--accent-cyan)";
+            target.style.boxShadow = "0 0 20px var(--accent-cyan)";
+            target.innerText = "";
+            
+            feedback2.classList.add('visible');
+            updateXP(250);
+        }
+
+        /* --- Section 3: Taste --- */
+        const codeDisplay = document.getElementById('codeDisplay');
+        const debtFill = document.getElementById('debtFill');
+        const debtValue = document.getElementById('debtValue');
+        const feedback3 = document.getElementById('feedback3');
+
+        function generateAI() {
+            codeDisplay.innerText = `// AI Generated\nif (user) {\n  if (user.hasAuth) {\n    if (data.isValid) {\n      doThing();\n    }\n  }\n}\nvar x = 1; // what is x?`;
+            debtFill.style.width = "100%";
+            debtFill.style.backgroundColor = "var(--accent-red)";
+            debtValue.innerText = "HIGH";
+            debtValue.style.color = "var(--accent-red)";
+        }
+
+        function humanRefactor() {
+            codeDisplay.innerText = `// Human Refactored\nif (!user?.hasAuth || !data.isValid) return;\n\ndoThing();\nconst activeUserCount = 1;`;
+            debtFill.style.width = "20%";
+            debtFill.style.backgroundColor = "var(--accent-green)";
+            debtValue.innerText = "LOW";
+            debtValue.style.color = "var(--accent-green)";
+            
+            if (!state.hasRefactored) {
+                state.hasRefactored = true;
+                updateXP(250);
+                feedback3.classList.add('visible');
+            }
+        }
+
+        /* --- Section 4: Debugging --- */
+        const terminal = document.getElementById('terminalLog');
+        const feedback4 = document.getElementById('feedback4');
+        const finalScore = document.getElementById('finalScore');
+
+        function logToTerminal(msg, type='') {
+            const div = document.createElement('div');
+            div.className = `log-entry ${type}`;
+            div.innerText = msg;
+            terminal.appendChild(div);
+            terminal.scrollTop = terminal.scrollHeight;
+        }
+
+        function applyFix(type) {
+            if (state.hasDebugged) return;
+
+            if (type === 1) {
+                logToTerminal("> Applying Try/Catch patch...", "log-warn");
+                setTimeout(() => logToTerminal("ERROR: NullReferenceException downstream.", "log-error"), 500);
+            } else if (type === 2) {
+                logToTerminal("> Hardcoding February...", "log-warn");
+                setTimeout(() => logToTerminal("ERROR: Failed on year 2025.", "log-error"), 500);
+            } else if (type === 3) {
+                logToTerminal("> Analyzing Logic trace...", "log-success");
+                setTimeout(() => {
+                    logToTerminal("SUCCESS: Leap Year logic corrected.", "log-success");
+                    logToTerminal("> Production System: ONLINE", "log-success");
+                    state.hasDebugged = true;
+                    updateXP(300);
+                    feedback4.classList.add('visible');
+                    calculateFinalScore();
+                }, 800);
+            }
+        }
+
+        function calculateFinalScore() {
+            finalScore.innerText = state.xp + " XP";
+        }
+
+    </script>
+</body>
+</html>

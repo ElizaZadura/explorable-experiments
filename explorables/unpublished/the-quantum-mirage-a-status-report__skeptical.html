@@ -1,0 +1,633 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>The Quantum Mirage: A Status Report</title>
+    <style>
+        :root {
+            --bg: #111;
+            --text: #ddd;
+            --accent-red: #ff4d4d;
+            --accent-yellow: #ffd700;
+            --accent-blue: #4da6ff;
+            --panel-bg: #222;
+            --border: #444;
+            --font-main: 'Helvetica Neue', Helvetica, Arial, sans-serif;
+            --font-mono: 'Courier New', Courier, monospace;
+        }
+
+        body {
+            background-color: var(--bg);
+            color: var(--text);
+            font-family: var(--font-main);
+            line-height: 1.6;
+            margin: 0;
+            padding: 0;
+        }
+
+        /* Layout */
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        header {
+            padding: 60px 0;
+            border-bottom: 2px solid var(--accent-red);
+            margin-bottom: 40px;
+        }
+
+        h1 {
+            font-family: var(--font-mono);
+            font-size: 2.5rem;
+            margin: 0;
+            color: var(--text);
+        }
+
+        .subtitle {
+            color: var(--accent-red);
+            font-family: var(--font-mono);
+            font-size: 1.2rem;
+            margin-top: 10px;
+            display: block;
+        }
+
+        section {
+            margin-bottom: 80px;
+            padding-bottom: 40px;
+            border-bottom: 1px dashed var(--border);
+        }
+
+        h2 {
+            border-left: 5px solid var(--accent-blue);
+            padding-left: 15px;
+            margin-bottom: 20px;
+        }
+
+        p {
+            font-size: 1.1rem;
+            margin-bottom: 1.5rem;
+            color: #ccc;
+        }
+
+        strong {
+            color: #fff;
+        }
+
+        /* Interactive Panels */
+        .lab-panel {
+            background: var(--panel-bg);
+            border: 1px solid var(--border);
+            border-top: 4px solid var(--accent-red);
+            padding: 20px;
+            margin: 30px 0;
+            border-radius: 4px;
+            font-family: var(--font-mono);
+            box-shadow: 0 4px 10px rgba(0,0,0,0.5);
+        }
+
+        .lab-title {
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            font-size: 0.9rem;
+            color: var(--accent-red);
+            margin-bottom: 15px;
+            display: block;
+            border-bottom: 1px solid var(--border);
+            padding-bottom: 5px;
+            font-weight: bold;
+        }
+
+        /* Controls */
+        .control-group {
+            margin-bottom: 15px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+
+        label {
+            font-size: 0.9rem;
+            color: #aaa;
+        }
+
+        input[type="range"] {
+            width: 100%;
+            margin-top: 5px;
+            accent-color: var(--accent-red);
+            background: #333;
+            height: 5px;
+            border-radius: 5px;
+            outline: none;
+        }
+
+        button {
+            background: var(--bg);
+            border: 1px solid var(--accent-red);
+            color: var(--accent-red);
+            padding: 8px 16px;
+            font-family: var(--font-mono);
+            cursor: pointer;
+            transition: all 0.2s;
+            font-weight: bold;
+            text-transform: uppercase;
+            font-size: 0.8rem;
+        }
+
+        button:hover {
+            background: var(--accent-red);
+            color: var(--bg);
+        }
+
+        button:disabled {
+            border-color: #555;
+            color: #555;
+            cursor: not-allowed;
+            background: transparent;
+        }
+
+        /* Specific Visualizations */
+        .equation {
+            font-size: 1.2rem;
+            text-align: center;
+            padding: 20px;
+            background: #000;
+            border-radius: 4px;
+            margin: 20px 0;
+            font-family: var(--font-mono);
+            border: 1px solid #333;
+        }
+
+        .var {
+            color: var(--accent-blue);
+            font-weight: bold;
+        }
+
+        .val-display {
+            color: var(--accent-yellow);
+            font-weight: bold;
+        }
+
+        #tsp-canvas {
+            background: #000;
+            width: 100%;
+            height: 300px;
+            border: 1px solid #333;
+            cursor: crosshair;
+            display: block;
+        }
+
+        .warning-box {
+            background: rgba(255, 77, 77, 0.1);
+            border: 1px solid var(--accent-red);
+            padding: 15px;
+            margin-top: 15px;
+            font-size: 0.9rem;
+            display: none;
+            color: var(--accent-red);
+        }
+
+        /* List Items */
+        .checklist-item {
+            margin-bottom: 10px;
+            padding: 15px;
+            border: 1px solid #333;
+            background: #1a1a1a;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+        
+        .checklist-item:hover {
+            background: #252525;
+        }
+
+        .checklist-item input {
+            margin-right: 10px;
+            transform: scale(1.2);
+        }
+
+        .crossed-out {
+            text-decoration: line-through;
+            color: #666;
+            opacity: 0.7;
+        }
+        
+        .annotation {
+            color: var(--accent-red);
+            font-size: 0.9em;
+            font-style: italic;
+            margin-top: 8px;
+            padding-left: 28px;
+            border-left: 2px solid var(--accent-red);
+        }
+
+        @media (max-width: 600px) {
+            h1 { font-size: 1.8rem; }
+            .control-group { flex-direction: column; align-items: flex-start; }
+            button { width: 100%; margin-bottom: 5px; }
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <header>
+        <h1>THE QUANTUM MIRAGE</h1>
+        <span class="subtitle">Field Notes on the Disappearing Advantage</span>
+    </header>
+
+    <!-- SECTION 1: THE HYPE CYCLE -->
+    <section>
+        <h2>1. The Vanishing Rabbit</h2>
+        <p>
+            The narrative of quantum computing is a magic show. First, the rabbit appears: a problem unsolvable by classical computers. Then, the hat appears: the quantum machine. But as research progresses, the rabbit tends to disappear.
+        </p>
+        <p>
+            The industry relies on the concept of <strong>Quantum Advantage</strong>—the threshold where a quantum computer outperforms a classical one. But "outperforming" is a moving target. Classical algorithms are not standing still.
+        </p>
+
+        <div class="lab-panel">
+            <span class="lab-title">Hypothesis Tracker: Use Cases</span>
+            <p style="font-size: 0.9rem; color: #888;">Click the proposed use cases to update their status based on recent findings.</p>
+            
+            <div class="checklist-item" onclick="toggleCase(1)">
+                <input type="checkbox" id="case1">
+                <label for="case1" id="label1" style="cursor: pointer;"><strong>Simulating FeMo-cofactor</strong> (Nitrogen fixation)</label>
+                <div id="note1" class="annotation" style="display:none;">
+                    [REJECTED] A Caltech team recently calculated the ground state energy to precision using a standard computer cluster. No quantum needed.
+                </div>
+            </div>
+
+            <div class="checklist-item" onclick="toggleCase(2)">
+                <input type="checkbox" id="case2">
+                <label for="case2" id="label2" style="cursor: pointer;"><strong>Recommendation Systems</strong> (Netflix/Amazon)</label>
+                <div id="note2" class="annotation" style="display:none;">
+                    [REJECTED] Ewin Tang's "de-quantization" proved that classical algorithms could match the proposed quantum speedup for recommendation systems.
+                </div>
+            </div>
+            
+            <div class="checklist-item" onclick="toggleCase(3)">
+                <input type="checkbox" id="case3">
+                <label for="case3" id="label3" style="cursor: pointer;"><strong>Traveling Salesman Problem</strong> (Logistics)</label>
+                <div id="note3" class="annotation" style="display:none;">
+                    [UNLIKELY] 20 years of literature review suggests no quantum speedup over classical heuristics for NP-Hard optimization.
+                </div>
+            </div>
+        </div>
+        <p>
+            When we look closely at specific examples, the story collapses. We were told only a quantum computer could simulate complex molecules. Then, classical teams optimize their code and solve it. The "impossible" problem was just a hard problem we hadn't optimized yet.
+        </p>
+    </section>
+
+    <!-- SECTION 2: THE TSP PROBLEM -->
+    <section>
+        <h2>2. The Traveling Salesman Fallacy</h2>
+        <p>
+            Marketing teams love the <strong>Traveling Salesman Problem (TSP)</strong>. A salesman must visit $N$ cities via the shortest route. It is NP-Hard. The assumption is that quantum computers, using superposition, can check all routes at once.
+        </p>
+        <p>
+            This is a misunderstanding. Quantum computers manipulate probabilities, they don't simply "try everything." For optimization, classical heuristics (guessing intelligently) are remarkably efficient.
+        </p>
+
+        <div class="lab-panel">
+            <span class="lab-title">Simulation: Heuristic vs. Search Space</span>
+            <div class="control-group">
+                <div style="display:flex; gap:10px; width:100%">
+                    <button onclick="addCity()" style="flex:1">Add City (Click Map)</button>
+                    <button onclick="resetTSP()" style="flex:1">Reset Map</button>
+                </div>
+                <span id="city-count" style="width:100%; text-align:right; font-size:0.8rem; color:#888;">Cities: 0</span>
+            </div>
+            
+            <canvas id="tsp-canvas"></canvas>
+            
+            <div class="control-group" style="margin-top: 15px;">
+                <button onclick="solveClassical()" style="border-color: var(--accent-yellow); color: var(--accent-yellow);">Run Classical Heuristic</button>
+                <button onclick="solveQuantum()">Attempt Quantum Search</button>
+            </div>
+
+            <div id="tsp-output" style="margin-top: 15px; font-family: var(--font-mono); min-height: 20px; color: #fff;">
+                Status: Ready for input.
+            </div>
+            <div id="tsp-warning" class="warning-box"></div>
+        </div>
+
+        <p>
+            Notice the difference? The classical approach (Nearest Neighbor) isn't perfect, but it's instant. The "Quantum" approach (often conflated with brute force in pop-sci) faces an exploding search space ($N!$). Even with Grover's Algorithm providing a square-root speedup, the overhead and noise make it non-competitive against classical approximations.
+        </p>
+    </section>
+
+    <!-- SECTION 3: THE ENERGY BILL -->
+    <section>
+        <h2>3. The Hidden Energy Cost</h2>
+        <p>
+            There is a problem no one talks about: <strong>Thermodynamics</strong>. 
+        </p>
+        <p>
+            To make quantum computers work, we need Error Correction. To get one perfect "Logical Qubit," we need thousands of noisy "Physical Qubits" to correct it. All of those physical qubits need to be cooled to near absolute zero.
+        </p>
+
+        <div class="equation">
+            P<sub>total</sub> = <span class="var">Q<sub>logical</sub></span> × <span class="var">R<sub>overhead</sub></span> × <span class="var">P<sub>cooling</sub></span>
+        </div>
+
+        <div class="lab-panel">
+            <span class="lab-title">Power Consumption Estimator</span>
+            
+            <div class="control-group">
+                <label>Desired Logical Qubits (For useful work): <span id="val-logic" class="val-display">10</span></label>
+                <input type="range" id="input-logic" min="1" max="100" value="10" oninput="updateEnergy()">
+            </div>
+
+            <div class="control-group">
+                <label>Error Correction Overhead (Physical Qubits per Logical): <span id="val-overhead" class="val-display">1000</span></label>
+                <input type="range" id="input-overhead" min="100" max="10000" step="100" value="1000" oninput="updateEnergy()">
+                <small style="width: 100%; color: #666; font-size: 0.8rem;">Current estimates suggest 1,000 to 10,000 physical qubits are needed for 1 stable logical qubit.</small>
+            </div>
+
+            <div class="control-group">
+                <label>Cooling Power Cost (Watts per Physical Qubit): <span id="val-cooling" class="val-display">5</span></label>
+                <input type="range" id="input-cooling" min="1" max="20" value="5" oninput="updateEnergy()">
+            </div>
+
+            <div style="margin-top: 20px; border-top: 1px solid #444; padding-top: 10px;">
+                <div>Total Physical Qubits: <span id="res-phys" style="color: var(--accent-red)">10,000</span></div>
+                <div>Estimated Power Draw: <span id="res-power" style="color: var(--accent-red); font-size: 1.5em; font-weight: bold;">50 kW</span></div>
+                <div id="comparison-text" style="font-style: italic; color: #888; margin-top: 5px;"></div>
+            </div>
+        </div>
+
+        <p>
+            If we need millions of physical qubits to do useful chemistry, we aren't talking about a chip in a laptop. We are talking about a facility consuming the power of a small city, just to run the error correction cycles.
+        </p>
+    </section>
+
+    <!-- SECTION 4: CONCLUSION -->
+    <section style="border-bottom: none;">
+        <h2>4. The Transistor Fallacy</h2>
+        <p>
+            We are often told this is the "Transistor Moment" for quantum tech. This analogy is flawed.
+        </p>
+        <p>
+            <strong>The Transistor:</strong> Became smaller, faster, and cooler over time. <br>
+            <strong>The Qubit:</strong> Requires massive macroscopic equipment (dilution refrigerators, lasers, vacuum chambers) that does not scale down linearly.
+        </p>
+        <p>
+            The skeptical view isn't that quantum computing is impossible physics. It's that it is impractical engineering. If the error correction requires more energy than a supercomputer would take to just solve the problem classically, where is the advantage?
+        </p>
+        <div style="background: #111; border: 1px solid #333; padding: 20px; text-align: center; margin-top: 40px; color: #666;">
+            <em>Conclusion: There is little cause for optimism. But there is plenty of cause for research funding.</em>
+        </div>
+    </section>
+
+</div>
+
+<script>
+    // --- SECTION 1: HYPE TRACKER ---
+    function toggleCase(id) {
+        const checkbox = document.getElementById(`case${id}`);
+        const label = document.getElementById(`label${id}`);
+        const note = document.getElementById(`note${id}`);
+        
+        // Toggle the checkbox state manually if the div was clicked
+        if(event.target.type !== 'checkbox') {
+             checkbox.checked = !checkbox.checked;
+        }
+
+        if (checkbox.checked) {
+            label.classList.add('crossed-out');
+            note.style.display = 'block';
+        } else {
+            label.classList.remove('crossed-out');
+            note.style.display = 'none';
+        }
+    }
+
+    // --- SECTION 2: TSP VISUALIZER ---
+    const canvas = document.getElementById('tsp-canvas');
+    const ctx = canvas.getContext('2d');
+    let cities = [];
+    let isAnimating = false;
+    let animationId = null;
+    
+    // Resize canvas
+    function resizeCanvas() {
+        // Get the computed style width/height to avoid stretching
+        const rect = canvas.getBoundingClientRect();
+        canvas.width = rect.width;
+        canvas.height = rect.height;
+        drawCities();
+    }
+    window.addEventListener('resize', resizeCanvas);
+    
+    // Initial resize
+    setTimeout(resizeCanvas, 100);
+
+    function addCity(e) {
+        if(isAnimating) return; // Lock during animation
+        
+        let x, y;
+        if(e) {
+            // Click on canvas
+            const rect = canvas.getBoundingClientRect();
+            x = e.clientX - rect.left;
+            y = e.clientY - rect.top;
+        } else {
+            // Button click (random)
+            x = Math.random() * (canvas.width - 40) + 20;
+            y = Math.random() * (canvas.height - 40) + 20;
+        }
+
+        cities.push({x, y});
+        document.getElementById('city-count').innerText = `Cities: ${cities.length}`;
+        drawCities();
+        document.getElementById('tsp-output').innerText = "Status: New city added.";
+        document.getElementById('tsp-warning').style.display = 'none';
+    }
+
+    function resetTSP() {
+        if(isAnimating) clearInterval(animationId);
+        isAnimating = false;
+        cities = [];
+        document.getElementById('city-count').innerText = `Cities: 0`;
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        document.getElementById('tsp-output').innerText = "Status: Map cleared.";
+        document.getElementById('tsp-warning').style.display = 'none';
+    }
+
+    function drawCities() {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        
+        // Draw grid lines for "lab" feel
+        ctx.strokeStyle = '#222';
+        ctx.lineWidth = 1;
+        ctx.beginPath();
+        for(let i=0; i<canvas.width; i+=40) { ctx.moveTo(i,0); ctx.lineTo(i,canvas.height); }
+        for(let i=0; i<canvas.height; i+=40) { ctx.moveTo(0,i); ctx.lineTo(canvas.width,i); }
+        ctx.stroke();
+
+        // Draw cities
+        ctx.fillStyle = '#4da6ff';
+        cities.forEach(city => {
+            ctx.beginPath();
+            ctx.arc(city.x, city.y, 4, 0, Math.PI * 2);
+            ctx.fill();
+            // Glow
+            ctx.shadowBlur = 5;
+            ctx.shadowColor = '#4da6ff';
+            ctx.stroke();
+            ctx.shadowBlur = 0;
+        });
+    }
+
+    // Classical Heuristic (Nearest Neighbor)
+    function solveClassical() {
+        if (cities.length < 2) return;
+        if (isAnimating) { clearInterval(animationId); isAnimating = false; }
+        
+        drawCities();
+        
+        let unvisited = [...cities];
+        let current = unvisited.shift(); // Start at first city
+        let path = [current];
+
+        ctx.strokeStyle = '#ffd700'; // Yellow for classical
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        ctx.moveTo(current.x, current.y);
+
+        while (unvisited.length > 0) {
+            // Find nearest
+            let nearestIndex = 0;
+            let minDist = Infinity;
+            
+            unvisited.forEach((city, index) => {
+                const d = Math.hypot(city.x - current.x, city.y - current.y);
+                if (d < minDist) {
+                    minDist = d;
+                    nearestIndex = index;
+                }
+            });
+
+            current = unvisited.splice(nearestIndex, 1)[0];
+            path.push(current);
+            ctx.lineTo(current.x, current.y);
+        }
+        
+        // Close loop
+        ctx.lineTo(path[0].x, path[0].y);
+        ctx.stroke();
+        
+        document.getElementById('tsp-output').innerText = "Status: Classical Heuristic found a path instantly.";
+        document.getElementById('tsp-warning').style.display = 'none';
+    }
+
+    // "Quantum" Simulation (Illustrating the difficulty)
+    function solveQuantum() {
+        if (cities.length < 2) return;
+        if (isAnimating) return;
+        
+        drawCities();
+        
+        const output = document.getElementById('tsp-output');
+        const warning = document.getElementById('tsp-warning');
+
+        // Factorial calculation for explanation
+        let combinations = 1;
+        // Approximation for display
+        if(cities.length > 20) combinations = 1e18; 
+        else for(let i=1; i<cities.length; i++) combinations *= i;
+
+        output.innerText = `Status: Initializing Superposition...`;
+        isAnimating = true;
+        
+        // Visualizing the "Explosion" of search space
+        ctx.strokeStyle = 'rgba(255, 77, 77, 0.3)'; // Red
+        ctx.lineWidth = 1;
+
+        let linesDrawn = 0;
+        const maxLines = 100; 
+
+        animationId = setInterval(() => {
+            // Draw random lines to simulate checking all paths simultaneously (and uselessly)
+            ctx.beginPath();
+            const c1 = cities[Math.floor(Math.random() * cities.length)];
+            const c2 = cities[Math.floor(Math.random() * cities.length)];
+            ctx.moveTo(c1.x, c1.y);
+            ctx.lineTo(c2.x, c2.y);
+            ctx.stroke();
+
+            linesDrawn++;
+            
+            if (linesDrawn > maxLines) {
+                clearInterval(animationId);
+                isAnimating = false;
+                output.innerText = `Status: Coherence Lost.`;
+                warning.style.display = 'block';
+                
+                let timeMsg = "";
+                if (cities.length > 10) timeMsg = "Search space is too large for current QPU stability.";
+                else timeMsg = "Overhead for error correction exceeds calculation benefit.";
+
+                let sciNum = combinations > 1e15 ? "10^" + Math.log10(combinations).toFixed(0) : combinations.toLocaleString();
+
+                warning.innerHTML = `<strong>QUANTUM ADVANTAGE FAILED</strong><br>Route permutations: ~${sciNum}<br>${timeMsg}<br>Optimization landscape is too rugged for Grover's algorithm to provide practical speedup over classical heuristics.`;
+            }
+        }, 20);
+    }
+
+    // --- SECTION 3: ENERGY CALCULATOR ---
+    function updateEnergy() {
+        const logic = parseInt(document.getElementById('input-logic').value);
+        const overhead = parseInt(document.getElementById('input-overhead').value);
+        const cooling = parseInt(document.getElementById('input-cooling').value);
+
+        // Update Labels
+        document.getElementById('val-logic').innerText = logic;
+        document.getElementById('val-overhead').innerText = overhead.toLocaleString();
+        document.getElementById('val-cooling').innerText = cooling;
+
+        // Calculate
+        const physQubits = logic * overhead;
+        const powerWatts = physQubits * cooling;
+        const powerKW = powerWatts / 1000;
+        const powerMW = powerKW / 1000;
+
+        // Display
+        document.getElementById('res-phys').innerText = physQubits.toLocaleString();
+        
+        let powerString = "";
+        if (powerMW >= 1) {
+            powerString = powerMW.toFixed(2) + " MW";
+        } else {
+            powerString = powerKW.toFixed(0) + " kW";
+        }
+        document.getElementById('res-power').innerText = powerString;
+
+        // Contextual Comparison
+        const compText = document.getElementById('comparison-text');
+        if (powerMW > 20) {
+            compText.innerText = "⚠️ Equivalent to the Frontier Supercomputer (Exascale).";
+        } else if (powerMW > 1) {
+            compText.innerText = "⚠️ Equivalent to a large industrial data center.";
+        } else if (powerKW > 100) {
+            compText.innerText = "Equivalent to a Tesla Supercharger station.";
+        } else {
+            compText.innerText = "Manageable, but remember: this is just for cooling.";
+        }
+    }
+
+    // Init
+    updateEnergy();
+
+    // Canvas click listener
+    canvas.addEventListener('mousedown', addCity);
+
+</script>
+
+</body>
+</html>

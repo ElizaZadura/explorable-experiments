@@ -1,0 +1,674 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>The AI Skill Ceiling</title>
+    <style>
+        :root {
+            --bg-color: #050505;
+            --term-green: #00ff41;
+            --term-dim: #008F11;
+            --term-red: #ff3333;
+            --term-amber: #ffb000;
+            --font-main: 'Courier New', Courier, monospace;
+        }
+
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            background-color: var(--bg-color);
+            color: var(--term-green);
+            font-family: var(--font-main);
+            margin: 0;
+            padding: 0;
+            line-height: 1.6;
+            overflow-x: hidden;
+        }
+
+        /* Container */
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        /* Typography */
+        h1, h2, h3 {
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            margin-top: 2rem;
+            border-bottom: 1px solid var(--term-dim);
+            padding-bottom: 0.5rem;
+        }
+
+        h1 {
+            text-align: center;
+            border: 1px solid var(--term-green);
+            padding: 20px;
+            box-shadow: 0 0 10px var(--term-dim);
+            text-shadow: 0 0 5px var(--term-green);
+        }
+
+        p {
+            margin-bottom: 1.5rem;
+            font-size: 1.1rem;
+        }
+
+        .highlight {
+            color: var(--term-amber);
+            font-weight: bold;
+        }
+
+        /* UI Elements */
+        button {
+            background: transparent;
+            color: var(--term-green);
+            border: 1px solid var(--term-green);
+            padding: 10px 20px;
+            font-family: var(--font-main);
+            font-size: 1rem;
+            cursor: pointer;
+            transition: all 0.2s;
+            text-transform: uppercase;
+            margin-top: 10px;
+        }
+
+        button:hover {
+            background: var(--term-green);
+            color: var(--bg-color);
+            box-shadow: 0 0 15px var(--term-green);
+        }
+
+        button:active {
+            transform: translateY(2px);
+        }
+
+        input[type=range] {
+            width: 100%;
+            background: transparent;
+            -webkit-appearance: none;
+            margin: 10px 0;
+        }
+
+        input[type=range]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            height: 20px;
+            width: 20px;
+            background: var(--term-green);
+            cursor: pointer;
+            margin-top: -8px;
+        }
+
+        input[type=range]::-webkit-slider-runnable-track {
+            width: 100%;
+            height: 4px;
+            cursor: pointer;
+            background: var(--term-dim);
+        }
+
+        /* Section Specifics */
+        section {
+            margin-bottom: 80px;
+            border-left: 2px solid var(--term-dim);
+            padding-left: 20px;
+        }
+
+        /* Section 1: Hello World */
+        #code-box {
+            border: 1px dashed var(--term-dim);
+            height: 150px;
+            width: 100%;
+            padding: 10px;
+            overflow: hidden;
+            background: #000;
+            display: flex;
+            flex-wrap: wrap;
+            align-content: flex-start;
+            gap: 5px;
+        }
+        .code-block {
+            height: 10px;
+            background-color: var(--term-dim);
+            display: inline-block;
+            animation: type 0.1s ease forwards;
+        }
+        @keyframes type { to { opacity: 1; } }
+
+        /* Section 2: Mechanism */
+        .token-viz {
+            border: 1px solid var(--term-dim);
+            padding: 15px;
+            margin-top: 20px;
+        }
+        .bar-container {
+            margin-bottom: 10px;
+        }
+        .bar-label { display: flex; justify-content: space-between; font-size: 0.8rem; }
+        .bar-bg { background: #111; height: 10px; width: 100%; margin-top: 5px; }
+        .bar-fill { height: 100%; background: var(--term-amber); transition: width 0.3s; }
+
+        /* Section 3: Sloshing */
+        canvas {
+            background: #000;
+            border: 1px solid var(--term-dim);
+            width: 100%;
+            max-width: 100%;
+            height: 200px;
+            display: block;
+        }
+        .controls {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            margin-top: 20px;
+        }
+        .control-group label { display: block; font-size: 0.8rem; color: var(--term-dim); }
+        .slosh-stats {
+            display: flex;
+            justify-content: space-between;
+            font-size: 0.8rem;
+            color: var(--term-dim);
+            margin-top: 5px;
+        }
+        .under-hood {
+            font-size: 0.8rem;
+            color: var(--term-dim);
+            margin-top: 10px;
+            border-top: 1px dotted var(--term-dim);
+            padding-top: 5px;
+            display: none;
+        }
+        .under-hood.visible { display: block; }
+
+        /* Section 4: Intern Factor */
+        .arch-container {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 20px;
+            margin-top: 20px;
+        }
+        .arch-box {
+            flex: 1;
+            min-width: 250px;
+            border: 1px solid var(--term-dim);
+            padding: 10px;
+            position: relative;
+        }
+        .arch-title { text-align: center; font-size: 0.8rem; margin-bottom: 10px; color: var(--term-dim); }
+        
+        .diagram {
+            height: 150px;
+            position: relative;
+            background: #000;
+        }
+        
+        /* Nodes */
+        .node {
+            width: 10px;
+            height: 10px;
+            background: var(--term-green);
+            position: absolute;
+            border-radius: 50%;
+            transition: background 0.3s;
+        }
+        .node.red { background: var(--term-red); box-shadow: 0 0 10px var(--term-red); }
+        
+        /* Lines */
+        .line {
+            position: absolute;
+            background: var(--term-dim);
+            height: 1px;
+            transform-origin: 0 0;
+            opacity: 0.5;
+        }
+
+        /* Section 5: Conclusion */
+        .switch-container {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 20px;
+            margin-top: 40px;
+        }
+        .toggle-switch {
+            position: relative;
+            display: inline-block;
+            width: 60px;
+            height: 34px;
+        }
+        .toggle-switch input { opacity: 0; width: 0; height: 0; }
+        .slider {
+            position: absolute;
+            cursor: pointer;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background-color: #333;
+            transition: .4s;
+            border: 1px solid var(--term-dim);
+        }
+        .slider:before {
+            position: absolute;
+            content: "";
+            height: 26px;
+            width: 26px;
+            left: 3px;
+            bottom: 3px;
+            background-color: var(--term-green);
+            transition: .4s;
+        }
+        input:checked + .slider:before {
+            transform: translateX(26px);
+            background-color: var(--term-red);
+        }
+        #final-message {
+            text-align: center;
+            font-size: 1.5rem;
+            margin-top: 20px;
+            min-height: 3rem;
+        }
+
+        /* Mobile adjustments */
+        @media (max-width: 600px) {
+            .controls { grid-template-columns: 1fr; }
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h1>The AI Skill Ceiling</h1>
+    <p style="text-align: center; color: var(--term-dim);">// SYSTEM AUDIT: ENGINEERING REALITY CHECK</p>
+
+    <!-- SECTION 1 -->
+    <section>
+        <h2>01. The "Hello World" Trap</h2>
+        <p>So, you've heard the advice: <span class="highlight">'Don't learn to code. The AI will do it for you.'</span></p>
+        <p>It sounds liberating. For simple tasks, it feels like magic. But is it engineering?</p>
+        
+        <div id="code-box"></div>
+        <div style="display: flex; justify-content: space-between; align-items: center;">
+            <button onclick="generateScript()">[ Generate Script ]</button>
+            <span id="script-status" style="font-size: 0.8rem; color: var(--term-dim);">Status: Idle</span>
+        </div>
+
+        <p style="margin-top: 20px; opacity: 0; transition: opacity 1s;" id="trap-turn">
+            That was easy. But real engineering isn't about <em>starting</em> projects. It's about <em>maintaining</em> them as they grow.
+        </p>
+    </section>
+
+    <!-- SECTION 2 -->
+    <section>
+        <h2>02. The Mechanism</h2>
+        <p>Here is the fundamental friction. Computers are <span class="highlight">Deterministic</span> (Logic). LLMs are <span class="highlight">Probabilistic</span> (Statistics).</p>
+        
+        <div style="text-align: center; border: 1px solid var(--term-dim); padding: 10px; margin: 20px 0;">
+            $$P(w_i | w_{1}...w_{i-1})$$
+            <br>
+            <small style="color:var(--term-dim)">Probability of next token given previous context</small>
+        </div>
+
+        <p>The AI doesn't "know" code. It predicts text.</p>
+
+        <div class="token-viz">
+            <p style="margin:0 0 10px 0;"><strong>Input:</strong> "The function `calculateTax` should return..."</p>
+            
+            <label for="temp-slider">Temperature (Randomness): <span id="temp-val">0.2</span></label>
+            <input type="range" id="temp-slider" min="0" max="1" step="0.1" value="0.2">
+
+            <div id="bars">
+                <!-- Bars injected by JS -->
+            </div>
+            
+            <p id="viz-lesson" style="font-size: 0.9rem; margin-top: 15px; color: var(--term-amber); min-height: 40px;">
+                Output is rigid. Safe, but not creative.
+            </p>
+        </div>
+    </section>
+
+    <!-- SECTION 3 -->
+    <section>
+        <h2>03. The "Sloshing" Effect</h2>
+        <p>The Primeagen argues: As complexity grows, an AI-reliant developer enters the <span class="highlight">Sloshing Phase</span>. You fix one bug, but because you don't understand the system, you introduce two more.</p>
+
+        <canvas id="sloshChart"></canvas>
+        <div class="slosh-stats">
+            <span>Bugs: <span id="bug-count">5</span></span>
+            <span>Stability: <span id="stability-status">STABLE</span></span>
+        </div>
+
+        <div class="controls">
+            <div class="control-group">
+                <label>Project Complexity</label>
+                <input type="range" id="complexity-slider" min="10" max="100" value="20">
+            </div>
+            <div class="control-group">
+                <label>Your Hard Skills</label>
+                <input type="range" id="skill-slider" min="10" max="100" value="50">
+            </div>
+        </div>
+
+        <button style="width: 100%;" onclick="fixBug()">[ Fix Bug ]</button>
+        
+        <div style="text-align: right; margin-top: 5px;">
+            <a href="#" onclick="toggleHood(event)" style="color: var(--term-dim); font-size: 0.8rem; text-decoration: none;">[Toggle Under The Hood]</a>
+        </div>
+        <div id="hood-content" class="under-hood">
+            Formula: <code>NewBugs = Current + (Complexity/Skill * Noise) - FixEffort</code><br>
+            When Complexity > Skill, the noise coefficient overrides your fix effort. You are no longer the pilot.
+        </div>
+    </section>
+
+    <!-- SECTION 4 -->
+    <section>
+        <h2>04. The "Intern" Factor</h2>
+        <p>AI is like an intern who doesn't care. It wants to finish the ticket. It satisfies the prompt, not the architecture.</p>
+
+        <div class="arch-container">
+            <!-- Spaghetti -->
+            <div class="arch-box">
+                <div class="arch-title">Prompted Solution</div>
+                <div id="spaghetti-diagram" class="diagram"></div>
+            </div>
+            <!-- Engineered -->
+            <div class="arch-box">
+                <div class="arch-title">Engineered Solution</div>
+                <div id="modular-diagram" class="diagram"></div>
+            </div>
+        </div>
+
+        <div style="text-align: center; margin-top: 20px;">
+            <button id="change-req-btn" onmouseover="simulateChange(true)" onmouseout="simulateChange(false)" ontouchstart="simulateChange(true)" ontouchend="simulateChange(false)">[ Hover: Switch Database ]</button>
+        </div>
+
+        <p style="margin-top: 20px;">
+            If you can't distinguish between these two diagrams, you are building a trap for your future self.
+        </p>
+    </section>
+
+    <!-- SECTION 5 -->
+    <section style="border: none;">
+        <h2>05. Conclusion</h2>
+        <p>AI is a thruster. Hard Skills are the steering wheel. If you have a massive thruster and no steering wheel, you don't go faster. You crash harder.</p>
+
+        <div class="switch-container">
+            <span>RELY ON AI</span>
+            <label class="toggle-switch">
+                <input type="checkbox" id="final-toggle">
+                <span class="slider"></span>
+            </label>
+            <span>MASTER THE MACHINE</span>
+        </div>
+
+        <div id="final-message" class="highlight">
+            Good luck with the sloshing.
+        </div>
+    </section>
+</div>
+
+<script>
+    /* --- SECTION 1: HELLO WORLD --- */
+    function generateScript() {
+        const box = document.getElementById('code-box');
+        const status = document.getElementById('script-status');
+        const turn = document.getElementById('trap-turn');
+        
+        box.innerHTML = '';
+        status.innerText = "Status: Generating...";
+        
+        let count = 0;
+        const total = 30;
+        
+        const interval = setInterval(() => {
+            const width = Math.floor(Math.random() * 60) + 10;
+            const block = document.createElement('div');
+            block.className = 'code-block';
+            block.style.width = width + '%';
+            // Randomly break lines
+            if(Math.random() > 0.7) block.style.marginRight = '100%';
+            else block.style.marginRight = '10px';
+            
+            box.appendChild(block);
+            count++;
+            
+            if(count >= total) {
+                clearInterval(interval);
+                status.innerText = "Status: Success. Time: 0.1s";
+                status.style.color = "var(--term-green)";
+                turn.style.opacity = "1";
+            }
+        }, 30);
+    }
+
+    /* --- SECTION 2: MECHANISM --- */
+    const tempSlider = document.getElementById('temp-slider');
+    const tempVal = document.getElementById('temp-val');
+    const barsContainer = document.getElementById('bars');
+    const lesson = document.getElementById('viz-lesson');
+
+    function updateViz() {
+        const t = parseFloat(tempSlider.value);
+        tempVal.innerText = t.toFixed(1);
+
+        // Simulated distribution based on Temperature
+        // Low T = High confidence in top choice. High T = Flat distribution.
+        let p1, p2, p3;
+        
+        if (t < 0.3) {
+            p1 = 95 - (t * 20); 
+            p2 = 100 - p1 - 1;
+            p3 = 1;
+            lesson.innerText = "Output is rigid. Safe, but not creative.";
+            lesson.style.color = "var(--term-green)";
+        } else if (t < 0.7) {
+            p1 = 70 - ((t-0.3) * 40);
+            p2 = 20 + ((t-0.3) * 20);
+            p3 = 100 - p1 - p2;
+            lesson.innerText = "Balanced. The 'Goldilocks' zone for generic tasks.";
+            lesson.style.color = "var(--term-amber)";
+        } else {
+            p1 = 40;
+            p2 = 35;
+            p3 = 25; // Chaos
+            lesson.innerText = "High hallucination risk. Syntax errors likely. 'Creative' but dangerous.";
+            lesson.style.color = "var(--term-red)";
+        }
+
+        const data = [
+            { label: 'Integer', val: p1 },
+            { label: 'String', val: p2 },
+            { label: 'Null', val: p3 }
+        ];
+
+        barsContainer.innerHTML = data.map(d => `
+            <div class="bar-container">
+                <div class="bar-label"><span>${d.label}</span><span>${d.val.toFixed(0)}%</span></div>
+                <div class="bar-bg">
+                    <div class="bar-fill" style="width: ${d.val}%;"></div>
+                </div>
+            </div>
+        `).join('');
+    }
+
+    tempSlider.addEventListener('input', updateViz);
+    updateViz(); // Init
+
+    /* --- SECTION 3: SLOSHING --- */
+    const canvas = document.getElementById('sloshChart');
+    const ctx = canvas.getContext('2d');
+    const bugDisplay = document.getElementById('bug-count');
+    const stabDisplay = document.getElementById('stability-status');
+    const compSlider = document.getElementById('complexity-slider');
+    const skillSlider = document.getElementById('skill-slider');
+
+    // Canvas sizing
+    canvas.width = canvas.parentElement.offsetWidth;
+    canvas.height = 200;
+
+    let bugs = 10;
+    let history = new Array(50).fill(10); // History for graph
+
+    function drawGraph() {
+        ctx.fillStyle = '#000';
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+        // Grid lines
+        ctx.strokeStyle = '#111';
+        ctx.beginPath();
+        for(let i=0; i<canvas.width; i+=20) { ctx.moveTo(i,0); ctx.lineTo(i, canvas.height); }
+        for(let i=0; i<canvas.height; i+=20) { ctx.moveTo(0,i); ctx.lineTo(canvas.width, i); }
+        ctx.stroke();
+
+        // Draw Line
+        ctx.strokeStyle = bugs > 50 ? '#ff3333' : '#00ff41';
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        
+        const step = canvas.width / (history.length - 1);
+        
+        // Scale Y: 0 bugs = bottom, 100 bugs = top (inverted for canvas coords)
+        // Actually let's make 0 bugs = height-10, 100 bugs = 10
+        const getY = (val) => canvas.height - (val * (canvas.height/150)) - 10;
+
+        history.forEach((val, i) => {
+            const x = i * step;
+            const y = getY(val);
+            if(i===0) ctx.moveTo(x, y);
+            else ctx.lineTo(x, y);
+        });
+        ctx.stroke();
+    }
+
+    function fixBug() {
+        const complexity = parseInt(compSlider.value);
+        const skill = parseInt(skillSlider.value);
+        
+        // The Logic
+        // If Skill > Complexity: Bugs go down.
+        // If Skill < Complexity: Bugs might go down a little, or go UP (Sloshing).
+        
+        const ratio = complexity / (skill + 1); // Avoid div by zero
+        let change = 0;
+
+        if (ratio < 0.8) {
+            // High skill, low complexity. Good fix.
+            change = -5;
+        } else if (ratio < 1.2) {
+            // Struggling. 
+            change = (Math.random() > 0.5) ? -2 : 2;
+        } else {
+            // Sloshing. Fix one, break two.
+            change = Math.floor(Math.random() * 10) - 3; // range -3 to +6
+        }
+
+        bugs = Math.max(0, bugs + change);
+        
+        // Update history
+        history.shift();
+        history.push(bugs);
+        
+        // Update text
+        bugDisplay.innerText = bugs;
+        if(bugs < 20) {
+            stabDisplay.innerText = "STABLE";
+            stabDisplay.style.color = "var(--term-green)";
+        } else if (bugs < 60) {
+            stabDisplay.innerText = "VOLATILE";
+            stabDisplay.style.color = "var(--term-amber)";
+        } else {
+            stabDisplay.innerText = "CRITICAL";
+            stabDisplay.style.color = "var(--term-red)";
+        }
+
+        drawGraph();
+    }
+
+    function toggleHood(e) {
+        e.preventDefault();
+        document.getElementById('hood-content').classList.toggle('visible');
+    }
+
+    drawGraph(); // Init
+
+    /* --- SECTION 4: INTERN FACTOR --- */
+    function createNodes(containerId, type) {
+        const container = document.getElementById(containerId);
+        const w = container.offsetWidth;
+        const h = container.offsetHeight;
+        const count = 15;
+        
+        // Create nodes
+        for(let i=0; i<count; i++) {
+            const node = document.createElement('div');
+            node.className = 'node';
+            
+            if(type === 'spaghetti') {
+                node.style.left = Math.random() * (w - 10) + 'px';
+                node.style.top = Math.random() * (h - 10) + 'px';
+            } else {
+                // Grid
+                const col = i % 5;
+                const row = Math.floor(i / 5);
+                node.style.left = (col * (w/5) + 15) + 'px';
+                node.style.top = (row * (h/3) + 15) + 'px';
+            }
+            container.appendChild(node);
+        }
+
+        // Draw messy lines for spaghetti
+        if(type === 'spaghetti') {
+            for(let i=0; i<10; i++) {
+                const line = document.createElement('div');
+                line.className = 'line';
+                line.style.width = (Math.random() * 50 + 20) + 'px';
+                line.style.left = (Math.random() * w) + 'px';
+                line.style.top = (Math.random() * h) + 'px';
+                line.style.transform = `rotate(${Math.random()*360}deg)`;
+                container.appendChild(line);
+            }
+        }
+    }
+
+    // Init diagrams
+    // Delay slightly to ensure width is calculated
+    setTimeout(() => {
+        createNodes('spaghetti-diagram', 'spaghetti');
+        createNodes('modular-diagram', 'modular');
+    }, 100);
+
+    function simulateChange(isHovering) {
+        const spagNodes = document.querySelectorAll('#spaghetti-diagram .node');
+        const modNodes = document.querySelectorAll('#modular-diagram .node');
+        
+        if (isHovering) {
+            // Spaghetti: Light up 80% randomly
+            spagNodes.forEach(n => {
+                if(Math.random() > 0.2) n.classList.add('red');
+            });
+            // Modular: Light up specific one (e.g., center)
+            modNodes[7].classList.add('red');
+        } else {
+            spagNodes.forEach(n => n.classList.remove('red'));
+            modNodes.forEach(n => n.classList.remove('red'));
+        }
+    }
+
+    /* --- SECTION 5: CONCLUSION --- */
+    const finalToggle = document.getElementById('final-toggle');
+    const finalMsg = document.getElementById('final-message');
+
+    finalToggle.addEventListener('change', (e) => {
+        if(e.target.checked) {
+            finalMsg.innerText = "Welcome to the real work.";
+            finalMsg.style.color = "var(--term-green)";
+        } else {
+            finalMsg.innerText = "Good luck with the sloshing.";
+            finalMsg.style.color = "var(--term-amber)";
+        }
+    });
+
+</script>
+
+</body>
+</html>

@@ -1,0 +1,397 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>The Limits of Computation</title>
+    <style>
+        /* Minimalist / Zen Color Palette & Variables */
+        :root {
+            --bg: #ffffff;
+            --text: #1a1a1a;
+            --gray: #777777;
+            --light-gray: #e5e5e5;
+            --accent: #000000;
+            --error: #d32f2f;
+        }
+
+        /* Reset & Base Styles */
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            background-color: var(--bg);
+            color: var(--text);
+            line-height: 1.7;
+            font-size: 18px;
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
+        }
+
+        article {
+            max-width: 680px;
+            margin: 0 auto;
+            padding: 12vh 24px;
+        }
+
+        /* Typography */
+        h1 {
+            font-weight: 300;
+            font-size: 2.8rem;
+            letter-spacing: -0.04em;
+            margin-bottom: 1.5rem;
+            line-height: 1.1;
+        }
+
+        h2 {
+            font-weight: 400;
+            font-size: 1.6rem;
+            margin: 4rem 0 1.5rem 0;
+            border-bottom: 1px solid var(--light-gray);
+            padding-bottom: 0.5rem;
+            letter-spacing: -0.02em;
+        }
+
+        p {
+            margin-bottom: 1.5rem;
+            color: #333;
+        }
+
+        em {
+            font-style: italic;
+            color: var(--accent);
+        }
+
+        .math {
+            font-family: "SFMono-Regular", Consolas, "Liberation Mono", Menlo, monospace;
+            background: #f4f4f4;
+            padding: 0.2em 0.4em;
+            font-size: 0.85em;
+            border-radius: 4px;
+            color: var(--accent);
+        }
+
+        /* Interactive Containers */
+        .simulation {
+            border: 1px solid var(--light-gray);
+            padding: 2.5rem 2rem;
+            margin: 2.5rem 0;
+            border-radius: 8px;
+            text-align: center;
+            background: #fafafa;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.02);
+        }
+
+        .sim-title {
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            letter-spacing: 0.15em;
+            color: var(--gray);
+            margin-bottom: 1.5rem;
+        }
+
+        /* Buttons */
+        button {
+            appearance: none;
+            background: var(--bg);
+            border: 1px solid var(--text);
+            color: var(--text);
+            padding: 0.8rem 1.5rem;
+            font-size: 1rem;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            font-family: inherit;
+            border-radius: 4px;
+            min-height: 44px; /* Touch target size for mobile */
+        }
+
+        button:hover:not(:disabled) {
+            background: var(--text);
+            color: var(--bg);
+        }
+
+        button:disabled {
+            border-color: var(--light-gray);
+            color: var(--gray);
+            cursor: not-allowed;
+            background: var(--bg);
+        }
+
+        /* Tape specific styles */
+        .tape {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            gap: 0.5rem;
+            margin: 1.5rem 0;
+        }
+
+        .tape span {
+            font-family: "SFMono-Regular", Consolas, monospace;
+            font-size: 1.2rem;
+            border: 1px solid var(--light-gray);
+            padding: 0.5rem 1rem;
+            background: var(--bg);
+            border-radius: 4px;
+            animation: popIn 0.3s ease-out;
+        }
+
+        /* Machine Paradox styles */
+        .machine-box {
+            border: 2px solid var(--text);
+            background: var(--bg);
+            padding: 1.5rem;
+            display: inline-block;
+            margin: 1.5rem 0;
+            position: relative;
+            font-weight: 500;
+            border-radius: 4px;
+            transition: border-color 0.3s ease, color 0.3s ease;
+        }
+
+        .machine-output {
+            margin-top: 1.5rem;
+            font-family: "SFMono-Regular", Consolas, monospace;
+            font-size: 0.9rem;
+            min-height: 3rem;
+            color: var(--gray);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 0 1rem;
+        }
+
+        .choice-grid {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 1rem;
+            justify-content: center;
+            margin: 1.5rem 0;
+        }
+
+        /* Animations */
+        @keyframes shake {
+            0%, 100% { transform: translateX(0); }
+            20% { transform: translateX(-6px); }
+            40% { transform: translateX(6px); }
+            60% { transform: translateX(-4px); }
+            80% { transform: translateX(4px); }
+        }
+
+        @keyframes popIn {
+            0% { opacity: 0; transform: scale(0.8); }
+            100% { opacity: 1; transform: scale(1); }
+        }
+
+        @keyframes fadeIn {
+            0% { opacity: 0; transform: translateY(10px); }
+            100% { opacity: 1; transform: translateY(0); }
+        }
+
+        .error-state {
+            animation: shake 0.5s ease-in-out;
+            border-color: var(--error) !important;
+            color: var(--error);
+        }
+
+        .error-text {
+            color: var(--error);
+        }
+
+        /* State classes */
+        .hidden {
+            display: none !important;
+        }
+
+        .fade-in {
+            animation: fadeIn 0.8s ease-out forwards;
+        }
+
+        .reveal-box {
+            background: var(--bg);
+            border-left: 3px solid var(--text);
+            padding: 1.5rem;
+            margin-top: 2rem;
+            text-align: left;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+        }
+
+        /* Mobile Adjustments */
+        @media (max-width: 600px) {
+            h1 { font-size: 2.2rem; }
+            .choice-grid { flex-direction: column; }
+            button { width: 100%; }
+        }
+    </style>
+</head>
+<body>
+
+<article>
+    <h1>Understanding vs. Computation</h1>
+    <p>Physicist Roger Penrose argues that human consciousness—specifically our ability to <em>understand</em> mathematics—cannot be replicated by a computer. To understand why, we must look at how computers actually work.</p>
+
+    <h2>1. The Formal System</h2>
+    <p>A computer operates within a "formal system." It is given a set of axioms (starting facts) and a set of rules. It blindly applies those rules to generate new facts. It does not know what the symbols <em>mean</em>; it only knows how to move them.</p>
+
+    <div class="simulation">
+        <div class="sim-title">Simulation: The Rule Follower</div>
+        <p><strong>Axiom:</strong> <span class="math">0</span><br>
+        <strong>Rule:</strong> To get the next truth, add <span class="math">1</span>.</p>
+        <div class="tape" id="tape-output">
+            <span>0</span>
+        </div>
+        <button id="btn-compute">Apply Rule</button>
+    </div>
+
+    <p>If we ask this machine to prove that <span class="math">4</span> is a valid truth, it simply runs the rule until it hits <span class="math">4</span>. This is computation. It is predictable, mechanical, and entirely contained within its rules.</p>
+
+    <h2>2. Gödel's Trap</h2>
+    <p>In 1931, Kurt Gödel discovered a fundamental limit to these mechanical systems. He proved that for any set of rules, you can construct a mathematical statement that essentially says:</p>
+    <p style="text-align: center; font-size: 1.3rem; margin: 2.5rem 0; font-style: italic; color: #000;">"This statement cannot be proven by these rules."</p>
+    <p>Let's call this statement <span class="math">G</span>. What happens if we feed <span class="math">G</span> into our formal computer and ask it to prove if it is true or false?</p>
+
+    <div class="simulation">
+        <div class="sim-title">Simulation: The Paradox</div>
+        <p>Statement <span class="math">G</span>: <em>"I am not provable by the Machine."</em></p>
+        
+        <div class="machine-box" id="machine-box">
+            The Machine (Rules)
+        </div>
+        
+        <div class="choice-grid">
+            <button id="btn-prove-true">Attempt to Prove True</button>
+            <button id="btn-prove-false">Attempt to Prove False</button>
+        </div>
+        <div class="machine-output" id="paradox-output">Awaiting input...</div>
+    </div>
+
+    <div id="post-paradox-container" class="hidden">
+        <p>Notice the trap. If the machine proves <span class="math">G</span> is true, then <span class="math">G</span> <em>is</em> provable, which makes the statement false. A contradiction. If the machine proves it false, it means it <em>can</em> be proven, another contradiction. The machine is paralyzed.</p>
+    </div>
+
+    <div id="section-3" class="hidden">
+        <h2>3. The Human Leap</h2>
+        <p>The machine cannot compute an answer. Its rules fail it. But now, read statement <span class="math">G</span> again yourself.</p>
+        <p style="text-align: center; font-size: 1.1rem; margin: 1.5rem 0;"><em>"This statement cannot be proven by the Machine."</em></p>
+        <p>Because you just watched the simulation, you know for a fact that the machine cannot prove it. Therefore, looking at the statement from the outside, what is its status?</p>
+
+        <div class="simulation">
+            <div class="sim-title">Human Insight</div>
+            <div class="choice-grid">
+                <button id="btn-human-false">It is False</button>
+                <button id="btn-human-true">It is True</button>
+            </div>
+            
+            <div id="final-error" class="machine-output error-text hidden" style="margin-top:1.5rem; min-height: auto;">
+                Think again. If the machine actually cannot prove it, doesn't that make the statement an accurate description of reality?
+            </div>
+
+            <div id="final-reveal" class="reveal-box hidden">
+                <p><strong>Exactly. It is True.</strong></p>
+                <p style="margin-bottom: 0;">You know it is true <em>because</em> you know the machine cannot prove it. You have just ascertained a mathematical truth that the machine, by its very definition, cannot reach.</p>
+            </div>
+        </div>
+
+        <p>This is Penrose's argument. A computer operates entirely within a system of rules. Human intelligence has the capacity to step <em>outside</em> the system, look at the rules themselves, understand their meaning, and see truths that the rules cannot generate.</p>
+        <p>Understanding is not a computational process. It is something else entirely.</p>
+    </div>
+
+</article>
+
+<script>
+    // --- Simulation 1: The Rule Follower ---
+    let currentNumber = 0;
+    const tapeOutput = document.getElementById('tape-output');
+    const btnCompute = document.getElementById('btn-compute');
+
+    btnCompute.addEventListener('click', () => {
+        currentNumber++;
+        const newSpan = document.createElement('span');
+        newSpan.innerText = currentNumber;
+        tapeOutput.appendChild(newSpan);
+        
+        if (currentNumber >= 4) {
+            btnCompute.disabled = true;
+            btnCompute.innerText = "Target Reached";
+        }
+    });
+
+    // --- Simulation 2: The Paradox ---
+    const btnProveTrue = document.getElementById('btn-prove-true');
+    const btnProveFalse = document.getElementById('btn-prove-false');
+    const machineBox = document.getElementById('machine-box');
+    const paradoxOutput = document.getElementById('paradox-output');
+    const postParadoxContainer = document.getElementById('post-paradox-container');
+    const section3 = document.getElementById('section-3');
+    let paradoxTriggered = false;
+
+    function triggerMachineError(message) {
+        // Reset animation
+        machineBox.classList.remove('error-state');
+        void machineBox.offsetWidth; // Trigger reflow to restart animation
+        
+        // Apply error state
+        machineBox.classList.add('error-state');
+        paradoxOutput.innerHTML = `<span class="error-text">${message}</span>`;
+        
+        // Reveal next section smoothly after the first interaction
+        if (!paradoxTriggered) {
+            paradoxTriggered = true;
+            setTimeout(() => {
+                postParadoxContainer.classList.remove('hidden');
+                postParadoxContainer.classList.add('fade-in');
+                
+                setTimeout(() => {
+                    section3.classList.remove('hidden');
+                    section3.classList.add('fade-in');
+                    // Scroll slightly to bring new content into view
+                    section3.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+                }, 800);
+            }, 1200);
+        }
+    }
+
+    btnProveTrue.addEventListener('click', () => {
+        triggerMachineError("<strong>HALT:</strong> If proven true, it is provable. But statement says NOT provable. Contradiction.");
+    });
+
+    btnProveFalse.addEventListener('click', () => {
+        triggerMachineError("<strong>HALT:</strong> If proven false, it CAN be proven. But I cannot output false statements. Contradiction.");
+    });
+
+    // --- Simulation 3: Human Insight ---
+    const btnHumanTrue = document.getElementById('btn-human-true');
+    const btnHumanFalse = document.getElementById('btn-human-false');
+    const finalReveal = document.getElementById('final-reveal');
+    const finalError = document.getElementById('final-error');
+
+    btnHumanTrue.addEventListener('click', () => {
+        finalError.classList.add('hidden');
+        finalReveal.classList.remove('hidden');
+        finalReveal.classList.add('fade-in');
+        
+        // Disable buttons after correct choice
+        btnHumanFalse.disabled = true;
+        btnHumanTrue.disabled = true;
+        btnHumanTrue.style.background = "var(--text)";
+        btnHumanTrue.style.color = "var(--bg)";
+    });
+
+    btnHumanFalse.addEventListener('click', () => {
+        finalError.classList.remove('hidden');
+        finalError.classList.add('fade-in');
+        
+        // Reset animation to allow re-triggering
+        finalError.style.animation = 'none';
+        void finalError.offsetWidth;
+        finalError.style.animation = null;
+    });
+
+</script>
+
+</body>
+</html>

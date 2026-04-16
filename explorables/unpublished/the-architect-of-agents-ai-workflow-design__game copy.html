@@ -1,0 +1,710 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>The Architect of Agents | AI Workflow Design</title>
+    <style>
+        :root {
+            --bg-dark: #0f172a;
+            --card-bg: rgba(30, 41, 59, 0.6);
+            --text-main: #e2e8f0;
+            --text-dim: #94a3b8;
+            --cyan: #06b6d4;
+            --pink: #ec4899;
+            --green: #22c55e;
+            --yellow: #eab308;
+            --font-mono: 'Courier New', Courier, monospace;
+            --font-sans: system-ui, -apple-system, sans-serif;
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+
+        body {
+            background-color: var(--bg-dark);
+            color: var(--text-main);
+            font-family: var(--font-sans);
+            line-height: 1.6;
+            background-image: 
+                linear-gradient(rgba(6, 182, 212, 0.05) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(6, 182, 212, 0.05) 1px, transparent 1px);
+            background-size: 30px 30px;
+            padding-bottom: 100px;
+        }
+
+        /* Utility Classes */
+        .container { max-width: 800px; margin: 0 auto; padding: 20px; }
+        .mono { font-family: var(--font-mono); }
+        .text-cyan { color: var(--cyan); }
+        .text-pink { color: var(--pink); }
+        .text-green { color: var(--green); }
+        .text-yellow { color: var(--yellow); }
+        .hidden { display: none; }
+        
+        /* UI Elements */
+        header {
+            position: sticky;
+            top: 0;
+            background: rgba(15, 23, 42, 0.95);
+            backdrop-filter: blur(10px);
+            z-index: 100;
+            padding: 15px 0;
+            border-bottom: 1px solid rgba(6, 182, 212, 0.2);
+        }
+
+        .progress-container {
+            width: 100%;
+            height: 4px;
+            background: #1e293b;
+            margin-top: 10px;
+        }
+
+        .progress-bar {
+            height: 100%;
+            background: var(--cyan);
+            width: 0%;
+            transition: width 0.5s ease;
+            box-shadow: 0 0 10px var(--cyan);
+        }
+
+        .header-content {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .lens-toggle {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-size: 0.9rem;
+            cursor: pointer;
+        }
+
+        /* Cards & Sections */
+        section {
+            margin-bottom: 60px;
+            opacity: 0.3;
+            pointer-events: none;
+            filter: grayscale(1);
+            transition: all 0.5s ease;
+        }
+
+        section.active {
+            opacity: 1;
+            pointer-events: all;
+            filter: grayscale(0);
+        }
+
+        .card {
+            background: var(--card-bg);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 12px;
+            padding: 20px;
+            margin-top: 20px;
+            box-shadow: 0 4px 30px rgba(0, 0, 0, 0.5);
+        }
+
+        h2 { font-size: 1.8rem; margin-bottom: 10px; border-left: 4px solid var(--cyan); padding-left: 15px; }
+        h3 { font-size: 1.2rem; margin-bottom: 15px; color: var(--text-dim); }
+
+        /* Controls */
+        button.btn-run {
+            background: transparent;
+            border: 1px solid var(--cyan);
+            color: var(--cyan);
+            padding: 10px 20px;
+            font-family: var(--font-mono);
+            font-weight: bold;
+            cursor: pointer;
+            border-radius: 4px;
+            transition: all 0.2s;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            display: inline-block;
+            margin-top: 10px;
+        }
+
+        button.btn-run:hover {
+            background: var(--cyan);
+            color: var(--bg-dark);
+            box-shadow: 0 0 15px var(--cyan);
+        }
+
+        input[type="text"], select {
+            background: #1e293b;
+            border: 1px solid #334155;
+            color: var(--text-main);
+            padding: 8px;
+            border-radius: 4px;
+            font-family: var(--font-mono);
+            width: 100%;
+            margin-bottom: 10px;
+        }
+
+        input[type="range"] {
+            width: 100%;
+            accent-color: var(--cyan);
+            margin: 10px 0;
+        }
+
+        /* Terminal Output */
+        .terminal {
+            background: #000;
+            border: 1px solid #333;
+            padding: 15px;
+            border-radius: 6px;
+            font-family: var(--font-mono);
+            font-size: 0.9rem;
+            min-height: 100px;
+            margin-top: 15px;
+            color: #d4d4d4;
+            overflow-y: auto;
+            white-space: pre-wrap;
+        }
+        
+        .terminal .log-entry { margin-bottom: 8px; border-bottom: 1px solid #222; padding-bottom: 4px; }
+        .terminal .lens-note { color: var(--text-dim); font-style: italic; font-size: 0.8rem; border-left: 2px solid var(--yellow); padding-left: 8px; margin-top: 4px; display: none; }
+        .lens-active .lens-note { display: block; }
+
+        /* Module Specific Visuals */
+        .pipeline { display: flex; gap: 10px; align-items: center; margin: 20px 0; flex-wrap: wrap; }
+        .node { background: #1e293b; border: 1px solid var(--text-dim); padding: 10px; border-radius: 6px; text-align: center; min-width: 100px; flex: 1; transition: 0.3s; }
+        .node.active { border-color: var(--cyan); box-shadow: 0 0 10px var(--cyan); color: var(--cyan); }
+        .node.error { border-color: var(--pink); box-shadow: 0 0 10px var(--pink); color: var(--pink); }
+        .arrow { color: var(--text-dim); font-size: 1.5rem; }
+
+        .router-vis { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; text-align: center; margin-top: 20px; }
+        .bucket { border: 1px dashed var(--text-dim); padding: 10px; border-radius: 6px; opacity: 0.5; transition: 0.3s; }
+        .bucket.highlight { opacity: 1; border-color: var(--green); background: rgba(34, 197, 94, 0.1); }
+
+        .parallel-bars { display: flex; flex-direction: column; gap: 5px; margin: 15px 0; }
+        .p-bar-track { background: #1e293b; height: 8px; border-radius: 4px; overflow: hidden; }
+        .p-bar-fill { background: var(--cyan); height: 100%; width: 0%; transition: width 0.1s linear; }
+
+        /* Badge */
+        .badge-container { text-align: center; padding: 40px; border: 2px solid var(--cyan); border-radius: 20px; background: rgba(6, 182, 212, 0.1); margin-top: 50px; display: none; }
+        .badge-title { font-size: 2rem; color: var(--cyan); text-transform: uppercase; letter-spacing: 4px; margin-bottom: 10px; text-shadow: 0 0 20px var(--cyan); }
+
+        /* Switch Toggle */
+        .switch { position: relative; display: inline-block; width: 40px; height: 20px; }
+        .switch input { opacity: 0; width: 0; height: 0; }
+        .slider { position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background-color: #334155; transition: .4s; border-radius: 20px; }
+        .slider:before { position: absolute; content: ""; height: 14px; width: 14px; left: 3px; bottom: 3px; background-color: white; transition: .4s; border-radius: 50%; }
+        input:checked + .slider { background-color: var(--cyan); }
+        input:checked + .slider:before { transform: translateX(20px); }
+
+        @media (max-width: 600px) {
+            .pipeline { flex-direction: column; }
+            .arrow { transform: rotate(90deg); }
+        }
+    </style>
+</head>
+<body>
+
+<header>
+    <div class="container header-content">
+        <div>
+            <div style="font-weight: bold; font-size: 1.2rem;">THE ARCHITECT</div>
+            <div style="font-size: 0.8rem; color: var(--text-dim);">SYSTEM INTEGRITY</div>
+        </div>
+        <div class="lens-toggle">
+            <span>Lens</span>
+            <label class="switch">
+                <input type="checkbox" id="lens-toggle-btn" onchange="toggleLens()">
+                <span class="slider"></span>
+            </label>
+        </div>
+    </div>
+    <div class="progress-container">
+        <div class="progress-bar" id="global-progress"></div>
+    </div>
+</header>
+
+<div class="container">
+
+    <!-- MODULE 0: AGENT DEFINITION -->
+    <section id="mod-0" class="active">
+        <h2>Module 0: The Definition</h2>
+        <p>Welcome, Architect. Standard LLMs just talk. <span class="text-cyan">Agents</span> do work. An Agent is a system where the LLM's output controls the workflow.</p>
+        
+        <div class="card">
+            <h3>Simulation: "The Hello World of Agency"</h3>
+            <div style="margin-bottom: 15px;">
+                <label>Mode:</label>
+                <select id="mod0-mode">
+                    <option value="agent">Agentic (Tools Enabled)</option>
+                    <option value="chat">Standard Chat (No Tools)</option>
+                </select>
+            </div>
+            
+            <div style="display: flex; gap: 10px;">
+                <input type="text" id="mod0-input" value="Check status of server_01" placeholder="Enter command...">
+                <button class="btn-run" onclick="runMod0()">EXECUTE</button>
+            </div>
+
+            <div class="terminal" id="mod0-term">
+                <span class="text-dim">// System Ready. Awaiting Input...</span>
+            </div>
+        </div>
+    </section>
+
+    <!-- MODULE 1: THE CHAIN -->
+    <section id="mod-1">
+        <h2>Module 1: The Chain</h2>
+        <p>Linear Logic. If we ask an AI to do everything at once, it hallucinates. We must break the task into sequential steps.</p>
+        
+        <div class="card">
+            <h3>Simulation: Chain Reactor</h3>
+            <div class="pipeline">
+                <div class="node" id="m1-n1">Idea Gen</div>
+                <div class="arrow">→</div>
+                <div class="node" id="m1-n2">Niche Drill</div>
+                <div class="arrow">→</div>
+                <div class="node" id="m1-n3">Decision Gate</div>
+            </div>
+
+            <div style="margin: 15px 0; border: 1px solid #334155; padding: 10px; border-radius: 8px;">
+                <div style="display: flex; justify-content: space-between; align-items: center;">
+                    <span><strong>Safety Gate:</strong> <span id="gate-status" class="text-pink">OFF</span></span>
+                    <label class="switch">
+                        <input type="checkbox" id="mod1-gate" onchange="updateGateUI()">
+                        <span class="slider"></span>
+                    </label>
+                </div>
+                <div id="gate-warning" class="text-pink" style="font-size: 0.8rem; margin-top: 5px;">⚠ Unchecked assumptions will propagate.</div>
+            </div>
+
+            <button class="btn-run" onclick="runMod1()">RUN CHAIN</button>
+            <div class="terminal" id="mod1-term">
+                <span class="text-dim">// Pipeline Standby...</span>
+            </div>
+        </div>
+    </section>
+
+    <!-- MODULE 2: THE ROUTER -->
+    <section id="mod-2">
+        <h2>Module 2: The Router</h2>
+        <p>Traffic Control. Generalist models are slow. Route queries to specialized experts for better accuracy.</p>
+        
+        <div class="card">
+            <h3>Simulation: The Switchboard</h3>
+            
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 20px;">
+                <div>
+                    <label class="mono text-dim">Input Query:</label>
+                    <select id="mod2-input">
+                        <option value="plot">"Plot this CSV data"</option>
+                        <option value="refund">"I want my money back"</option>
+                        <option value="joke">"Tell me a joke"</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="mono text-dim">Confidence Threshold:</label>
+                    <input type="range" id="mod2-conf" min="0" max="100" value="50">
+                    <div style="text-align: right; font-size: 0.8rem;" id="conf-val">50%</div>
+                </div>
+            </div>
+
+            <div class="router-vis">
+                <div class="bucket" id="b-refund">Refund Specialist</div>
+                <div class="bucket" id="b-general">General Chat</div>
+                <div class="bucket" id="b-data">Data Analyst</div>
+            </div>
+
+            <button class="btn-run" onclick="runMod2()">ROUTE PACKET</button>
+            <div class="terminal" id="mod2-term">
+                <span class="text-dim">// Router listening...</span>
+            </div>
+        </div>
+    </section>
+
+    <!-- MODULE 3: PARALLELIZATION -->
+    <section id="mod-3">
+        <h2>Module 3: Parallelization</h2>
+        <p>Speed. Processing a massive contract linearly takes forever. Split it into shards and process concurrently.</p>
+        
+        <div class="card">
+            <h3>Simulation: The Hive Mind</h3>
+            
+            <label class="mono text-dim">Worker Count (Shards): <span id="shard-count-display">1</span></label>
+            <input type="range" id="mod3-shards" min="1" max="5" value="1" oninput="updateShardDisplay()">
+
+            <div class="parallel-bars" id="mod3-bars">
+                <!-- Bars injected by JS -->
+                <div class="p-bar-track"><div class="p-bar-fill" style="width: 0%"></div></div>
+            </div>
+
+            <div style="display: flex; justify-content: space-between; font-size: 0.9rem; margin-top: 10px;">
+                <div id="mod3-time">Est. Time: 5.0s</div>
+                <div id="mod3-cost">Cost: $0.05</div>
+            </div>
+            
+            <div style="font-size: 0.8rem; color: var(--text-dim); margin-top: 10px; border-left: 2px solid var(--yellow); padding-left: 10px;">
+                *Note: Parallelization improves latency, not reasoning depth.
+            </div>
+
+            <button class="btn-run" onclick="runMod3()">PROCESS DOC</button>
+            <div class="terminal" id="mod3-term">
+                <span class="text-dim">// Document loaded (5000 tokens)...</span>
+            </div>
+        </div>
+    </section>
+
+    <!-- MODULE 4: EVALUATOR-OPTIMIZER -->
+    <section id="mod-4">
+        <h2>Module 4: The Loop</h2>
+        <p>Self-Correction. Agents make mistakes. An Evaluator-Optimizer loop forces the agent to fix its own work.</p>
+        
+        <div class="card">
+            <h3>Simulation: The Code Forge</h3>
+            
+            <div style="margin-bottom: 15px;">
+                <label class="mono text-dim">Acceptance Criteria (Strictness):</label>
+                <input type="range" id="mod4-strict" min="50" max="95" value="80">
+                <div style="display: flex; justify-content: space-between; font-size: 0.8rem;">
+                    <span>Lax (Fast)</span>
+                    <span>Strict (Robust)</span>
+                </div>
+            </div>
+
+            <button class="btn-run" onclick="runMod4()">GENERATE CODE</button>
+            
+            <div class="terminal" id="mod4-term">
+                <span class="text-dim">// Awaiting spec...</span>
+            </div>
+        </div>
+    </section>
+
+    <!-- FINAL BADGE -->
+    <div class="badge-container" id="final-badge">
+        <div class="badge-title">SENIOR ARCHITECT</div>
+        <p>CERTIFICATION GRANTED</p>
+        <p style="margin-top: 20px; font-family: var(--font-mono); font-size: 0.9rem; color: var(--text-dim);">
+            "You didn’t build an agent.<br>
+            You designed constraints that made intelligence possible."
+        </p>
+    </div>
+
+</div>
+
+<script>
+    // --- STATE MANAGEMENT ---
+    const gameState = {
+        level: 0,
+        lensEnabled: false
+    };
+
+    // --- UTILS ---
+    const sleep = (ms) => new Promise(r => setTimeout(r, ms));
+    const log = (id, msg, type = 'info', lensMsg = '') => {
+        const term = document.getElementById(id);
+        const colorClass = type === 'error' ? 'text-pink' : (type === 'success' ? 'text-green' : 'text-cyan');
+        
+        let html = `<div class="log-entry"><span class="${colorClass}">></span> ${msg}`;
+        if (lensMsg) {
+            html += `<div class="lens-note">LENS: ${lensMsg}</div>`;
+        }
+        html += `</div>`;
+        
+        term.innerHTML += html;
+        term.scrollTop = term.scrollHeight;
+    };
+
+    const nextLevel = (current) => {
+        if (gameState.level <= current) {
+            gameState.level = current + 1;
+            const nextSection = document.getElementById(`mod-${gameState.level}`);
+            
+            // Update Progress
+            const progress = ((gameState.level) / 5) * 100;
+            document.getElementById('global-progress').style.width = `${progress}%`;
+
+            if (nextSection) {
+                setTimeout(() => {
+                    nextSection.classList.add('active');
+                    nextSection.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                }, 1000);
+            } else {
+                // All done
+                setTimeout(() => {
+                    document.getElementById('final-badge').style.display = 'block';
+                    document.getElementById('final-badge').scrollIntoView({ behavior: 'smooth' });
+                }, 1000);
+            }
+        }
+    };
+
+    const toggleLens = () => {
+        gameState.lensEnabled = document.getElementById('lens-toggle-btn').checked;
+        if(gameState.lensEnabled) {
+            document.body.classList.add('lens-active');
+        } else {
+            document.body.classList.remove('lens-active');
+        }
+    };
+
+    // --- MODULE 0: AGENT ---
+    async function runMod0() {
+        const input = document.getElementById('mod0-input').value;
+        const mode = document.getElementById('mod0-mode').value;
+        const termId = 'mod0-term';
+        
+        document.getElementById(termId).innerHTML = ''; // Clear
+        log(termId, `User Input: "${input}"`, 'info');
+        
+        await sleep(500);
+
+        if (mode === 'chat') {
+            log(termId, "Analysing...", 'info');
+            await sleep(800);
+            log(termId, "Response: Server 01 is probably fine. I don't have access to check.", 'error', 'Without tools, the LLM hallucinates or refuses.');
+            log(termId, "FAIL: No agency detected.", 'error');
+        } else {
+            // Agentic
+            log(termId, "Thinking...", 'info');
+            await sleep(600);
+            const toolCall = `{ "tool": "check_status", "args": "server_01" }`;
+            log(termId, `LLM Output (Hidden): ${toolCall}`, 'info', 'LLM decided to call a function instead of replying text.');
+            
+            await sleep(600);
+            log(termId, `[SYSTEM] Executing tool check_status...`, 'text-yellow');
+            await sleep(600);
+            log(termId, `Tool Result: { status: "ONLINE", uptime: "99.9%" }`, 'text-yellow');
+            
+            await sleep(600);
+            log(termId, "Final Response: The server is ONLINE.", 'success', 'LLM read the tool output and synthesized the answer.');
+            nextLevel(0);
+        }
+    }
+
+    // --- MODULE 1: CHAIN ---
+    function updateGateUI() {
+        const isOn = document.getElementById('mod1-gate').checked;
+        const status = document.getElementById('gate-status');
+        const warning = document.getElementById('gate-warning');
+        
+        status.innerText = isOn ? "ON" : "OFF";
+        status.className = isOn ? "text-green" : "text-pink";
+        warning.style.display = isOn ? "none" : "block";
+    }
+
+    async function runMod1() {
+        const gateOn = document.getElementById('mod1-gate').checked;
+        const termId = 'mod1-term';
+        const nodes = ['m1-n1', 'm1-n2', 'm1-n3'];
+        
+        document.getElementById(termId).innerHTML = '';
+        nodes.forEach(n => document.getElementById(n).className = 'node'); // reset
+
+        // Step 1
+        document.getElementById('m1-n1').classList.add('active');
+        log(termId, "Node 1: Generating investment idea...", 'info');
+        await sleep(800);
+        log(termId, "Output: 'Crypto Micro-caps'", 'info', 'Raw creative output.');
+
+        // Step 2
+        document.getElementById('m1-n1').classList.remove('active');
+        document.getElementById('m1-n2').classList.add('active');
+        log(termId, "Node 2: Drilling down...", 'info');
+        await sleep(800);
+        log(termId, "Output: 'Buy Token X immediately.'", 'info', 'The model is getting aggressive.');
+
+        // Step 3 (Gate)
+        document.getElementById('m1-n2').classList.remove('active');
+        document.getElementById('m1-n3').classList.add('active');
+        
+        if (!gateOn) {
+            log(termId, "Node 3 (Gate): OFF. Passing signal.", 'error', 'No verification step performed.');
+            await sleep(500);
+            log(termId, "FINAL ACTION: BUY ORDER EXECUTED.", 'error');
+            log(termId, "RESULT: High Risk. User lost money.", 'error');
+            // Allow progress anyway to show learning, but maybe a warning? 
+            // Let's force them to turn the gate on to "win".
+            log(termId, "SYSTEM ALERT: Unsafe workflow. Enable Gate to proceed.", 'error');
+        } else {
+            log(termId, "Node 3 (Gate): Checking Budget & Risk...", 'info', 'Gate verifies previous output against rules.');
+            await sleep(800);
+            log(termId, "Gate Decision: REJECT. Risk too high.", 'success', 'Catastrophic action prevented.');
+            log(termId, "Workflow Safe.", 'success');
+            document.getElementById('m1-n3').classList.remove('active');
+            document.getElementById('m1-n3').classList.add('error'); // Visual cue for stop
+            nextLevel(1);
+        }
+    }
+
+    // --- MODULE 2: ROUTER ---
+    document.getElementById('mod2-conf').addEventListener('input', (e) => {
+        document.getElementById('conf-val').innerText = e.target.value + '%';
+    });
+
+    async function runMod2() {
+        const query = document.getElementById('mod2-input').value;
+        const threshold = parseInt(document.getElementById('mod2-conf').value);
+        const termId = 'mod2-term';
+        
+        document.getElementById(termId).innerHTML = '';
+        ['b-refund', 'b-general', 'b-data'].forEach(id => {
+            document.getElementById(id).classList.remove('highlight');
+        });
+
+        log(termId, `Input: "${document.getElementById('mod2-input').options[document.getElementById('mod2-input').selectedIndex].text}"`, 'info');
+
+        // Logic
+        let destination = 'b-general';
+        let confidence = 0;
+        let reasoning = "";
+
+        if (query === 'plot') {
+            confidence = 90;
+            destination = 'b-data';
+            reasoning = "Keywords 'plot', 'csv' detected.";
+        } else if (query === 'refund') {
+            confidence = 85;
+            destination = 'b-refund';
+            reasoning = "Keyword 'money back' detected.";
+        } else {
+            confidence = 20; // Joke
+            destination = 'b-general'; // Should go to general
+            reasoning = "No specialized intent found.";
+        }
+
+        log(termId, `Router Confidence: ${confidence}%`, 'info');
+
+        await sleep(600);
+
+        if (confidence < threshold) {
+            destination = 'b-general';
+            log(termId, `Confidence < Threshold (${threshold}%). Fallback to General.`, 'text-yellow', 'Router was unsure, so it defaulted to the safest agent.');
+        } else {
+            log(termId, `Routing to Specialist...`, 'success', `Matched intent: ${reasoning}`);
+        }
+
+        document.getElementById(destination).classList.add('highlight');
+        
+        // Success condition: They routed correctly or fell back safely. 
+        // To make it a "game", let's say they fail if they route 'joke' to a specialist (which logic prevents)
+        // or if they set threshold so high nothing routes.
+        
+        if(query === 'plot' && destination === 'b-data') {
+            log(termId, "Data Analyst: Graph generated.", 'success');
+            nextLevel(2);
+        } else if (query === 'refund' && destination === 'b-refund') {
+            log(termId, "Refund Agent: Ticket created.", 'success');
+            nextLevel(2);
+        } else if (destination === 'b-general') {
+            log(termId, "General Chat: responding...", 'info');
+            // If they wanted to route plot/refund but threshold was too high
+            if(query !== 'joke' && confidence > 80) {
+                 log(termId, "Inefficient: Specialist was available but threshold blocked it.", 'error');
+            } else {
+                // Joke went to general = Good.
+                if(query === 'joke') nextLevel(2);
+            }
+        }
+    }
+
+    // --- MODULE 3: PARALLEL ---
+    function updateShardDisplay() {
+        const count = document.getElementById('mod3-shards').value;
+        document.getElementById('shard-count-display').innerText = count;
+        
+        const container = document.getElementById('mod3-bars');
+        container.innerHTML = '';
+        for(let i=0; i<count; i++) {
+            container.innerHTML += `<div class="p-bar-track"><div class="p-bar-fill" id="p-bar-${i}" style="width: 0%"></div></div>`;
+        }
+
+        // Update Math
+        const time = (5.0 / count).toFixed(1);
+        document.getElementById('mod3-time').innerText = `Est. Time: ${time}s`;
+        // Cost is roughly same (tokens don't change, just concurrency)
+        document.getElementById('mod3-cost').innerText = `Cost: $0.05`; 
+    }
+
+    async function runMod3() {
+        const count = parseInt(document.getElementById('mod3-shards').value);
+        const termId = 'mod3-term';
+        
+        document.getElementById(termId).innerHTML = '';
+        log(termId, `Splitting document into ${count} shards...`, 'info');
+        
+        const promises = [];
+        
+        // Animation
+        for(let i=0; i<count; i++) {
+            const bar = document.getElementById(`p-bar-${i}`);
+            // Random speed variation
+            const speed = 2000 + Math.random() * 1000; 
+            
+            const p = new Promise(resolve => {
+                bar.style.transition = `width ${speed}ms linear`;
+                setTimeout(() => { bar.style.width = '100%'; }, 50);
+                setTimeout(() => resolve(), speed);
+            });
+            promises.push(p);
+        }
+
+        await Promise.all(promises);
+        
+        log(termId, "All shards processed.", 'info');
+        await sleep(500);
+        log(termId, "Aggregating summaries...", 'info', 'The Coordinator merges the parallel outputs.');
+        await sleep(500);
+        log(termId, "Task Complete.", 'success');
+        
+        if(count >= 3) {
+            nextLevel(3);
+        } else {
+            log(termId, "Hint: Try more workers to experience true parallel speed.", 'text-yellow');
+        }
+    }
+
+    // --- MODULE 4: LOOP ---
+    async function runMod4() {
+        const strictness = parseInt(document.getElementById('mod4-strict').value);
+        const termId = 'mod4-term';
+        document.getElementById(termId).innerHTML = '';
+        
+        let attempts = 0;
+        const maxAttempts = 3;
+        let success = false;
+
+        log(termId, "Generating Python function...", 'info');
+
+        while(attempts < maxAttempts && !success) {
+            attempts++;
+            await sleep(800);
+            
+            // Simulate a score (improves with attempts)
+            let score = 60 + (attempts * 10) + (Math.random() * 10);
+            if (attempts === 3) score += 15; // Boost last attempt
+
+            log(termId, `Attempt #${attempts} generated.`, 'info');
+            log(termId, `Evaluator checking logic...`, 'text-yellow', 'Another LLM call reviews the code.');
+            await sleep(600);
+
+            if (score >= strictness) {
+                log(termId, `Score: ${Math.floor(score)}/100. PASSED criteria.`, 'success');
+                success = true;
+            } else {
+                log(termId, `Score: ${Math.floor(score)}/100. REJECTED.`, 'error', `Below strictness (${strictness}). Feedback sent to generator.`);
+                log(termId, `> Feedback: Fix syntax error on line ${attempts + 2}.`, 'text-dim');
+            }
+        }
+
+        if(success) {
+            log(termId, "Codebase updated.", 'success');
+            nextLevel(4);
+        } else {
+            log(termId, "Loop Limit Reached. Failed to meet strictness.", 'error');
+            log(termId, "Hint: Lower strictness slightly or try again.", 'text-yellow');
+        }
+    }
+
+    // Init
+    updateShardDisplay();
+</script>
+
+</body>
+</html>

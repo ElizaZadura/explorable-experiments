@@ -1,0 +1,624 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Quantum Quest: The Reality Check</title>
+    <style>
+        /* --- FONTS & VARIABLES --- */
+        @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&family=Roboto+Mono:wght@400;700&display=swap');
+
+        :root {
+            --neon-pink: #ff00ff;
+            --neon-blue: #00ffff;
+            --neon-green: #00ff00;
+            --dark-bg: #0d0d12;
+            --panel-bg: #1a1a24;
+            
+            --office-beige: #f5f5dc;
+            --office-grey: #808080;
+            --office-text: #333;
+
+            --font-head: 'Orbitron', sans-serif;
+            --font-body: 'Roboto Mono', monospace;
+        }
+
+        * { box-sizing: border-box; }
+
+        body {
+            margin: 0;
+            padding: 0;
+            background-color: var(--dark-bg);
+            color: #fff;
+            font-family: var(--font-body);
+            overflow-x: hidden;
+            padding-top: 80px; /* Space for HUD */
+        }
+
+        h1, h2, h3 { font-family: var(--font-head); text-transform: uppercase; }
+        
+        /* --- HUD --- */
+        #hud {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 80px;
+            background: rgba(13, 13, 18, 0.95);
+            border-bottom: 2px solid var(--neon-blue);
+            display: flex;
+            justify-content: space-around;
+            align-items: center;
+            z-index: 1000;
+            padding: 0 10px;
+            box-shadow: 0 0 15px var(--neon-blue);
+        }
+
+        .stat-box {
+            text-align: center;
+            flex: 1;
+        }
+
+        .stat-label { font-size: 0.7rem; color: #888; display: block; }
+        .stat-value { font-size: 1.2rem; font-weight: bold; }
+        
+        .progress-container {
+            width: 80%;
+            height: 6px;
+            background: #333;
+            margin: 5px auto;
+            border-radius: 3px;
+            overflow: hidden;
+        }
+        
+        .progress-bar { height: 100%; transition: width 0.3s ease; }
+        #hype-bar { background: var(--neon-pink); width: 0%; }
+        #reality-bar { background: var(--neon-green); width: 100%; }
+        #budget-val { color: var(--neon-blue); }
+
+        /* --- LAYOUT --- */
+        section {
+            min-height: 100vh;
+            padding: 40px 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            border-bottom: 1px solid #333;
+            opacity: 0;
+            transform: translateY(20px);
+            transition: opacity 0.8s ease, transform 0.8s ease;
+        }
+
+        section.active {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        .container {
+            max-width: 800px;
+            width: 100%;
+            background: var(--panel-bg);
+            padding: 20px;
+            border-radius: 10px;
+            border: 1px solid #333;
+            position: relative;
+        }
+
+        /* --- THEMES --- */
+        .cyber-theme {
+            border: 2px solid var(--neon-pink);
+            box-shadow: 0 0 15px rgba(255, 0, 255, 0.2);
+        }
+        .office-theme {
+            background: var(--office-beige);
+            color: var(--office-text);
+            border: 4px solid var(--office-grey);
+            font-family: sans-serif;
+        }
+
+        /* --- UI ELEMENTS --- */
+        button {
+            padding: 15px 30px;
+            margin: 10px;
+            font-family: var(--font-head);
+            cursor: pointer;
+            border: none;
+            transition: transform 0.1s;
+            font-size: 1rem;
+        }
+        button:active { transform: scale(0.95); }
+
+        .btn-cyber {
+            background: transparent;
+            border: 2px solid var(--neon-blue);
+            color: var(--neon-blue);
+            text-shadow: 0 0 5px var(--neon-blue);
+            box-shadow: 0 0 5px var(--neon-blue);
+        }
+        .btn-cyber:hover {
+            background: var(--neon-blue);
+            color: #000;
+        }
+
+        .btn-office {
+            background: #e0e0e0;
+            border: 2px outset #fff;
+            color: #333;
+        }
+        .btn-office:hover { background: #d0d0d0; }
+
+        .feedback-text {
+            margin-top: 15px;
+            font-style: italic;
+            min-height: 1.5em;
+        }
+
+        /* --- LEVEL SPECIFICS --- */
+        
+        /* Level 1: Entanglement */
+        .dance-floor {
+            height: 200px;
+            background: #000;
+            position: relative;
+            margin-bottom: 20px;
+            overflow: hidden;
+            border: 1px solid #444;
+        }
+        .philosopher {
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            position: absolute;
+            transition: all 0.5s cubic-bezier(0.68, -0.55, 0.27, 1.55);
+        }
+        .p1 { background: var(--neon-pink); left: 20%; top: 50%; }
+        .p2 { background: var(--neon-blue); left: 80%; top: 50%; }
+        .entangled .p1 { left: 45%; box-shadow: 0 0 20px white; }
+        .entangled .p2 { left: 55%; box-shadow: 0 0 20px white; }
+
+        /* Level 2: Molecule */
+        .molecule-spinner {
+            font-size: 4rem;
+            animation: spin 4s linear infinite;
+            display: inline-block;
+            margin: 20px;
+        }
+        @keyframes spin { 100% { transform: rotate(360deg); } }
+
+        /* Level 3: TSP */
+        canvas {
+            background: #000;
+            border: 1px solid var(--neon-blue);
+            width: 100%;
+            height: 300px;
+        }
+        .slider-group {
+            width: 100%;
+            margin: 20px 0;
+        }
+        input[type=range] { width: 100%; }
+
+        /* Level 4: Fridge */
+        #fridge-container {
+            width: 100px;
+            height: 150px;
+            border: 2px solid #555;
+            margin: 0 auto;
+            position: relative;
+            background: #222;
+            transition: background 0.2s;
+        }
+        #fridge-core {
+            width: 40px;
+            height: 80px;
+            background: gold;
+            margin: 10px auto;
+            border-radius: 0 0 20px 20px;
+        }
+        .shake { animation: shake 0.5s infinite; }
+        @keyframes shake {
+            0% { transform: translate(1px, 1px) rotate(0deg); }
+            10% { transform: translate(-1px, -2px) rotate(-1deg); }
+            20% { transform: translate(-3px, 0px) rotate(1deg); }
+            30% { transform: translate(3px, 2px) rotate(0deg); }
+            40% { transform: translate(1px, -1px) rotate(1deg); }
+            50% { transform: translate(-1px, 2px) rotate(-1deg); }
+            60% { transform: translate(-3px, 1px) rotate(0deg); }
+            70% { transform: translate(3px, 1px) rotate(-1deg); }
+            80% { transform: translate(-1px, -1px) rotate(1deg); }
+            90% { transform: translate(1px, 2px) rotate(0deg); }
+            100% { transform: translate(1px, -2px) rotate(-1deg); }
+        }
+        .math-display {
+            font-family: serif;
+            font-size: 1.2rem;
+            margin: 15px 0;
+            color: var(--neon-green);
+        }
+
+        /* Level 5: Data Broker */
+        #data-screen {
+            height: 300px;
+            background: #ddd;
+            position: relative;
+            overflow: hidden;
+            border: 2px solid #000;
+            color: black;
+        }
+        .popup {
+            position: absolute;
+            background: white;
+            border: 2px solid red;
+            padding: 10px;
+            width: 120px;
+            text-align: center;
+            font-size: 0.8rem;
+            box-shadow: 5px 5px 0px rgba(0,0,0,0.2);
+            cursor: pointer;
+            user-select: none;
+        }
+        
+        .incogni-btn {
+            background: #0056b3;
+            color: white;
+            border: none;
+            width: 100%;
+            padding: 15px;
+            font-weight: bold;
+            margin-top: 10px;
+        }
+
+        /* Footer */
+        footer {
+            padding: 50px;
+            text-align: center;
+            color: #555;
+            font-size: 0.8rem;
+        }
+    </style>
+</head>
+<body>
+
+    <!-- HUD -->
+    <div id="hud">
+        <div class="stat-box">
+            <span class="stat-label">BUDGET</span>
+            <span id="budget-val" class="stat-value">$10M</span>
+        </div>
+        <div class="stat-box">
+            <span class="stat-label">HYPE</span>
+            <div class="progress-container"><div id="hype-bar" class="progress-bar"></div></div>
+        </div>
+        <div class="stat-box">
+            <span class="stat-label">REALITY</span>
+            <div class="progress-container"><div id="reality-bar" class="progress-bar"></div></div>
+        </div>
+    </div>
+
+    <!-- HEADER -->
+    <section class="active" style="justify-content: center; text-align: center;">
+        <h1 style="font-size: 3rem; color: var(--neon-blue); text-shadow: 0 0 20px var(--neon-blue);">
+            Quantum Quest
+        </h1>
+        <h2 style="color: var(--neon-pink);">The Reality Check</h2>
+        <p>You are the Lab Director. Your goal: Build a Quantum Computer without going bankrupt or lying too much.</p>
+        <p style="color: #888;">Scroll down to begin...</p>
+    </section>
+
+    <!-- LEVEL 1: ENTANGLEMENT -->
+    <section id="lvl1">
+        <div class="container cyber-theme">
+            <h2>Level 1: The Magic Show</h2>
+            <p>Quantum computers aren't just faster; they are fundamentally different. But can you control the magic?</p>
+            
+            <div class="dance-floor" id="danceFloor">
+                <div class="philosopher p1"></div>
+                <div class="philosopher p2"></div>
+            </div>
+
+            <div style="text-align: center;">
+                <button class="btn-cyber" onclick="triggerEntanglement()">Mention "Free Will"</button>
+            </div>
+            
+            <div id="lvl1-feedback" class="feedback-text" style="text-align: center; color: var(--neon-pink);"></div>
+        </div>
+    </section>
+
+    <!-- LEVEL 2: MOLECULES -->
+    <section id="lvl2">
+        <div class="container office-theme">
+            <h2>Level 2: The Fertilizer Boss</h2>
+            <p>The FeMo-cofactor molecule creates nitrogen for soil. We need to calculate its Ground State Energy.</p>
+            
+            <div style="text-align: center;">
+                <div class="molecule-spinner">⚛️</div>
+            </div>
+
+            <div style="display: flex; justify-content: center; flex-wrap: wrap;">
+                <button class="btn-cyber" style="background: #000;" onclick="simMolecule('quantum')">
+                    Use Quantum Rig<br><span style="font-size:0.7rem">Cost: $5M | Hype: +20%</span>
+                </button>
+                <button class="btn-office" onclick="simMolecule('classical')">
+                    Use Caltech Cluster<br><span style="font-size:0.7rem">Cost: $500k | Hype: -10%</span>
+                </button>
+            </div>
+
+            <div id="lvl2-feedback" class="feedback-text" style="text-align: center; color: #333;"></div>
+        </div>
+    </section>
+
+    <!-- LEVEL 3: TSP -->
+    <section id="lvl3">
+        <div class="container cyber-theme">
+            <h2>Level 3: The Logistics Maze</h2>
+            <p>The Travelling Salesman Problem. Find the shortest route between cities.</p>
+            
+            <canvas id="tspCanvas"></canvas>
+            
+            <div class="slider-group">
+                <label>Number of Cities (N): <span id="n-val">5</span></label>
+                <input type="range" min="3" max="20" value="5" id="tspSlider" oninput="updateTSPInput(this.value)">
+            </div>
+
+            <div style="display: flex; justify-content: center;">
+                <button class="btn-cyber" onclick="solveTSP('quantum')">Quantum Brute Force</button>
+                <button class="btn-office" onclick="solveTSP('classical')">Classical Heuristic</button>
+            </div>
+            
+            <div id="lvl3-feedback" class="feedback-text" style="text-align: center; color: var(--neon-blue);"></div>
+        </div>
+    </section>
+
+    <!-- LEVEL 4: POWER -->
+    <section id="lvl4">
+        <div class="container cyber-theme">
+            <h2>Level 4: The Power Bill</h2>
+            <p>We have a chip! But we need to keep it at 0.01 Kelvin.</p>
+            
+            <div id="fridge-container">
+                <div id="fridge-core"></div>
+            </div>
+
+            <div class="math-display" id="power-eq">
+                P<sub>total</sub> = 10 <span style="color:var(--neon-blue)">qubits</span> × 1.5 <span style="color:red">cooling</span>
+            </div>
+
+            <div class="slider-group">
+                <label>Qubits: <span id="q-val">10</span></label>
+                <input type="range" min="10" max="10000" step="10" value="10" id="qubitSlider" oninput="updatePower()">
+            </div>
+            
+            <div style="text-align: center; margin-bottom: 20px;">
+                <label><input type="checkbox" id="errorToggle" onchange="updatePower()"> Enable Error Correction (Heavy Load)</label>
+            </div>
+
+            <div id="lvl4-feedback" class="feedback-text" style="text-align: center; color: #ff5555;"></div>
+        </div>
+    </section>
+
+    <!-- LEVEL 5: DATA BROKER -->
+    <section id="lvl5">
+        <div class="container office-theme">
+            <h2>Final Boss: The Data Broker</h2>
+            <p>While you were distracted by Quantum Hype, your personal data was stolen by classical algorithms!</p>
+            
+            <div id="data-screen">
+                <!-- Popups spawn here -->
+            </div>
+
+            <button class="incogni-btn" onclick="automateRemoval()">
+                🛡️ ACTIVATE AUTOMATED REMOVAL (Incogni)
+            </button>
+            
+            <div id="lvl5-feedback" class="feedback-text" style="text-align: center; color: #0056b3;"></div>
+        </div>
+    </section>
+
+    <footer>
+        <p>Based on content from "Quantum Quest: The Reality Check".<br>
+        Game Design: AI Assistant.</p>
+    </footer>
+
+    <script>
+        /* --- GAME STATE --- */
+        const state = {
+            budget: 10, // Millions
+            hype: 0,    // Percent
+            reality: 100 // Percent
+        };
+
+        function updateHUD() {
+            document.getElementById('budget-val').innerText = `$${state.budget.toFixed(1)}M`;
+            document.getElementById('hype-bar').style.width = `${Math.min(100, Math.max(0, state.hype))}%`;
+            document.getElementById('reality-bar').style.width = `${Math.min(100, Math.max(0, state.reality))}%`;
+            
+            if(state.budget <= 0) {
+                document.getElementById('budget-val').style.color = 'red';
+                document.getElementById('budget-val').innerText = "BANKRUPT";
+            }
+        }
+
+        /* --- SCROLL OBSERVER --- */
+        const observer = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    entry.target.classList.add('active');
+                    // Initialize specific level logic if needed
+                    if(entry.target.id === 'lvl5') startDataSpawn();
+                }
+            });
+        }, { threshold: 0.3 });
+
+        document.querySelectorAll('section').forEach(section => {
+            observer.observe(section);
+        });
+
+        /* --- LEVEL 1: ENTANGLEMENT --- */
+        function triggerEntanglement() {
+            const floor = document.getElementById('danceFloor');
+            const txt = document.getElementById('lvl1-feedback');
+            
+            floor.classList.add('entangled');
+            txt.innerHTML = "<strong>ENTANGLEMENT ACHIEVED!</strong><br>Strong correlation established. But notice—you didn't calculate anything yet. You just started an argument.";
+            
+            state.hype += 10;
+            state.reality -= 5;
+            updateHUD();
+        }
+
+        /* --- LEVEL 2: MOLECULE --- */
+        function simMolecule(type) {
+            const txt = document.getElementById('lvl2-feedback');
+            
+            if(type === 'quantum') {
+                state.budget -= 5;
+                state.hype += 20;
+                state.reality -= 15;
+                txt.innerHTML = "<span style='color:red'>Error: Noise levels too high.</span><br>The hardware isn't ready for this complexity yet.";
+            } else {
+                state.budget -= 0.5;
+                state.hype -= 10;
+                state.reality += 10;
+                txt.innerHTML = "<strong>SUCCESS!</strong><br>A 2024 Caltech paper proved classical computers could solve this using clever algorithms. Boring, but it works.";
+            }
+            updateHUD();
+        }
+
+        /* --- LEVEL 3: TSP (CANVAS) --- */
+        const canvas = document.getElementById('tspCanvas');
+        const ctx = canvas.getContext('2d');
+        let cities = [];
+        let numCities = 5;
+
+        // Resize canvas
+        canvas.width = canvas.offsetWidth;
+        canvas.height = canvas.offsetHeight;
+
+        function generateCities(n) {
+            cities = [];
+            for(let i=0; i<n; i++) {
+                cities.push({
+                    x: Math.random() * (canvas.width - 40) + 20,
+                    y: Math.random() * (canvas.height - 40) + 20
+                });
+            }
+            drawCities();
+        }
+
+        function drawCities() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            ctx.fillStyle = '#00ffff';
+            cities.forEach(c => {
+                ctx.beginPath();
+                ctx.arc(c.x, c.y, 5, 0, Math.PI*2);
+                ctx.fill();
+            });
+        }
+
+        function updateTSPInput(val) {
+            numCities = parseInt(val);
+            document.getElementById('n-val').innerText = numCities;
+            generateCities(numCities);
+            document.getElementById('lvl3-feedback').innerText = "";
+        }
+
+        function solveTSP(method) {
+            const txt = document.getElementById('lvl3-feedback');
+            
+            if(method === 'quantum') {
+                if(numCities > 8) {
+                    txt.innerHTML = "Thinking... <span class='molecule-spinner' style='font-size:1rem'>⚛️</span><br>The search landscape is too rugged! Quantum optimization struggles here.";
+                    state.hype += 5;
+                    state.reality -= 5;
+                } else {
+                    drawPath('gold');
+                    txt.innerHTML = "Solved instantly! (Because N is small).";
+                    state.hype += 5;
+                }
+            } else {
+                drawPath('#ccc');
+                txt.innerHTML = "Classical Heuristic found a 'Good Enough' path instantly.";
+                state.reality += 10;
+            }
+            updateHUD();
+        }
+
+        function drawPath(color) {
+            drawCities();
+            ctx.strokeStyle = color;
+            ctx.lineWidth = 2;
+            ctx.beginPath();
+            ctx.moveTo(cities[0].x, cities[0].y);
+            for(let i=1; i<cities.length; i++) {
+                ctx.lineTo(cities[i].x, cities[i].y);
+            }
+            ctx.lineTo(cities[0].x, cities[0].y); // Loop back
+            ctx.stroke();
+        }
+
+        // Init Level 3
+        generateCities(5);
+
+        /* --- LEVEL 4: POWER --- */
+        function updatePower() {
+            const qubits = parseInt(document.getElementById('qubitSlider').value);
+            const isCorrected = document.getElementById('errorToggle').checked;
+            const fridge = document.getElementById('fridge-container');
+            const txt = document.getElementById('lvl4-feedback');
+            
+            document.getElementById('q-val').innerText = qubits;
+
+            // Simulation Math
+            let coolingFactor = isCorrected ? 5.2 : 1.5; 
+            let powerUsage = (qubits * coolingFactor);
+            
+            // Update Equation
+            document.getElementById('power-eq').innerHTML = 
+                `P<sub>total</sub> = ${qubits} <span style="color:var(--neon-blue)">qubits</span> × ${coolingFactor} <span style="color:red">cooling</span>`;
+
+            // Visuals
+            if(powerUsage > 5000) {
+                fridge.style.background = `rgba(255, 0, 0, ${powerUsage/20000})`;
+                fridge.classList.add('shake');
+                txt.innerText = "Warning: Cooling requirements exceeding local grid capacity!";
+                if(isCorrected) txt.innerText += " (Error correction multiplies hardware needs by 1000x)";
+            } else {
+                fridge.style.background = '#222';
+                fridge.classList.remove('shake');
+                txt.innerText = "";
+            }
+        }
+
+        /* --- LEVEL 5: DATA BROKER --- */
+        let spawnInterval;
+        const screen = document.getElementById('data-screen');
+
+        function startDataSpawn() {
+            if(spawnInterval) return;
+            spawnInterval = setInterval(() => {
+                const el = document.createElement('div');
+                el.className = 'popup';
+                el.innerText = "Buy Data?";
+                el.style.top = Math.random() * 250 + 'px';
+                el.style.left = Math.random() * 80 + '%';
+                el.onclick = function(){ this.remove(); };
+                screen.appendChild(el);
+                
+                if(screen.children.length > 20) {
+                    screen.innerHTML = ''; // prevent crash
+                }
+            }, 500);
+        }
+
+        function automateRemoval() {
+            clearInterval(spawnInterval);
+            screen.innerHTML = '<div style="display:flex; height:100%; align-items:center; justify-content:center; color:green; font-weight:bold; font-size:1.5rem;">DATA SECURED</div>';
+            document.getElementById('lvl5-feedback').innerHTML = "While we wait for Quantum Security, removing your data from brokers is the best defense today.";
+            state.reality = 100;
+            updateHUD();
+        }
+
+    </script>
+</body>
+</html>

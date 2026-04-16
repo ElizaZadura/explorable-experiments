@@ -1,0 +1,1031 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Inside the Black Box: How Neural Networks Think</title>
+    <style>
+        :root {
+            --bg-color: #111111;
+            --panel-bg: #1a1a1a;
+            --text-main: #eeeeee;
+            --text-muted: #aaaaaa;
+            --cyan: #00FFFF;
+            --green: #00FF00;
+            --red: #FF0000;
+            --font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+        }
+
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            background-color: var(--bg-color);
+            color: var(--text-main);
+            font-family: var(--font-family);
+            line-height: 1.6;
+            margin: 0;
+            padding: 0;
+        }
+
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 40px 20px;
+        }
+
+        h1 {
+            font-size: 2.5rem;
+            text-align: center;
+            margin-bottom: 10px;
+            color: #ffffff;
+        }
+
+        h2 {
+            font-size: 1.8rem;
+            margin-top: 50px;
+            border-bottom: 1px solid #333;
+            padding-bottom: 10px;
+            color: #ffffff;
+        }
+
+        p {
+            font-size: 1.1rem;
+            margin-bottom: 20px;
+        }
+
+        .widget {
+            background-color: var(--panel-bg);
+            border: 1px solid #333;
+            border-radius: 12px;
+            padding: 20px;
+            margin: 30px 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+        }
+
+        .prompt {
+            background: rgba(0, 255, 255, 0.1);
+            border-left: 4px solid var(--cyan);
+            padding: 10px 15px;
+            font-style: italic;
+            margin-top: 15px;
+            width: 100%;
+            border-radius: 0 4px 4px 0;
+        }
+
+        canvas {
+            display: block;
+            max-width: 100%;
+            border-radius: 8px;
+            user-select: none;
+            -webkit-user-select: none;
+        }
+
+        /* Section 2 Buttons */
+        .btn-group {
+            display: flex;
+            gap: 10px;
+            margin-top: 15px;
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+
+        button {
+            background-color: #333;
+            color: white;
+            border: 1px solid #555;
+            padding: 8px 16px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 1rem;
+            transition: all 0.2s;
+        }
+
+        button:hover { background-color: #444; }
+        button.active { background-color: var(--cyan); color: #000; border-color: var(--cyan); box-shadow: 0 0 10px var(--cyan); }
+
+        /* Section 3 Interactive Formula */
+        .s3-container {
+            display: flex;
+            width: 100%;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .formula-box {
+            background: #0a0a0a;
+            padding: 20px;
+            border-radius: 8px;
+            font-family: monospace;
+            font-size: 1.2rem;
+            width: 100%;
+            text-align: center;
+            margin-top: 20px;
+            border: 1px solid #333;
+        }
+
+        .slider-group {
+            display: inline-flex;
+            flex-direction: column;
+            align-items: center;
+            margin: 0 5px;
+            vertical-align: middle;
+        }
+
+        .slider-group input { width: 60px; }
+        .slider-group span { font-size: 0.9rem; color: var(--text-muted); }
+        
+        input[type=range] {
+            accent-color: var(--cyan);
+        }
+
+        /* Section 5 Matrix Math */
+        .matrix-widget {
+            display: flex;
+            width: 100%;
+            justify-content: space-around;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 20px;
+        }
+        
+        .matrix-math {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-family: monospace;
+            font-size: 1.2rem;
+            background: #0a0a0a;
+            padding: 20px;
+            border-radius: 8px;
+            border: 1px solid #333;
+            overflow-x: auto;
+            max-width: 100%;
+        }
+
+        .matrix {
+            display: grid;
+            gap: 5px;
+            padding: 5px;
+            border-left: 2px solid var(--text-main);
+            border-right: 2px solid var(--text-main);
+            border-radius: 4px;
+            position: relative;
+        }
+
+        .matrix::before, .matrix::after {
+            content: ''; position: absolute; width: 6px; height: 2px; background: var(--text-main);
+        }
+        .matrix::before { top: 0; left: 0; }
+        .matrix::after { bottom: 0; left: 0; }
+
+        .cell {
+            width: 35px;
+            height: 25px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 0.9rem;
+            transition: all 0.3s;
+        }
+
+        .cell.highlight-w { background: rgba(0, 255, 0, 0.3); color: var(--green); text-shadow: 0 0 5px var(--green); }
+        .cell.highlight-a { background: rgba(0, 255, 255, 0.3); color: var(--cyan); text-shadow: 0 0 5px var(--cyan); }
+        .cell.highlight-res { background: rgba(255, 255, 255, 0.3); color: white; text-shadow: 0 0 5px white; }
+
+        @media (max-width: 600px) {
+            h1 { font-size: 2rem; }
+            .matrix-math { font-size: 0.9rem; flex-direction: column; }
+            .formula-box { font-size: 1rem; }
+            .slider-group input { width: 50px; }
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h1>Inside the Black Box</h1>
+    <p style="text-align: center; color: var(--text-muted);">How Neural Networks Think — An Interactive Explorable Explanation</p>
+
+    <!-- SECTION 1 -->
+    <h2>1. The Input (Pixels to Neurons)</h2>
+    <p>When you see a handwritten '3', your brain instantly recognizes it. But a computer just sees a grid of pixels. To build a neural network, our first step is to unroll that 2D grid into a single 1D column of numbers. We call these containers <strong>Neurons</strong>.</p>
+    
+    <div class="widget">
+        <canvas id="canvas1" width="700" height="400"></canvas>
+        <div class="prompt">
+            <strong>Try it:</strong> Click and drag to draw on the left grid. Hover over any pixel to see a line connect it to its exact neuron in the vertical layer. Notice how a bright white pixel equals an activation of 1.0, while black is 0.0.
+        </div>
+    </div>
+
+    <!-- SECTION 2 -->
+    <h2>2. Building Abstractions (Why Layers?)</h2>
+    <p>We don't jump straight from pixels to the final answer. Neural networks use <strong>Hidden Layers</strong> to build abstractions. Imagine if the second layer learned to recognize tiny edges, and the third layer combined those edges into loops and lines.</p>
+    
+    <div class="widget">
+        <canvas id="canvas2" width="700" height="350"></canvas>
+        <div class="btn-group">
+            <button id="btn-loop" class="active">Top Loop Detector</button>
+            <button id="btn-line">Vertical Line Detector</button>
+        </div>
+        <div class="prompt" id="prompt2">
+            <strong>Try it:</strong> You are viewing the 'Top Loop' neuron. Why are the connections in the middle red? Because if there are pixels in the middle, it's probably an '8', not a '9' or a '0'. Negative weights tell the neuron to stay quiet.
+        </div>
+    </div>
+
+    <!-- SECTION 3 -->
+    <h2>3. The Math of a Single Neuron</h2>
+    <p>Let's zoom in on just one neuron to see the math. A neuron calculates its activation by taking a <strong>weighted sum</strong> of all the neurons connected to it, plus a baseline <strong>bias</strong>.</p>
+    
+    <div class="widget">
+        <div class="s3-container">
+            <canvas id="canvas3" width="600" height="250"></canvas>
+            <div class="formula-box">
+                Output = σ( 
+                <div class="slider-group">
+                    <span id="val-w1">1.0</span>
+                    <input type="range" id="s3-w1" min="-5" max="5" step="0.1" value="1">
+                </div> * <span class="cyan" id="val-a1">1</span> + 
+                <div class="slider-group">
+                    <span id="val-w2">-1.0</span>
+                    <input type="range" id="s3-w2" min="-5" max="5" step="0.1" value="-1">
+                </div> * <span class="cyan" id="val-a2">0</span> + 
+                <div class="slider-group">
+                    <span id="val-w3">0.5</span>
+                    <input type="range" id="s3-w3" min="-5" max="5" step="0.1" value="0.5">
+                </div> * <span class="cyan" id="val-a3">1</span> )<br>
+                + Bias: 
+                <div class="slider-group">
+                    <span id="val-b">0.0</span>
+                    <input type="range" id="s3-b" min="-5" max="5" step="0.1" value="0">
+                </div> 
+                = <strong id="val-out" class="cyan">0.82</strong>
+            </div>
+        </div>
+        <div class="prompt">
+            <strong>Try it:</strong> Click the input neurons (cyan circles) to toggle them on/off. Drag the Bias slider down to -5.0. Notice how the output stays dark even when inputs are on? A negative bias means the neuron needs a lot of positive input before it fires.
+        </div>
+    </div>
+
+    <!-- SECTION 4 -->
+    <h2>4. The "Squishification" Function</h2>
+    <p>There's a catch in the math above. A weighted sum can result in any number, like +45 or -12. But we want our neuron's activation to represent an intensity between 0 and 1. To fix this, we pump the result through an <strong>Activation Function</strong> like the Sigmoid curve.</p>
+
+    <div class="widget">
+        <canvas id="canvas4" width="700" height="350" style="cursor: ew-resize;"></canvas>
+        <div style="margin-top: 15px;">
+            <label style="cursor: pointer; display: flex; align-items: center; gap: 8px;">
+                <input type="checkbox" id="chk-relu" style="width: 18px; height: 18px;">
+                Modern alternative: ReLU (Rectified Linear Unit)
+            </label>
+        </div>
+        <div class="prompt">
+            <strong>Try it:</strong> Drag the glowing dot left and right. Notice how a negative sum gets squished to exactly 0? This non-linear squishing is what allows the network to make complex decisions.
+        </div>
+    </div>
+
+    <!-- SECTION 5 -->
+    <h2>5. The Full Forward Pass (Matrix Math)</h2>
+    <p>When you have 13,000 weights, calculating them one by one is too slow. Engineers group the activations into a vector, the weights into a matrix, and compute the whole layer at once using Linear Algebra.</p>
+
+    <div class="widget">
+        <div class="matrix-widget">
+            <canvas id="canvas5" width="250" height="250"></canvas>
+            
+            <div class="matrix-math">
+                <div style="text-align: center;">
+                    <span style="font-size: 0.8rem; color: #888;">Weights (W)</span>
+                    <div class="matrix" id="mat-w" style="grid-template-columns: repeat(4, 1fr);">
+                        <!-- populated by JS -->
+                    </div>
+                </div>
+                <div>×</div>
+                <div style="text-align: center;">
+                    <span style="font-size: 0.8rem; color: #888;">In (a⁰)</span>
+                    <div class="matrix" id="mat-a" style="grid-template-columns: 1fr;">
+                        <!-- populated by JS -->
+                    </div>
+                </div>
+                <div>+</div>
+                <div style="text-align: center;">
+                    <span style="font-size: 0.8rem; color: #888;">Bias (b)</span>
+                    <div class="matrix" id="mat-b" style="grid-template-columns: 1fr;">
+                        <!-- populated by JS -->
+                    </div>
+                </div>
+                <div>=</div>
+                <div style="text-align: center;">
+                    <span style="font-size: 0.8rem; color: #888;">Out (a¹)</span>
+                    <div class="matrix" id="mat-res" style="grid-template-columns: 1fr;">
+                        <!-- populated by JS -->
+                    </div>
+                </div>
+            </div>
+        </div>
+        <button id="btn-step" style="margin-top: 20px; font-size: 1.2rem; padding: 10px 30px; background-color: var(--cyan); color: #000; border: none; font-weight: bold;">Step Forward</button>
+        <div class="prompt">
+            <strong>Try it:</strong> Click "Step Forward". This single equation represents thousands of individual connections firing at once. But underneath the intimidating matrix math, it's just pixels, positive signals, and negative signals.
+        </div>
+    </div>
+
+</div>
+
+<script>
+    // Utility functions
+    function getMousePos(canvas, evt) {
+        const rect = canvas.getBoundingClientRect();
+        const scaleX = canvas.width / rect.width;
+        const scaleY = canvas.height / rect.height;
+        return {
+            x: (evt.clientX - rect.left) * scaleX,
+            y: (evt.clientY - rect.top) * scaleY
+        };
+    }
+
+    function sigmoid(x) {
+        return 1 / (1 + Math.exp(-x));
+    }
+
+    // Colors
+    const COLOR_CYAN = '#00FFFF';
+    const COLOR_GREEN = '#00FF00';
+    const COLOR_RED = '#FF0000';
+    const COLOR_BG = '#1a1a1a';
+    const COLOR_GRID = '#333333';
+
+    // ==========================================
+    // SECTION 1: Pixels to Neurons
+    // ==========================================
+    (() => {
+        const canvas = document.getElementById('canvas1');
+        const ctx = canvas.getContext('2d');
+        const gridSize = 16;
+        const cellSize = 15;
+        const gridX = 50;
+        const gridY = 80;
+        
+        const neuronX = 550;
+        const neuronStartY = 40;
+        const neuronSpacing = 1.2;
+        
+        let grid = Array(gridSize).fill(0).map(() => Array(gridSize).fill(0));
+        let isDrawing = false;
+        let hoverCell = null;
+
+        // Draw an initial "3"
+        const initialPoints = [
+            [4,5],[4,6],[4,7],[4,8],[4,9],
+            [5,9],[6,9],[7,9],[7,8],[7,7],
+            [7,6],[8,6],[9,6],[10,6],[11,6],[12,6],
+            [12,5],[12,4],[11,4],[10,4],[9,4]
+        ];
+        initialPoints.forEach(([r, c]) => grid[r][c] = 1);
+
+        function draw() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+            // Draw grid
+            for (let r = 0; r < gridSize; r++) {
+                for (let c = 0; c < gridSize; c++) {
+                    const x = gridX + c * cellSize;
+                    const y = gridY + r * cellSize;
+                    const val = grid[r][c];
+                    
+                    ctx.fillStyle = val > 0 ? `rgba(255, 255, 255, ${val})` : '#000';
+                    ctx.fillRect(x, y, cellSize, cellSize);
+                    ctx.strokeStyle = COLOR_GRID;
+                    ctx.lineWidth = 1;
+                    ctx.strokeRect(x, y, cellSize, cellSize);
+                }
+            }
+
+            // Draw Neurons
+            for (let i = 0; i < gridSize * gridSize; i++) {
+                const r = Math.floor(i / gridSize);
+                const c = i % gridSize;
+                const val = grid[r][c];
+                const y = neuronStartY + i * neuronSpacing;
+
+                ctx.fillStyle = val > 0 ? `rgba(0, 255, 255, ${val})` : '#333';
+                ctx.fillRect(neuronX, y, 10, 2);
+            }
+
+            // Draw hover connection
+            if (hoverCell) {
+                const {r, c} = hoverCell;
+                const idx = r * gridSize + c;
+                const startX = gridX + c * cellSize + cellSize;
+                const startY = gridY + r * cellSize + cellSize/2;
+                const endX = neuronX;
+                const endY = neuronStartY + idx * neuronSpacing + 1;
+
+                ctx.beginPath();
+                ctx.moveTo(startX, startY);
+                // Bezier curve
+                ctx.bezierCurveTo(startX + 150, startY, endX - 150, endY, endX, endY);
+                ctx.strokeStyle = COLOR_CYAN;
+                ctx.lineWidth = 2;
+                ctx.shadowColor = COLOR_CYAN;
+                ctx.shadowBlur = 10;
+                ctx.stroke();
+                ctx.shadowBlur = 0;
+
+                // Highlight grid cell and neuron
+                ctx.strokeStyle = COLOR_CYAN;
+                ctx.strokeRect(gridX + c * cellSize, gridY + r * cellSize, cellSize, cellSize);
+            }
+        }
+
+        function handleInput(evt) {
+            const pos = getMousePos(canvas, evt);
+            const c = Math.floor((pos.x - gridX) / cellSize);
+            const r = Math.floor((pos.y - gridY) / cellSize);
+
+            if (r >= 0 && r < gridSize && c >= 0 && c < gridSize) {
+                hoverCell = {r, c};
+                if (isDrawing) {
+                    // Brush effect
+                    grid[r][c] = 1;
+                    if(r>0) grid[r-1][c] = Math.max(grid[r-1][c], 0.5);
+                    if(r<gridSize-1) grid[r+1][c] = Math.max(grid[r+1][c], 0.5);
+                    if(c>0) grid[r][c-1] = Math.max(grid[r][c-1], 0.5);
+                    if(c<gridSize-1) grid[r][c+1] = Math.max(grid[r][c+1], 0.5);
+                }
+            } else {
+                hoverCell = null;
+            }
+            draw();
+        }
+
+        canvas.addEventListener('mousedown', (e) => { isDrawing = true; handleInput(e); });
+        canvas.addEventListener('mousemove', handleInput);
+        window.addEventListener('mouseup', () => { isDrawing = false; });
+        canvas.addEventListener('mouseleave', () => { hoverCell = null; draw(); });
+
+        draw();
+    })();
+
+    // ==========================================
+    // SECTION 2: Building Abstractions
+    // ==========================================
+    (() => {
+        const canvas = document.getElementById('canvas2');
+        const ctx = canvas.getContext('2d');
+        const btnLoop = document.getElementById('btn-loop');
+        const btnLine = document.getElementById('btn-line');
+        const promptText = document.getElementById('prompt2');
+
+        let mode = 'loop'; // 'loop' or 'line'
+
+        function draw() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+            // Coordinates
+            const inputX = 150;
+            const hiddenX = 400;
+            const outputX = 600;
+
+            // Draw Input Grid (Flattened to a column visually, or 2D. Let's do a pseudo 3D grid or just a column of blocks)
+            // Let's draw a 16x16 grid to represent the input layer spatially
+            const gridSz = 8; // simplified
+            const cellSz = 12;
+            const startY = 120;
+
+            // Define weights based on mode
+            const getWeight = (r, c) => {
+                if (mode === 'loop') {
+                    // Top loop: positive in top semi-circle, negative in middle
+                    const distCenter = Math.sqrt(Math.pow(r - 2, 2) + Math.pow(c - 3.5, 2));
+                    if (distCenter < 2.5 && r < 4) return 1;
+                    if (r >= 3 && r <= 5 && c >= 2 && c <= 5) return -1;
+                    return 0;
+                } else {
+                    // Vertical line: positive down middle, negative sides
+                    if (c === 3 || c === 4) return 1;
+                    if (c < 2 || c > 5) return -1;
+                    return 0;
+                }
+            };
+
+            // Draw connections first
+            const activeHiddenY = 150;
+            for (let r = 0; r < gridSz; r++) {
+                for (let c = 0; c < gridSz; c++) {
+                    const w = getWeight(r, c);
+                    if (w !== 0) {
+                        const px = inputX + c * cellSz;
+                        const py = startY + r * cellSz;
+                        ctx.beginPath();
+                        ctx.moveTo(px + cellSz/2, py + cellSz/2);
+                        ctx.lineTo(hiddenX, activeHiddenY);
+                        ctx.strokeStyle = w > 0 ? COLOR_GREEN : COLOR_RED;
+                        ctx.globalAlpha = 0.5;
+                        ctx.lineWidth = 1;
+                        ctx.stroke();
+                    }
+                }
+            }
+            ctx.globalAlpha = 1.0;
+
+            // Draw Input Grid
+            for (let r = 0; r < gridSz; r++) {
+                for (let c = 0; c < gridSz; c++) {
+                    const px = inputX + c * cellSz;
+                    const py = startY + r * cellSz;
+                    ctx.fillStyle = '#222';
+                    ctx.fillRect(px, py, cellSz, cellSz);
+                    ctx.strokeStyle = '#444';
+                    ctx.strokeRect(px, py, cellSz, cellSz);
+                    
+                    // Overlay weight color
+                    const w = getWeight(r, c);
+                    if (w > 0) { ctx.fillStyle = 'rgba(0,255,0,0.4)'; ctx.fillRect(px, py, cellSz, cellSz); }
+                    if (w < 0) { ctx.fillStyle = 'rgba(255,0,0,0.4)'; ctx.fillRect(px, py, cellSz, cellSz); }
+                }
+            }
+
+            // Draw Hidden Layer Nodes
+            const hiddenNodes = [100, 150, 200, 250];
+            hiddenNodes.forEach(y => {
+                ctx.beginPath();
+                ctx.arc(hiddenX, y, 15, 0, Math.PI * 2);
+                ctx.fillStyle = y === activeHiddenY ? COLOR_CYAN : '#333';
+                ctx.fill();
+                if (y === activeHiddenY) {
+                    ctx.shadowColor = COLOR_CYAN;
+                    ctx.shadowBlur = 15;
+                    ctx.fill();
+                    ctx.shadowBlur = 0;
+                }
+            });
+
+            // Draw Output Layer Nodes
+            for(let i=0; i<6; i++) {
+                const y = 80 + i * 40;
+                ctx.beginPath();
+                ctx.arc(outputX, y, 12, 0, Math.PI * 2);
+                ctx.fillStyle = '#333';
+                ctx.fill();
+                // Draw some faint lines from hidden to output
+                hiddenNodes.forEach(hy => {
+                    ctx.beginPath();
+                    ctx.moveTo(hiddenX + 15, hy);
+                    ctx.lineTo(outputX - 12, y);
+                    ctx.strokeStyle = 'rgba(255,255,255,0.05)';
+                    ctx.stroke();
+                });
+            }
+
+            // Labels
+            ctx.fillStyle = '#fff';
+            ctx.font = '14px sans-serif';
+            ctx.textAlign = 'center';
+            ctx.fillText('Input (Pixels)', inputX + (gridSz*cellSz)/2, startY - 20);
+            ctx.fillText('Hidden Layer', hiddenX, 60);
+            ctx.fillText('Output (Digits)', outputX, 60);
+        }
+
+        btnLoop.addEventListener('click', () => {
+            mode = 'loop';
+            btnLoop.classList.add('active');
+            btnLine.classList.remove('active');
+            promptText.innerHTML = "<strong>Try it:</strong> You are viewing the 'Top Loop' neuron. Why are the connections in the middle red? Because if there are pixels in the middle, it's probably an '8', not a '9' or a '0'. Negative weights tell the neuron to stay quiet.";
+            draw();
+        });
+
+        btnLine.addEventListener('click', () => {
+            mode = 'line';
+            btnLine.classList.add('active');
+            btnLoop.classList.remove('active');
+            promptText.innerHTML = "<strong>Try it:</strong> You are viewing the 'Vertical Line' neuron. Positive (green) weights look for pixels straight down the middle, like in a '1'. Negative (red) weights penalize pixels on the sides.";
+            draw();
+        });
+
+        draw();
+    })();
+
+    // ==========================================
+    // SECTION 3: Single Neuron Math
+    // ==========================================
+    (() => {
+        const canvas = document.getElementById('canvas3');
+        const ctx = canvas.getContext('2d');
+        
+        let a = [1, 0, 1];
+        let w = [1.0, -1.0, 0.5];
+        let b = 0.0;
+
+        // DOM Elements
+        const s3w1 = document.getElementById('s3-w1');
+        const s3w2 = document.getElementById('s3-w2');
+        const s3w3 = document.getElementById('s3-w3');
+        const s3b = document.getElementById('s3-b');
+        
+        const vW1 = document.getElementById('val-w1');
+        const vW2 = document.getElementById('val-w2');
+        const vW3 = document.getElementById('val-w3');
+        const vB = document.getElementById('val-b');
+        const vA1 = document.getElementById('val-a1');
+        const vA2 = document.getElementById('val-a2');
+        const vA3 = document.getElementById('val-a3');
+        const vOut = document.getElementById('val-out');
+
+        function updateMath() {
+            w[0] = parseFloat(s3w1.value);
+            w[1] = parseFloat(s3w2.value);
+            w[2] = parseFloat(s3w3.value);
+            b = parseFloat(s3b.value);
+
+            vW1.innerText = w[0].toFixed(1);
+            vW2.innerText = w[1].toFixed(1);
+            vW3.innerText = w[2].toFixed(1);
+            vB.innerText = b.toFixed(1);
+            
+            vA1.innerText = a[0];
+            vA2.innerText = a[1];
+            vA3.innerText = a[2];
+
+            const sum = (w[0]*a[0]) + (w[1]*a[1]) + (w[2]*a[2]) + b;
+            const out = sigmoid(sum);
+            vOut.innerText = out.toFixed(2);
+            
+            // Dim/brighten formula output
+            vOut.style.color = `rgba(0, 255, 255, ${Math.max(0.2, out)})`;
+            vOut.style.textShadow = `0 0 ${out*10}px rgba(0, 255, 255, ${out})`;
+
+            draw();
+        }
+
+        function draw() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+            const inX = 150;
+            const inY = [50, 125, 200];
+            const outX = 450;
+            const outY = 125;
+
+            // Draw connections
+            for(let i=0; i<3; i++) {
+                ctx.beginPath();
+                ctx.moveTo(inX + 20, inY[i]);
+                ctx.lineTo(outX - 30, outY);
+                ctx.lineWidth = Math.abs(w[i]) * 2 + 1;
+                ctx.strokeStyle = w[i] >= 0 ? COLOR_GREEN : COLOR_RED;
+                
+                // Dim line if input is 0
+                ctx.globalAlpha = a[i] === 1 ? 1.0 : 0.2;
+                if (a[i] === 1) {
+                    ctx.shadowColor = ctx.strokeStyle;
+                    ctx.shadowBlur = 5;
+                }
+                ctx.stroke();
+                ctx.globalAlpha = 1.0;
+                ctx.shadowBlur = 0;
+            }
+
+            // Draw Input Nodes
+            for(let i=0; i<3; i++) {
+                ctx.beginPath();
+                ctx.arc(inX, inY[i], 20, 0, Math.PI * 2);
+                ctx.fillStyle = a[i] === 1 ? COLOR_CYAN : '#333';
+                ctx.fill();
+                if (a[i] === 1) {
+                    ctx.shadowColor = COLOR_CYAN;
+                    ctx.shadowBlur = 10;
+                    ctx.fill();
+                    ctx.shadowBlur = 0;
+                }
+                ctx.fillStyle = '#000';
+                ctx.font = '16px monospace';
+                ctx.textAlign = 'center';
+                ctx.textBaseline = 'middle';
+                ctx.fillText(`a${i+1}`, inX, inY[i]);
+            }
+
+            // Draw Output Node
+            const sum = (w[0]*a[0]) + (w[1]*a[1]) + (w[2]*a[2]) + b;
+            const out = sigmoid(sum);
+            ctx.beginPath();
+            ctx.arc(outX, outY, 30, 0, Math.PI * 2);
+            ctx.fillStyle = `rgba(0, 255, 255, ${Math.max(0.1, out)})`;
+            ctx.fill();
+            ctx.shadowColor = COLOR_CYAN;
+            ctx.shadowBlur = out * 20;
+            ctx.fill();
+            ctx.shadowBlur = 0;
+            
+            ctx.strokeStyle = COLOR_CYAN;
+            ctx.lineWidth = 2;
+            ctx.stroke();
+
+            ctx.fillStyle = out > 0.5 ? '#000' : '#fff';
+            ctx.fillText(out.toFixed(2), outX, outY);
+        }
+
+        // Event Listeners
+        [s3w1, s3w2, s3w3, s3b].forEach(el => el.addEventListener('input', updateMath));
+        
+        canvas.addEventListener('mousedown', (evt) => {
+            const pos = getMousePos(canvas, evt);
+            const inX = 150;
+            const inY = [50, 125, 200];
+            for(let i=0; i<3; i++) {
+                const dist = Math.sqrt(Math.pow(pos.x - inX, 2) + Math.pow(pos.y - inY[i], 2));
+                if (dist < 20) {
+                    a[i] = a[i] === 1 ? 0 : 1;
+                    updateMath();
+                }
+            }
+        });
+
+        updateMath();
+    })();
+
+    // ==========================================
+    // SECTION 4: Squishification Function
+    // ==========================================
+    (() => {
+        const canvas = document.getElementById('canvas4');
+        const ctx = canvas.getContext('2d');
+        const chkRelu = document.getElementById('chk-relu');
+
+        let isRelu = false;
+        let xVal = 2;
+        let isDragging = false;
+
+        function draw() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+            const padX = 50;
+            const padY = 50;
+            const w = canvas.width - padX * 2;
+            const h = canvas.height - padY * 2;
+            
+            const minX = -10, maxX = 10;
+            const minY = isRelu ? -2 : -0.2, maxY = isRelu ? 10 : 1.2;
+
+            const mapX = (x) => padX + ((x - minX) / (maxX - minX)) * w;
+            const mapY = (y) => canvas.height - padY - ((y - minY) / (maxY - minY)) * h;
+
+            // Draw Axes
+            ctx.beginPath();
+            ctx.moveTo(mapX(minX), mapY(0));
+            ctx.lineTo(mapX(maxX), mapY(0)); // X axis
+            ctx.moveTo(mapX(0), mapY(minY));
+            ctx.lineTo(mapX(0), mapY(maxY)); // Y axis
+            ctx.strokeStyle = '#555';
+            ctx.lineWidth = 2;
+            ctx.stroke();
+
+            // Labels
+            ctx.fillStyle = '#aaa';
+            ctx.font = '14px sans-serif';
+            ctx.textAlign = 'center';
+            ctx.fillText('Weighted Sum (Input)', canvas.width / 2, canvas.height - 10);
+            ctx.save();
+            ctx.translate(20, canvas.height / 2);
+            ctx.rotate(-Math.PI / 2);
+            ctx.fillText('Activation (Output)', 0, 0);
+            ctx.restore();
+
+            // Draw Curve
+            ctx.beginPath();
+            for (let px = padX; px <= canvas.width - padX; px++) {
+                const vx = minX + ((px - padX) / w) * (maxX - minX);
+                const vy = isRelu ? Math.max(0, vx) : sigmoid(vx);
+                const py = mapY(vy);
+                if (px === padX) ctx.moveTo(px, py);
+                else ctx.lineTo(px, py);
+            }
+            ctx.strokeStyle = COLOR_CYAN;
+            ctx.lineWidth = 3;
+            ctx.stroke();
+
+            // Draw Tracker
+            const vy = isRelu ? Math.max(0, xVal) : sigmoid(xVal);
+            const px = mapX(xVal);
+            const py = mapY(vy);
+
+            // Projection lines
+            ctx.beginPath();
+            ctx.setLineDash([5, 5]);
+            ctx.moveTo(px, mapY(0));
+            ctx.lineTo(px, py);
+            ctx.lineTo(mapX(0), py);
+            ctx.strokeStyle = '#fff';
+            ctx.lineWidth = 1;
+            ctx.stroke();
+            ctx.setLineDash([]);
+
+            // Dot
+            ctx.beginPath();
+            ctx.arc(px, mapY(0), 8, 0, Math.PI * 2);
+            ctx.fillStyle = '#fff';
+            ctx.fill();
+
+            ctx.beginPath();
+            ctx.arc(px, py, 8, 0, Math.PI * 2);
+            ctx.fillStyle = COLOR_CYAN;
+            ctx.shadowColor = COLOR_CYAN;
+            ctx.shadowBlur = 10;
+            ctx.fill();
+            ctx.shadowBlur = 0;
+
+            // Text values
+            ctx.fillStyle = '#fff';
+            ctx.font = '16px monospace';
+            ctx.textAlign = 'left';
+            ctx.fillText(`Sum = ${xVal.toFixed(1)}`, px + 15, mapY(0) + 20);
+            ctx.fillText(`Out = ${vy.toFixed(2)}`, mapX(0) + 10, py - 10);
+        }
+
+        chkRelu.addEventListener('change', (e) => {
+            isRelu = e.target.checked;
+            draw();
+        });
+
+        canvas.addEventListener('mousedown', (e) => {
+            isDragging = true;
+            updateDrag(e);
+        });
+
+        window.addEventListener('mouseup', () => { isDragging = false; });
+        
+        canvas.addEventListener('mousemove', (e) => {
+            if (isDragging) updateDrag(e);
+        });
+
+        function updateDrag(e) {
+            const pos = getMousePos(canvas, e);
+            const padX = 50;
+            const w = canvas.width - padX * 2;
+            let normX = (pos.x - padX) / w;
+            normX = Math.max(0, Math.min(1, normX));
+            xVal = -10 + normX * 20;
+            draw();
+        }
+
+        draw();
+    })();
+
+    // ==========================================
+    // SECTION 5: Matrix Math
+    // ==========================================
+    (() => {
+        const matW = document.getElementById('mat-w');
+        const matA = document.getElementById('mat-a');
+        const matB = document.getElementById('mat-b');
+        const matRes = document.getElementById('mat-res');
+        const btnStep = document.getElementById('btn-step');
+        const canvas = document.getElementById('canvas5');
+        const ctx = canvas.getContext('2d');
+
+        // Data 4x4
+        const W = [
+            [ 1.2, -0.5,  0.1,  0.8],
+            [-0.8,  1.5, -0.2, -0.1],
+            [ 0.3,  0.4,  1.1, -0.6],
+            [-0.1, -0.5, -0.8,  1.4]
+        ];
+        const a = [1, 0, 1, 0];
+        const b = [0.1, -0.2, 0.5, -0.1];
+        let res = [0, 0, 0, 0];
+        
+        for(let i=0; i<4; i++) {
+            let sum = 0;
+            for(let j=0; j<4; j++) sum += W[i][j] * a[j];
+            res[i] = sigmoid(sum + b[i]);
+        }
+
+        let step = -1; // -1: initial, 0-3: rows
+
+        function buildMatrices() {
+            matW.innerHTML = '';
+            matA.innerHTML = '';
+            matB.innerHTML = '';
+            matRes.innerHTML = '';
+
+            for(let r=0; r<4; r++) {
+                for(let c=0; c<4; c++) {
+                    const div = document.createElement('div');
+                    div.className = `cell w-r${r}-c${c}`;
+                    div.innerText = W[r][c].toFixed(1);
+                    matW.appendChild(div);
+                }
+                
+                const divA = document.createElement('div');
+                divA.className = `cell a-r${r}`;
+                divA.innerText = a[r];
+                matA.appendChild(divA);
+
+                const divB = document.createElement('div');
+                divB.className = `cell b-r${r}`;
+                divB.innerText = b[r].toFixed(1);
+                matB.appendChild(divB);
+
+                const divRes = document.createElement('div');
+                divRes.className = `cell res-r${r}`;
+                divRes.innerText = '?';
+                matRes.appendChild(divRes);
+            }
+        }
+
+        function drawNetwork() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            const inX = 50, outX = 200;
+            const spacing = 50;
+            const startY = 50;
+
+            for(let i=0; i<4; i++) {
+                for(let j=0; j<4; j++) {
+                    const isHighlighted = (step === j);
+                    ctx.beginPath();
+                    ctx.moveTo(inX + 10, startY + i * spacing);
+                    ctx.lineTo(outX - 10, startY + j * spacing);
+                    
+                    if (isHighlighted) {
+                        ctx.strokeStyle = W[j][i] >= 0 ? COLOR_GREEN : COLOR_RED;
+                        ctx.lineWidth = 2;
+                        ctx.globalAlpha = 1.0;
+                    } else {
+                        ctx.strokeStyle = '#333';
+                        ctx.lineWidth = 1;
+                        ctx.globalAlpha = 0.3;
+                    }
+                    ctx.stroke();
+                }
+            }
+            ctx.globalAlpha = 1.0;
+
+            for(let i=0; i<4; i++) {
+                // Input nodes
+                ctx.beginPath();
+                ctx.arc(inX, startY + i * spacing, 12, 0, Math.PI*2);
+                ctx.fillStyle = a[i] === 1 ? COLOR_CYAN : '#333';
+                if (step >= 0 && a[i] === 1) {
+                    ctx.shadowColor = COLOR_CYAN; ctx.shadowBlur = 10;
+                }
+                ctx.fill(); ctx.shadowBlur = 0;
+
+                // Output nodes
+                ctx.beginPath();
+                ctx.arc(outX, startY + i * spacing, 12, 0, Math.PI*2);
+                ctx.fillStyle = (step >= i) ? `rgba(0,255,255,${res[i]})` : '#333';
+                if (step === i) {
+                    ctx.shadowColor = COLOR_CYAN; ctx.shadowBlur = 15;
+                    ctx.strokeStyle = '#fff'; ctx.lineWidth = 2; ctx.stroke();
+                }
+                ctx.fill(); ctx.shadowBlur = 0;
+            }
+        }
+
+        function updateHighlights() {
+            // Reset
+            document.querySelectorAll('.cell').forEach(el => {
+                el.classList.remove('highlight-w', 'highlight-a', 'highlight-res');
+            });
+
+            if (step >= 0 && step < 4) {
+                // Highlight W row
+                for(let c=0; c<4; c++) {
+                    document.querySelector(`.w-r${step}-c${c}`).classList.add('highlight-w');
+                }
+                // Highlight A col
+                for(let r=0; r<4; r++) {
+                    document.querySelector(`.a-r${r}`).classList.add('highlight-a');
+                }
+                // Update Result
+                const resEl = document.querySelector(`.res-r${step}`);
+                resEl.innerText = res[step].toFixed(2);
+                resEl.classList.add('highlight-res');
+            }
+
+            if (step === 4) {
+                btnStep.innerText = "Reset";
+            } else {
+                btnStep.innerText = "Step Forward";
+            }
+
+            drawNetwork();
+        }
+
+        btnStep.addEventListener('click', () => {
+            step++;
+            if (step > 4) {
+                step = -1;
+                buildMatrices(); // reset result column
+            }
+            updateHighlights();
+        });
+
+        buildMatrices();
+        drawNetwork();
+    })();
+
+</script>
+</body>
+</html>

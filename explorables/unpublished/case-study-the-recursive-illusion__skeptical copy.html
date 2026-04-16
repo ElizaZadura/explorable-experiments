@@ -1,0 +1,536 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Case Study: The Recursive Illusion</title>
+    <style>
+        :root {
+            --bg: #f4f4f0;
+            --text: #1a1a1a;
+            --accent: #d03030; /* Skeptical Red */
+            --highlight: #e8e8e0;
+            --border: 1px solid #1a1a1a;
+            --font-body: 'Georgia', serif;
+            --font-mono: 'Courier New', Courier, monospace;
+        }
+
+        body {
+            background-color: var(--bg);
+            color: var(--text);
+            font-family: var(--font-body);
+            line-height: 1.6;
+            margin: 0;
+            padding: 0;
+        }
+
+        /* Layout */
+        .container {
+            max-width: 700px;
+            margin: 0 auto;
+            padding: 40px 20px;
+        }
+
+        /* Typography */
+        h1, h2, h3 {
+            font-family: var(--font-mono);
+            text-transform: uppercase;
+            letter-spacing: -0.5px;
+        }
+
+        h1 {
+            font-size: 2.5rem;
+            border-bottom: 4px solid var(--text);
+            padding-bottom: 20px;
+            margin-bottom: 40px;
+            line-height: 1.1;
+        }
+
+        .subtitle {
+            font-size: 1rem;
+            opacity: 0.7;
+            margin-top: -30px;
+            margin-bottom: 50px;
+            display: block;
+            font-style: italic;
+        }
+
+        p {
+            margin-bottom: 1.5rem;
+            font-size: 1.1rem;
+        }
+
+        /* Interactive Sections */
+        section {
+            margin-bottom: 80px;
+            border-top: 1px dashed #999;
+            padding-top: 40px;
+        }
+
+        .lab-note {
+            background: #fff;
+            border: var(--border);
+            padding: 20px;
+            margin: 20px 0;
+            box-shadow: 6px 6px 0px rgba(0,0,0,0.1);
+        }
+
+        .lab-note h3 {
+            margin-top: 0;
+            font-size: 0.9rem;
+            background: var(--text);
+            color: #fff;
+            display: inline-block;
+            padding: 4px 8px;
+        }
+
+        /* Controls */
+        input[type="range"] {
+            width: 100%;
+            margin: 10px 0;
+            accent-color: var(--text);
+        }
+
+        select {
+            background: #fff;
+            border: var(--border);
+            padding: 8px;
+            font-family: var(--font-mono);
+            max-width: 100%;
+        }
+
+        button {
+            background: var(--bg);
+            border: 2px solid var(--text);
+            font-family: var(--font-mono);
+            font-weight: bold;
+            padding: 10px 20px;
+            cursor: pointer;
+            transition: all 0.1s;
+            margin-top: 5px;
+        }
+
+        button:hover:not(:disabled) {
+            background: var(--text);
+            color: var(--bg);
+        }
+
+        button:active:not(:disabled) {
+            transform: translate(2px, 2px);
+        }
+
+        button:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        /* Visualization: Decay Graph */
+        .decay-graph {
+            height: 200px;
+            width: 100%;
+            background: #fdfdfd;
+            border: var(--border);
+            position: relative;
+            overflow: hidden;
+            display: flex;
+            align-items: flex-end;
+            justify-content: space-between;
+        }
+
+        .bar {
+            width: 1.5%;
+            background: var(--text);
+            transition: height 0.3s ease;
+            min-height: 2px;
+        }
+
+        /* Visualization: Equation */
+        .equation-box {
+            font-family: var(--font-mono);
+            font-size: 1.1rem;
+            text-align: center;
+            padding: 20px;
+            background: #e0e0e0;
+            border: var(--border);
+            margin-bottom: 20px;
+        }
+
+        .variable {
+            color: var(--accent);
+            border-bottom: 1px dotted var(--accent);
+            font-weight: bold;
+        }
+
+        /* Visualization: Terminal */
+        .terminal {
+            background: #111;
+            color: #0f0;
+            font-family: var(--font-mono);
+            padding: 15px;
+            height: 300px;
+            overflow-y: auto;
+            font-size: 0.85rem;
+            border: 4px solid #333;
+            margin-top: 15px;
+        }
+        .terminal-line { margin-bottom: 5px; word-break: break-all; }
+        .terminal-input { color: #fff; }
+        .terminal-error { color: #ff4444; }
+        .terminal-sys { color: #888; font-style: italic; }
+
+        /* Status Indicators */
+        .status-fail { color: var(--accent); font-weight: bold; }
+        .status-pass { color: green; font-weight: bold; }
+        
+        .observation {
+            font-family: var(--font-mono); 
+            font-size: 0.85rem; 
+            color: var(--accent);
+            margin-top: 10px;
+            border-top: 1px solid #eee;
+            padding-top: 10px;
+        }
+
+        /* Mobile Adjustments */
+        @media (max-width: 600px) {
+            h1 { font-size: 1.8rem; }
+            .container { padding: 20px 15px; }
+            .bar { width: 1px; } /* Thinner bars for small screens */
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h1>Recursive Language Models</h1>
+    <span class="subtitle">Field Notes: Investigating the "Infinite Context" Hypothesis</span>
+
+    <p>The industry claims we have solved the context window problem. They claim we can now feed millions of tokens—entire libraries of code or literature—into a model and get perfect recall.</p>
+    
+    <p>This is likely <strong>incorrect</strong>. The mechanism by which it works is not what you think. It is not "memory." It is a trick.</p>
+
+    <section id="part-1">
+        <h2>1. The Problem: Context Rot</h2>
+        <p>Before examining the solution, we must audit the failure mode. Standard Large Language Models (LLMs) have a "Context Window." As you fill this window, performance does not stay linear. It degrades. This is "Context Rot."</p>
+
+        <p>In the simulation below, we run a standard "Needle in a Haystack" test. We hide a password inside a pile of random text.</p>
+
+        <div class="lab-note">
+            <h3>Experiment A: Attention Decay</h3>
+            <p><strong>Hypothesis:</strong> As context length ($L$) increases, retrieval accuracy ($A$) approaches random chance.</p>
+            
+            <label for="context-slider" style="font-family: var(--font-mono); font-weight: bold;">
+                Context Load: <span id="token-display">1,000</span> Tokens
+            </label>
+            <input type="range" id="context-slider" min="1000" max="100000" step="1000" value="1000">
+            
+            <div class="decay-graph" id="decay-canvas">
+                <!-- Bars generated by JS -->
+            </div>
+            
+            <div style="display:flex; justify-content: space-between; font-family: var(--font-mono); font-size: 0.8rem; margin-top: 5px;">
+                <span>Start</span>
+                <span>End of Context</span>
+            </div>
+
+            <p style="text-align: center; font-size: 0.9rem; margin-top: 15px;">
+                Signal Integrity: <span id="accuracy-display" class="status-pass">99.8%</span>
+            </p>
+            <div id="observation-text" class="observation">
+                // Observation: At low context, attention is sharp.
+            </div>
+        </div>
+
+        <p>Why does this happen? Because the mechanism—Self-Attention—is quadratic ($O(N^2)$). The noise drowns out the signal. The model isn't "reading"; it is statistically guessing based on weighted associations.</p>
+    </section>
+
+    <section id="part-2">
+        <h2>2. The Failed Fix: Compaction</h2>
+        <p>The industry's first reaction was "Compaction" (or RAG/Summarization). If the book is too long, write a summary. If the summary is too long, summarize the summary.</p>
+        
+        <p>This creates a lossy compression artifact. You are trading <strong>resolution</strong> for <strong>length</strong>.</p>
+
+        <div class="lab-note">
+            <h3>Experiment B: Semantic Entropy</h3>
+            <p><strong>Method:</strong> Recursive summarization of a specific narrative detail.</p>
+            
+            <div style="display: flex; flex-wrap: wrap; gap: 10px; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+                <button id="btn-compress">Run Compression Cycle</button>
+                <span id="cycle-count" style="font-family: var(--font-mono);">Generation: 0</span>
+            </div>
+
+            <div style="background: #eee; padding: 15px; font-family: var(--font-mono); min-height: 80px; border-left: 4px solid var(--text);" id="compression-output">
+                "The suspect was wearing a vintage 1980s red Casio digital watch with a scratched screen."
+            </div>
+
+            <p id="entropy-warning" style="margin-top: 10px; font-size: 0.9rem; display: none;">
+                <span class="status-fail">DATA LOSS DETECTED:</span> Specifics (Year, Brand, Condition) have been hallucinated away.
+            </p>
+        </div>
+
+        <p>Compaction works for "the gist." It fails catastrophically for Code Auditing, where a single line of code (the needle) might crash the system.</p>
+    </section>
+
+    <section id="part-3">
+        <h2>3. The "Recursive" Workaround</h2>
+        <p>Researchers now propose <strong>Recursive Language Models (RLMs)</strong>. The marketing says "Infinite Context." </p>
+        
+        <p>The reality? It's <strong>Scaffolding</strong>. They treat the prompt not as tokens to be ingested, but as an external file system to be queried via code.</p>
+
+        <div class="equation-box">
+            Cost = <span class="variable">Steps</span> × (<span class="variable">Input</span> + <span class="variable">Compute</span>)
+        </div>
+
+        <p>Instead of reading the book, the model writes a Python script to `grep` the book. If `grep` returns too many results, it writes <em>another</em> script to filter those results. It recurses.</p>
+
+        <p>Let's test this. You act as the Supervisor. We have a massive 10GB log file. You cannot read it. You must demand the RLM find the error.</p>
+
+        <div class="lab-note">
+            <h3>Experiment C: The RLM Environment</h3>
+            
+            <div style="margin-bottom: 15px;">
+                <label style="font-family: var(--font-mono); font-size: 0.9rem;">Task Complexity:</label><br>
+                <select id="task-complexity" style="width: 100%; margin-top: 5px;">
+                    <option value="simple">Simple: Find exact string ID</option>
+                    <option value="complex">Complex: Multi-file Correlation</option>
+                    <option value="impossible">Edge Case: Ambiguous Query</option>
+                </select>
+                <button id="btn-run-rlm" style="width: 100%; margin-top: 10px;">Execute RLM Strategy</button>
+            </div>
+
+            <div class="terminal" id="rlm-terminal">
+                <div class="terminal-sys">System initialized. Environment: Python REPL.</div>
+                <div class="terminal-sys">Context: 'server_logs.txt' (10GB) mounted as external drive.</div>
+                <div class="terminal-line">> Awaiting prompt...</div>
+            </div>
+            
+            <div id="rlm-analysis" style="margin-top: 10px; font-size: 0.9rem; border-top: 1px solid #ccc; padding-top: 10px;">
+                <strong>Analysis:</strong> <span id="rlm-status">Waiting for execution.</span>
+            </div>
+        </div>
+
+        <p><strong>The Skeptical Takeaway:</strong> Notice the delay? Notice the "Steps" in the equation above? The RLM isn't smarter. It's just more persistent. </p>
+        
+        <p>If the task is simple (RegEx), it works. If the task requires understanding the <em>relationship</em> between two distant lines, the model often enters a "trajectory loop"—writing code, failing, rewriting, failing—until it hits a timeout.</p>
+    </section>
+
+    <section id="conclusion">
+        <h2>Conclusion: No Free Lunch</h2>
+        <p>Recursive Language Models solve the <em>memory</em> problem by converting it into a <em>compute</em> problem.</p>
+        <ul>
+            <li><strong>Standard LLM:</strong> High Memory, Fast Inference, Low Accuracy at Scale.</li>
+            <li><strong>RLM:</strong> Low Memory, High Latency, High Accuracy (if the code works).</li>
+        </ul>
+        <p>We haven't solved intelligence. We've just given the model a file system and a Python compiler. Proceed with caution.</p>
+    </section>
+</div>
+
+<script>
+    // --- SIMULATION 1: CONTEXT ROT ---
+    const contextSlider = document.getElementById('context-slider');
+    const tokenDisplay = document.getElementById('token-display');
+    const accuracyDisplay = document.getElementById('accuracy-display');
+    const decayCanvas = document.getElementById('decay-canvas');
+    const observationText = document.getElementById('observation-text');
+
+    function drawDecayGraph(tokens) {
+        decayCanvas.innerHTML = '';
+        // Create 40 bars
+        const barCount = 40;
+        
+        // The "Rot" formula: Accuracy drops as tokens increase
+        let baseAccuracy = 100;
+        if (tokens > 8000) {
+            // Exponential decay after a certain threshold
+            const x = (tokens - 8000) / 25000;
+            baseAccuracy = 100 * Math.exp(-0.4 * x); 
+        }
+
+        // Generate bars
+        for(let i=0; i<barCount; i++) {
+            const bar = document.createElement('div');
+            bar.className = 'bar';
+            
+            // Random noise increases as accuracy decreases
+            // The further right the bar (index i), the more likely it is to degrade in a "Long Context" scenario
+            const positionPenalty = (i / barCount) * 0.5; // Later tokens are harder to recall
+            const noise = (100 - baseAccuracy) * Math.random() * (1 + positionPenalty); 
+            let height = baseAccuracy - (noise * 0.8); 
+            
+            // Occasional "Hallucination" spikes (drop to near 0)
+            if (Math.random() > 0.92 && tokens > 30000) height = Math.random() * 10;
+
+            bar.style.height = Math.max(5, height) + '%';
+            
+            // Color coding
+            if (height < 50) bar.style.background = '#d03030';
+            else if (height < 80) bar.style.background = '#e6b800';
+            else bar.style.background = '#1a1a1a';
+            
+            decayCanvas.appendChild(bar);
+        }
+
+        // Update Text
+        tokenDisplay.innerText = parseInt(tokens).toLocaleString();
+        const finalAcc = Math.max(0, Math.min(100, baseAccuracy)).toFixed(1);
+        accuracyDisplay.innerText = finalAcc + '%';
+        
+        if (finalAcc > 90) {
+            accuracyDisplay.className = 'status-pass';
+            observationText.innerText = "// Observation: Context is within safe limits. Retrieval is reliable.";
+        } else if (finalAcc > 60) {
+            accuracyDisplay.className = 'status-fail';
+            accuracyDisplay.style.color = '#e6b800';
+            observationText.innerText = "// Observation: Noise floor rising. Model begins to conflate similar concepts.";
+        } else {
+            accuracyDisplay.className = 'status-fail';
+            accuracyDisplay.style.color = '#d03030';
+            observationText.innerText = "// Observation: CRITICAL FAILURE. The needle is lost in the haystack. Hallucination imminent.";
+        }
+    }
+
+    contextSlider.addEventListener('input', (e) => drawDecayGraph(e.target.value));
+    // Init
+    drawDecayGraph(1000);
+
+
+    // --- SIMULATION 2: COMPACTION ---
+    const btnCompress = document.getElementById('btn-compress');
+    const entropyWarning = document.getElementById('entropy-warning');
+    const compressionOutput = document.getElementById('compression-output');
+    const cycleCountSpan = document.getElementById('cycle-count');
+
+    const summaries = [
+        "The suspect was wearing a vintage 1980s red Casio digital watch with a scratched screen.",
+        "The suspect wore an old red digital watch with a damaged screen.",
+        "The suspect had a red watch that was broken.",
+        "Subject identified with a watch.",
+        "A person with an item."
+    ];
+    let compressionStage = 0;
+
+    btnCompress.addEventListener('click', () => {
+        if (compressionStage < summaries.length - 1) {
+            compressionStage++;
+            compressionOutput.innerText = summaries[compressionStage];
+            cycleCountSpan.innerText = "Generation: " + compressionStage;
+            
+            // Visual feedback
+            compressionOutput.style.opacity = 0.5;
+            setTimeout(() => compressionOutput.style.opacity = 1, 200);
+
+            if (compressionStage >= 2) {
+                entropyWarning.style.display = 'block';
+            }
+        } else {
+            // Reset
+            compressionStage = 0;
+            compressionOutput.innerText = summaries[0];
+            cycleCountSpan.innerText = "Generation: 0";
+            entropyWarning.style.display = 'none';
+        }
+    });
+
+
+    // --- SIMULATION 3: RLM / REPL ---
+    const btnRunRlm = document.getElementById('btn-run-rlm');
+    const rlmTerminal = document.getElementById('rlm-terminal');
+    const taskSelector = document.getElementById('task-complexity');
+    const rlmStatus = document.getElementById('rlm-status');
+
+    function log(msg, type='output') {
+        const div = document.createElement('div');
+        div.className = 'terminal-line';
+        if (type === 'input') div.className += ' terminal-input';
+        if (type === 'error') div.className += ' terminal-error';
+        if (type === 'sys') div.className += ' terminal-sys';
+        div.innerText = msg;
+        rlmTerminal.appendChild(div);
+        rlmTerminal.scrollTop = rlmTerminal.scrollHeight;
+    }
+
+    async function wait(ms) {
+        return new Promise(resolve => setTimeout(resolve, ms));
+    }
+
+    btnRunRlm.addEventListener('click', async () => {
+        btnRunRlm.disabled = true;
+        rlmTerminal.innerHTML = '';
+        log("System initialized. Environment: Python REPL.", 'sys');
+        log("Context: 'server_logs.txt' (10GB) mounted.", 'sys');
+        
+        const task = taskSelector.value;
+        
+        // Step 1: The Prompt
+        await wait(500);
+        log("> User: Find the root cause of the crash.", 'input');
+        
+        // Step 2: The Thought Process (Internal Monologue)
+        await wait(800);
+        log("# RLM: File is too large for context window.", 'sys');
+        log("# RLM: Generating Python script to search file...", 'sys');
+
+        // Step 3: Branching Logic
+        if (task === 'simple') {
+            await wait(1000);
+            log("Running: grep -n 'CRITICAL' server_logs.txt | tail -n 5");
+            await wait(1500);
+            log("Output: \nLine 99402: [CRITICAL] DB_CONNECTION_TIMEOUT\nLine 99403: [CRITICAL] Shutting down.");
+            await wait(500);
+            log("# RLM: Answer found.");
+            log("> Agent: The crash was caused by a database timeout on line 99402.", 'input');
+            rlmStatus.innerText = "Success. Cost: Low (1 Step).";
+            rlmStatus.className = "status-pass";
+
+        } else if (task === 'complex') {
+            await wait(1000);
+            log("Running: grep 'ERROR' server_logs.txt > errors.tmp");
+            await wait(1000);
+            log("Output: 4,000 matches found. (Too large for context)");
+            
+            await wait(800);
+            log("# RLM: Output too large. Refining search strategy.", 'sys');
+            log("Running: python analyze_timestamps.py errors.tmp --interval=1min");
+            
+            await wait(2000); // Simulate compute time
+            log("Output: Spike detected at 14:00 UTC.");
+            
+            await wait(800);
+            log("# RLM: Investigating 14:00 UTC window.", 'sys');
+            log("Running: grep '14:00' server_logs.txt | grep 'User_ID_55'");
+            
+            await wait(1000);
+            log("> Agent: Correlation found. User 55 triggered an infinite loop at 14:00 which cascaded into a timeout.", 'input');
+            rlmStatus.innerText = "Success. Cost: High (3 Steps + Code Gen).";
+            rlmStatus.className = "status-pass";
+
+        } else {
+            // Impossible / Edge Case
+            await wait(1000);
+            log("Running: grep 'strange behavior' server_logs.txt");
+            await wait(500);
+            log("Output: 0 matches.");
+            
+            await wait(800);
+            log("# RLM: Hypothesis failed. Trying generic error search.", 'sys');
+            log("Running: grep 'fail' server_logs.txt");
+            await wait(1500);
+            log("Output: 50,000 matches.");
+            
+            await wait(800);
+            log("# RLM: Overwhelmed. Trying to sample random lines.", 'sys');
+            log("Running: head -n 100 server_logs.txt");
+            
+            await wait(1000);
+            log("# RLM: Trajectory limit reached. Aborting to prevent infinite loop.", 'error');
+            log("> Agent: I am unable to locate the specific issue without a more specific query.", 'input');
+            rlmStatus.innerText = "Failure. Cost: Maximum (Wasted Compute).";
+            rlmStatus.className = "status-fail";
+        }
+
+        btnRunRlm.disabled = false;
+    });
+</script>
+
+</body>
+</html>

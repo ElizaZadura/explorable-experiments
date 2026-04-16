@@ -1,0 +1,806 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>The Fraught Road to Quantum Advantage</title>
+    <style>
+        :root {
+            --bg: #fdfdfd;
+            --text: #111;
+            --accent: #2c3e50;
+            --quantum: #2980b9;
+            --classical: #c0392b;
+            --grid: #eee;
+            --font-main: 'Georgia', 'Cambria', serif;
+            --font-mono: 'Courier New', monospace;
+            --font-sans: 'Helvetica Neue', Helvetica, Arial, sans-serif;
+        }
+
+        body {
+            background-color: var(--bg);
+            color: var(--text);
+            font-family: var(--font-main);
+            line-height: 1.6;
+            margin: 0;
+            padding: 0;
+        }
+
+        /* Tufte-inspired Layout */
+        article {
+            max-width: 650px;
+            margin: 0 auto;
+            padding: 40px 20px;
+        }
+
+        h1, h2, h3 {
+            font-weight: normal;
+            margin-top: 2.5em;
+            margin-bottom: 0.5em;
+            color: var(--accent);
+        }
+
+        h1 { 
+            font-size: 2.5rem; 
+            margin-top: 1em; 
+            line-height: 1.1; 
+            letter-spacing: -0.02em;
+        }
+        
+        h2 { 
+            font-size: 1.4rem; 
+            border-bottom: 1px solid var(--accent); 
+            padding-bottom: 10px; 
+            margin-top: 3rem;
+        }
+        
+        .subtitle { 
+            font-style: italic; 
+            color: #666; 
+            font-size: 1.1rem; 
+            margin-bottom: 3rem; 
+            border-left: 3px solid var(--quantum);
+            padding-left: 15px;
+        }
+
+        p { margin-bottom: 1.5em; text-align: justify; }
+        
+        strong { font-weight: bold; color: var(--accent); }
+        em { font-style: italic; }
+
+        /* Interactive Figures */
+        .figure-container {
+            background: #f8f9fa;
+            border: 1px solid #e0e0e0;
+            padding: 20px;
+            margin: 2.5em -20px; /* Slight breakout on mobile */
+            border-radius: 2px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.02);
+        }
+
+        @media (min-width: 700px) {
+            .figure-container {
+                margin: 2.5em 0;
+            }
+        }
+
+        .figure-caption {
+            font-family: var(--font-sans);
+            font-size: 0.85rem;
+            color: #555;
+            margin-top: 15px;
+            border-top: 1px solid #ddd;
+            padding-top: 10px;
+            line-height: 1.4;
+        }
+
+        canvas {
+            background: white;
+            width: 100%;
+            height: 300px;
+            display: block;
+            border: 1px solid #ccc;
+        }
+
+        /* Controls */
+        .controls {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+            margin-bottom: 15px;
+            font-family: var(--font-sans);
+            font-size: 0.85rem;
+            background: #eef2f5;
+            padding: 15px;
+            border-radius: 4px;
+            border: 1px solid #dce4ec;
+        }
+
+        .control-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+
+        label { 
+            font-weight: bold; 
+            color: var(--accent); 
+            min-width: 120px;
+        }
+        
+        input[type=range] {
+            flex-grow: 1;
+            margin: 0 15px;
+            cursor: pointer;
+        }
+
+        .value-display {
+            font-family: var(--font-mono);
+            min-width: 80px;
+            text-align: right;
+            font-size: 0.9rem;
+            color: #333;
+        }
+
+        button {
+            background: var(--accent);
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-family: var(--font-sans);
+            font-size: 0.85rem;
+            margin-top: 10px;
+        }
+        button:hover { background: #34495e; }
+
+        /* Math Formatting */
+        .equation {
+            font-family: 'Times New Roman', serif;
+            font-style: italic;
+            text-align: center;
+            margin: 25px 0;
+            font-size: 1.1rem;
+            color: #444;
+            background: #fff;
+            padding: 10px;
+            border: 1px dashed #ddd;
+        }
+        .var { font-family: 'Times New Roman', serif; font-style: italic; }
+
+        /* Specific Highlight Classes */
+        .q-text { color: var(--quantum); font-weight: bold; }
+        .c-text { color: var(--classical); font-weight: bold; }
+
+    </style>
+</head>
+<body>
+
+<article>
+    <h1>The Fraught Road to Quantum Advantage</h1>
+    <div class="subtitle">
+        An interactive analysis of computational complexity, evaporating use-cases, and thermodynamic constraints. 
+        <br><small>Inspired by S. Hossenfelder's "Quantum Advantage?"</small>
+    </div>
+
+    <p>
+        The narrative surrounding quantum computing has long been one of inevitability. We are told that as research progresses, these machines will solve problems fundamentally intractable for classical computers. This threshold is known as <strong>Quantum Advantage</strong>.
+    </p>
+    <p>
+        However, a rigorous review of recent literature suggests a different reality. As classical algorithms improve and the physical costs of error correction become clear, the window of opportunity for quantum utility is narrowing.
+    </p>
+
+    <!-- SECTION 1 -->
+    <h2>I. The Theoretical Promise</h2>
+    <p>
+        The primary argument for quantum computing rests on the principle of superposition and entanglement. While a classical register of <span class="var">N</span> bits can exist in only one state at a time, <span class="var">N</span> entangled qubits represent a superposition of <span class="var">2<sup>N</sup></span> complex amplitudes simultaneously.
+    </p>
+    <p>
+        This creates a state space that expands exponentially. Simulating a quantum system on a classical computer quickly becomes impossible due to memory constraints.
+    </p>
+
+    <div class="figure-container">
+        <div class="controls">
+            <div class="control-row">
+                <label>Qubits (<span class="var">N</span>)</label>
+                <input type="range" id="qubitSlider" min="1" max="60" value="10" step="1">
+                <span class="value-display" id="qubitVal">10</span>
+            </div>
+        </div>
+        
+        <div class="equation">
+            Memory = 2<sup><span id="eqN">10</span></sup> × 16 bytes (complex double)
+        </div>
+        
+        <canvas id="canvas-exponential"></canvas>
+        <div class="figure-caption">
+            <strong>Figure 1. The Exponential Explosion.</strong> 
+            Visualizing the memory required to simulate <span class="var">N</span> qubits classically. 
+            At low <span class="var">N</span>, we can visualize individual states (blue squares). 
+            As <span class="var">N</span> increases, we transition from Kilobytes to Terabytes, eventually exceeding the number of atoms in the universe.
+        </div>
+    </div>
+
+    <p>
+        At <span class="var">N = 50</span>, we exceed the memory of the world's largest supercomputers. This is the "Quantum Supremacy" regime. However, raw state space does not automatically equate to useful computation. We must be able to manipulate these states to solve a specific problem.
+    </p>
+
+    <!-- SECTION 2 -->
+    <h2>II. The Vanishing Advantage</h2>
+    <p>
+        One of the most cited applications for quantum computing is the simulation of complex molecules, specifically the <strong>FeMo-cofactor</strong> responsible for nitrogen fixation. Understanding this molecule could revolutionize fertilizer production.
+    </p>
+    <p>
+        It was long held that calculating the ground state energy of such molecules was impossible for classical computers. Yet, recent work (e.g., from Caltech) demonstrated that improved classical algorithms—specifically <em>Tensor Networks</em>—could achieve chemical accuracy on conventional clusters.
+    </p>
+    <p>
+        This illustrates a moving goalpost: <strong>Quantum Advantage is defined relative to the best known classical algorithm.</strong> If classical algorithms improve, the quantum advantage evaporates.
+    </p>
+
+    <div class="figure-container">
+        <div class="controls">
+            <div class="control-row">
+                <label>Classical Innovation (<span class="var">η</span>)</label>
+                <input type="range" id="algoSlider" min="1" max="100" value="10">
+                <span class="value-display">Low</span>
+            </div>
+            <div class="control-row" style="margin-top: 5px; color: #666; font-size: 0.8em; justify-content: flex-end;">
+                (Simulating better Tensor Networks)
+            </div>
+        </div>
+        <canvas id="canvas-race"></canvas>
+        <div class="figure-caption">
+            <strong>Figure 2. The Algorithmic Race.</strong> 
+            The <span class="c-text">Red Line</span> represents Classical computational cost. The <span class="q-text">Blue Line</span> is Quantum cost (lower scaling, high overhead). 
+            Increase <em>Classical Innovation</em> to see how better algorithms push the "Crossover Point" (where Quantum becomes useful) to impossibly large problem sizes.
+        </div>
+    </div>
+
+    <!-- SECTION 3 -->
+    <h2>III. The Optimization Illusion</h2>
+    <p>
+        Another domain often promised to quantum computing is optimization, exemplified by the <strong>Traveling Salesman Problem</strong>. The theory is that techniques like <em>Quantum Annealing</em> can tunnel through energy barriers to find the global minimum (the best solution) faster than classical thermal annealing.
+    </p>
+    <p>
+        However, recent reviews indicate "little cause for optimism." The delicate quantum states are susceptible to noise. If the noise floor is too high, the system cannot settle into the true ground state, effectively randomizing the result.
+    </p>
+
+    <div class="figure-container">
+        <div class="controls">
+            <div class="control-row">
+                <label>Tunneling (Quantum)</label>
+                <input type="range" id="tunnelSlider" min="0" max="100" value="50">
+                <span class="value-display" id="tunnelVal">50%</span>
+            </div>
+            <div class="control-row">
+                <label>System Noise</label>
+                <input type="range" id="noiseSlider" min="0" max="100" value="10">
+                <span class="value-display" id="noiseVal">10%</span>
+            </div>
+            <div style="text-align: center;">
+                <button id="resetSimBtn">Restart Particle</button>
+            </div>
+        </div>
+        <canvas id="canvas-landscape"></canvas>
+        <div class="figure-caption">
+            <strong>Figure 3. Energy Landscape Simulator.</strong> 
+            The particle seeks the deepest well (Global Minimum). 
+            <strong>Tunneling</strong> allows it to pass through walls. 
+            <strong>Noise</strong> shakes the landscape. 
+            <br><em>Observation:</em> High noise negates the benefit of tunneling, preventing the particle from settling in the optimal state.
+        </div>
+    </div>
+
+    <!-- SECTION 4 -->
+    <h2>IV. The Thermodynamic Cost</h2>
+    <p>
+        Finally, we must address the "Transistor Moment" fallacy. Microchips succeeded because shrinking transistors reduced cost and power. Quantum computers face the inverse economics.
+    </p>
+    <p>
+        To run a useful calculation, we need <strong>Error Correction</strong>. This requires encoding one "Logical Qubit" into hundreds or thousands of "Physical Qubits." Each physical qubit requires cryogenic cooling, control wiring, and signal processing.
+    </p>
+    <div class="equation">
+        P<sub>total</sub> ≈ P<sub>cooling</sub> + (N<sub>logical</sub> × Ratio<sub>error</sub> × P<sub>control</sub>)
+    </div>
+    <p>
+        Estimates suggest that a fault-tolerant quantum computer capable of useful work might consume 100+ Megawatts—rivaling the consumption of the largest supercomputers, but for a much narrower set of tasks.
+    </p>
+
+    <div class="figure-container">
+        <div class="controls">
+            <div class="control-row">
+                <label>Target Logical Qubits</label>
+                <input type="range" id="logicalQubits" min="50" max="1000" value="100">
+                <span class="value-display" id="logicalVal">100</span>
+            </div>
+            <div class="control-row">
+                <label>Physical/Logical Ratio</label>
+                <input type="range" id="errorRatio" min="100" max="3000" value="1000">
+                <span class="value-display" id="ratioVal">1:1000</span>
+            </div>
+        </div>
+        <canvas id="canvas-energy"></canvas>
+        <div class="figure-caption">
+            <strong>Figure 4. The Power Bill.</strong> 
+            Comparing the power draw of a top-tier Classical Supercomputer (~20MW) vs. a Fault-Tolerant Quantum Computer. 
+            <span style="color:red">Warning lines</span> appear if power exceeds practical facility limits.
+        </div>
+    </div>
+
+    <h3>Conclusion</h3>
+    <p>
+        The road to quantum advantage is not merely an engineering challenge of adding more qubits. It is a multi-front war against classical algorithmic innovation, environmental noise, and thermodynamic limits. While scientifically profound, the practical window for these machines may be far smaller—and more expensive—than the hype suggests.
+    </p>
+    
+</article>
+
+<script>
+/**
+ * UTILITIES
+ */
+function formatBytes(bytes, decimals = 2) {
+    if (bytes === 0) return '0 Bytes';
+    const k = 1024;
+    const dm = decimals < 0 ? 0 : decimals;
+    const sizes = ['Bytes', 'KB', 'MB', 'GB', 'TB', 'PB', 'EB', 'ZB', 'YB'];
+    const i = Math.floor(Math.log(bytes) / Math.log(k));
+    
+    if(i >= sizes.length) return "Universe-Scale";
+    return parseFloat((bytes / Math.pow(k, i)).toFixed(dm)) + ' ' + sizes[i];
+}
+
+/**
+ * SIMULATION 1: EXPONENTIAL SPACE
+ */
+const sim1 = {
+    canvas: document.getElementById('canvas-exponential'),
+    slider: document.getElementById('qubitSlider'),
+    display: document.getElementById('qubitVal'),
+    eqDisplay: document.getElementById('eqN'),
+    ctx: null,
+    
+    init() {
+        this.ctx = this.canvas.getContext('2d');
+        this.slider.addEventListener('input', () => this.draw());
+        this.draw();
+    },
+
+    draw() {
+        const N = parseInt(this.slider.value);
+        this.display.innerText = N;
+        this.eqDisplay.innerText = N;
+        
+        const bytes = Math.pow(2, N) * 16; 
+        const w = this.canvas.width = this.canvas.offsetWidth;
+        const h = this.canvas.height = 300;
+        const ctx = this.ctx;
+
+        ctx.clearRect(0, 0, w, h);
+
+        ctx.fillStyle = "#2c3e50";
+        ctx.textAlign = "center";
+        ctx.font = "16px Helvetica Neue";
+        ctx.fillText(`Memory Required: ${formatBytes(bytes)}`, w/2, 40);
+
+        const maxSquares = 5000;
+        let squares = Math.pow(2, N);
+        
+        ctx.fillStyle = "#2980b9"; // Quantum Blue
+        
+        if (squares < maxSquares) {
+            // Draw grid
+            const area = (w * (h-80));
+            const size = Math.sqrt(area / squares);
+            const side = Math.min(Math.max(size, 2), 50);
+            
+            // Center visualization
+            const startY = 60;
+            let count = 0;
+            
+            // Simple grid logic
+            let x = 0;
+            let y = startY;
+            
+            while(count < squares && y < h) {
+                ctx.fillRect(x+1, y+1, side-2, side-2);
+                x += side;
+                if(x + side > w) {
+                    x = 0;
+                    y += side;
+                }
+                count++;
+            }
+        } else {
+            // Metaphor Mode
+            ctx.fillStyle = "#c0392b"; // Alert Red
+            ctx.font = "bold 20px Georgia";
+            let metaphor = "";
+            let subtext = "";
+
+            if (N < 40) {
+                metaphor = "Supercomputer Cluster Limit";
+                subtext = "Requires dedicated datacenter";
+            } else if (N < 50) {
+                metaphor = "Planetary Resource Limit";
+                subtext = "Requires all silicon on Earth";
+            } else if (N < 60) {
+                metaphor = "Solar System Limit";
+                subtext = "More states than atoms in the Earth";
+            } else {
+                metaphor = "Universal Limit";
+                subtext = "More states than atoms in the Universe";
+            }
+            
+            ctx.fillText("Exceeds Visual Representation", w/2, h/2 - 20);
+            
+            ctx.fillStyle = "#555";
+            ctx.font = "italic 18px Georgia";
+            ctx.fillText(metaphor, w/2, h/2 + 20);
+            
+            ctx.font = "14px Helvetica Neue";
+            ctx.fillStyle = "#888";
+            ctx.fillText(subtext, w/2, h/2 + 50);
+        }
+    }
+};
+
+/**
+ * SIMULATION 2: THE RACE
+ */
+const sim2 = {
+    canvas: document.getElementById('canvas-race'),
+    algoSlider: document.getElementById('algoSlider'),
+    ctx: null,
+
+    init() {
+        this.ctx = this.canvas.getContext('2d');
+        this.algoSlider.addEventListener('input', () => this.draw());
+        this.draw();
+    },
+
+    draw() {
+        const w = this.canvas.width = this.canvas.offsetWidth;
+        const h = this.canvas.height = 300;
+        const ctx = this.ctx;
+        
+        const classicalEfficiency = parseInt(this.algoSlider.value); 
+        
+        ctx.clearRect(0, 0, w, h);
+
+        // Draw Axes
+        ctx.beginPath();
+        ctx.strokeStyle = "#aaa";
+        ctx.lineWidth = 1;
+        ctx.moveTo(50, 20);
+        ctx.lineTo(50, h-40); // Y axis
+        ctx.lineTo(w-20, h-40); // X axis
+        ctx.stroke();
+
+        ctx.font = "12px Helvetica Neue";
+        ctx.fillStyle = "#666";
+        ctx.textAlign = "center";
+        ctx.fillText("Problem Complexity", w/2 + 20, h-10);
+        
+        ctx.save();
+        ctx.translate(20, h/2);
+        ctx.rotate(-Math.PI/2);
+        ctx.fillText("Time / Cost (Log Scale)", 0, 0);
+        ctx.restore();
+
+        // Plot Functions
+        const plot = (color, func, label) => {
+            ctx.beginPath();
+            ctx.strokeStyle = color;
+            ctx.lineWidth = 3;
+            let labelPos = {x:0, y:0};
+            
+            for(let x=0; x<w-70; x+=2) {
+                const problemSize = x / 4; 
+                const yVal = func(problemSize);
+                const plotY = (h-40) - yVal;
+                
+                if (plotY < 0) break; // Don't draw off top
+
+                if (x===0) ctx.moveTo(50+x, plotY);
+                else ctx.lineTo(50+x, plotY);
+                
+                labelPos = {x: 50+x, y: plotY};
+            }
+            ctx.stroke();
+            
+            // Label line
+            ctx.fillStyle = color;
+            ctx.textAlign = "left";
+            ctx.font = "bold 12px sans-serif";
+            if(labelPos.x > 50) ctx.fillText(label, labelPos.x + 5, labelPos.y);
+        };
+
+        // Classical Cost: Exponential. 
+        // As efficiency goes up (slider), the exponent divisor increases, flattening curve.
+        // Base formula: y = e^(x / (15 + eff))
+        plot("#c0392b", (x) => {
+            return Math.pow(Math.E, x / (15 + classicalEfficiency * 0.5)) * 1.5;
+        }, "Classical");
+
+        // Quantum Cost: Polynomial/Linear but high startup overhead.
+        plot("#2980b9", (x) => {
+            return 60 + (x * 1.2); 
+        }, "Quantum");
+
+        // Crossover analysis
+        // Where do they cross?
+        // If Classical curve is below Quantum curve for the whole visible graph, advantage is gone.
+        
+        // Simple visual heuristic for text
+        ctx.fillStyle = "#333";
+        ctx.font = "italic 14px Georgia";
+        ctx.textAlign = "center";
+
+        // Check value at max X
+        const maxX = (w-70)/4;
+        const cCost = Math.pow(Math.E, maxX / (15 + classicalEfficiency * 0.5)) * 1.5;
+        const qCost = 60 + (maxX * 1.2);
+
+        if(cCost < qCost) {
+            ctx.fillText("Advantage Window Closed for this range", w/2 + 20, 40);
+        } else {
+            ctx.fillText("Potential Advantage Region", w - 100, 40);
+        }
+    }
+};
+
+/**
+ * SIMULATION 3: OPTIMIZATION LANDSCAPE
+ */
+const sim3 = {
+    canvas: document.getElementById('canvas-landscape'),
+    tunnelSlider: document.getElementById('tunnelSlider'),
+    noiseSlider: document.getElementById('noiseSlider'),
+    btn: document.getElementById('resetSimBtn'),
+    ctx: null,
+    ball: { x: 0, y: 0 },
+    landscape: [],
+    animationId: null,
+
+    init() {
+        this.ctx = this.canvas.getContext('2d');
+        this.generateLandscape();
+        this.resetBall();
+        
+        // Listeners
+        this.tunnelSlider.addEventListener('input', () => {
+            document.getElementById('tunnelVal').innerText = this.tunnelSlider.value + "%";
+        });
+        this.noiseSlider.addEventListener('input', () => {
+            document.getElementById('noiseVal').innerText = this.noiseSlider.value + "%";
+        });
+        this.btn.addEventListener('click', () => {
+            this.generateLandscape();
+            this.resetBall();
+        });
+
+        this.loop();
+    },
+    
+    resetBall() {
+        this.ball.x = 20;
+    },
+
+    generateLandscape() {
+        this.landscape = [];
+        const w = this.canvas.offsetWidth || 800;
+        for(let i=0; i<=w; i++) {
+            // Complex terrain: sine waves + gaussian well
+            let y = Math.sin(i * 0.02) * 40 + Math.sin(i * 0.05) * 15;
+            // Global Minimum at ~75% width
+            let well = -140 * Math.exp(-Math.pow((i - w*0.75)/30, 2));
+            // Local minimum barrier before it
+            let barrier = 60 * Math.exp(-Math.pow((i - w*0.55)/40, 2));
+            
+            this.landscape.push(150 + y + well + barrier);
+        }
+    },
+
+    loop() {
+        const w = this.canvas.width = this.canvas.offsetWidth;
+        const h = this.canvas.height = 300;
+        const ctx = this.ctx;
+        
+        // Re-generate if width changed significantly
+        if(Math.abs(this.landscape.length - w) > 50) this.generateLandscape();
+
+        const tunneling = parseInt(this.tunnelSlider.value) / 100;
+        const noise = parseInt(this.noiseSlider.value);
+
+        ctx.clearRect(0, 0, w, h);
+
+        // Draw Landscape
+        ctx.beginPath();
+        ctx.strokeStyle = "#555";
+        ctx.lineWidth = 2;
+        
+        // Draw with noise jitter
+        for(let i=0; i<this.landscape.length; i++) {
+            // Visual noise
+            const jitter = (Math.random() - 0.5) * noise * 0.5;
+            const y = this.landscape[i] + jitter;
+            if(i===0) ctx.moveTo(i, y);
+            else ctx.lineTo(i, y);
+        }
+        ctx.stroke();
+
+        // Physics Logic
+        let idx = Math.floor(this.ball.x);
+        if(idx < 0) idx = 0;
+        if(idx >= this.landscape.length - 1) idx = this.landscape.length - 2;
+
+        // Gradient descent (Gravity)
+        const slope = this.landscape[idx+1] - this.landscape[idx];
+        this.ball.x -= slope * 0.2; // Slide down
+
+        // Tunneling Logic
+        // If we are stuck in a local valley (slope is roughly 0 and curvature is up), try to tunnel
+        if(Math.abs(slope) < 1 && Math.random() < (tunneling * 0.05)) {
+            // Look ahead for a lower spot
+            const lookAhead = 80; // Distance to tunnel
+            if(idx + lookAhead < this.landscape.length) {
+                if(this.landscape[idx+lookAhead] < this.landscape[idx] - 10) {
+                    // Draw tunneling effect
+                    ctx.strokeStyle = "rgba(41, 128, 185, 0.5)";
+                    ctx.setLineDash([5, 5]);
+                    ctx.beginPath();
+                    ctx.moveTo(this.ball.x, this.landscape[idx]);
+                    ctx.lineTo(this.ball.x + lookAhead, this.landscape[idx+lookAhead]);
+                    ctx.stroke();
+                    ctx.setLineDash([]);
+                    
+                    this.ball.x += lookAhead; // Teleport
+                }
+            }
+        }
+
+        // Noise Kick (Thermal Fluctuations)
+        // High noise kicks the ball randomly, preventing it from settling
+        if(Math.random() < 0.3) {
+            this.ball.x += (Math.random() - 0.5) * noise * 3;
+        }
+
+        // Bounds
+        if(this.ball.x < 0) this.ball.x = 0;
+        if(this.ball.x >= w) this.ball.x = w-1;
+
+        // Draw Ball
+        const ballY = this.landscape[Math.floor(this.ball.x)] || 150;
+        ctx.fillStyle = "#c0392b";
+        ctx.beginPath();
+        ctx.arc(this.ball.x, ballY - 10, 8, 0, Math.PI*2);
+        ctx.fill();
+
+        // Label Global Min
+        ctx.fillStyle = "#2c3e50";
+        ctx.font = "12px sans-serif";
+        ctx.textAlign = "center";
+        ctx.fillText("Global Minimum", w*0.75, h-20);
+        
+        requestAnimationFrame(() => this.loop());
+    }
+};
+
+/**
+ * SIMULATION 4: ENERGY COST
+ */
+const sim4 = {
+    canvas: document.getElementById('canvas-energy'),
+    logicalSlider: document.getElementById('logicalQubits'),
+    ratioSlider: document.getElementById('errorRatio'),
+    ctx: null,
+
+    init() {
+        this.ctx = this.canvas.getContext('2d');
+        this.logicalSlider.addEventListener('input', () => this.draw());
+        this.ratioSlider.addEventListener('input', () => this.draw());
+        this.draw();
+    },
+
+    draw() {
+        const w = this.canvas.width = this.canvas.offsetWidth;
+        const h = this.canvas.height = 300;
+        const ctx = this.ctx;
+        
+        const logical = parseInt(this.logicalSlider.value);
+        const ratio = parseInt(this.ratioSlider.value);
+        
+        document.getElementById('logicalVal').innerText = logical;
+        document.getElementById('ratioVal').innerText = "1:" + ratio;
+
+        ctx.clearRect(0, 0, w, h);
+
+        // Constants
+        const supercomputerPower = 25; // MW (Frontier scale)
+        // Power model: Base overhead + cost per physical qubit
+        // 1000 physical qubits ~ 5kW (optimistic future estimate including cooling & control) = 0.005 MW
+        const powerPerPhysicalMW = 0.000005; 
+        const baseOverheadMW = 2; 
+        
+        const totalPhysical = logical * ratio;
+        const quantumPower = baseOverheadMW + (totalPhysical * powerPerPhysicalMW);
+
+        // Scaling for chart
+        const maxVal = Math.max(supercomputerPower, quantumPower, 100) * 1.1;
+        const barWidth = Math.min(80, w/4);
+        
+        const scaleY = (val) => h - 40 - ((val / maxVal) * (h - 60));
+
+        // Draw Axes
+        ctx.beginPath();
+        ctx.strokeStyle = "#ccc";
+        ctx.moveTo(40, h-40);
+        ctx.lineTo(w, h-40);
+        ctx.stroke();
+
+        // Helper to draw bar
+        const drawBar = (x, val, color, label) => {
+            const y = scaleY(val);
+            const height = (h-40) - y;
+            
+            ctx.fillStyle = color;
+            ctx.fillRect(x - barWidth/2, y, barWidth, height);
+            
+            ctx.fillStyle = "#333";
+            ctx.textAlign = "center";
+            ctx.font = "bold 14px Helvetica Neue";
+            ctx.fillText(val.toFixed(1) + " MW", x, y - 10);
+            
+            ctx.font = "14px Georgia";
+            ctx.fillText(label, x, h-15);
+        };
+
+        drawBar(w*0.3, supercomputerPower, "#c0392b", "Supercomputer");
+        drawBar(w*0.7, quantumPower, "#2980b9", "Quantum System");
+
+        // Details
+        ctx.font = "12px sans-serif";
+        ctx.fillStyle = "#666";
+        ctx.fillText(`Physical Qubits: ${(totalPhysical/1000).toFixed(1)}k`, w*0.7, scaleY(quantumPower) - 30);
+
+        // Danger Zones
+        const drawLimit = (mw, text) => {
+            const y = scaleY(mw);
+            ctx.strokeStyle = "rgba(231, 76, 60, 0.5)";
+            ctx.setLineDash([5, 5]);
+            ctx.beginPath();
+            ctx.moveTo(40, y);
+            ctx.lineTo(w, y);
+            ctx.stroke();
+            ctx.setLineDash([]);
+            
+            ctx.fillStyle = "#c0392b";
+            ctx.textAlign = "left";
+            ctx.font = "italic 11px sans-serif";
+            ctx.fillText(text, 45, y - 5);
+        };
+
+        if(maxVal > 50) drawLimit(50, "Small Modular Reactor Output");
+        if(maxVal > 1000) drawLimit(1000, "Full Nuclear Plant Output");
+    }
+};
+
+// Initialize
+window.onload = () => {
+    sim1.init();
+    sim2.init();
+    sim3.init();
+    sim4.init();
+};
+
+window.onresize = () => {
+    sim1.draw();
+    sim2.draw();
+    sim4.draw();
+};
+
+</script>
+</body>
+</html>
